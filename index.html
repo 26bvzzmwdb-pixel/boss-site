@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05060f">
+<title>$BOSS · Ohio Final Boss · a joke meme coin</title>
+<meta name="description" content="$BOSS (Ohio Final Boss) is a joke meme coin on pump.fun with a free endless-runner game. Not financial advice. No promises of value.">
+<meta property="og:title" content="$BOSS · Ohio Final Boss">
+<meta property="og:description" content="Joke meme coin + free endless runner. Dodge the rugs. Not financial advice.">
+<meta property="og:image" content="assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@TheBossCoin_SOL">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<style>
+@font-face{font-family:Orbitron;src:url(assets/orbitron.ttf) format("truetype");font-weight:400 900;font-display:swap}
+:root{--bg:#05060f;--panel:rgba(12,12,38,.78);--cyan:#28dcff;--purp:#aa5aff;--gold:#ffd24a;--green:#28ff8c;--pink:#ff4fd8;--red:#ff3250;--txt:#d6dcff;--mut:#8f97c8;
+  --r:18px;--hd:Orbitron,"Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;z-index:-1;background:
+  radial-gradient(60% 40% at 50% 0%,rgba(170,90,255,.28),transparent 70%),
+  radial-gradient(50% 30% at 100% 60%,rgba(40,220,255,.12),transparent 70%),
+  radial-gradient(50% 30% at 0% 90%,rgba(255,79,216,.10),transparent 70%),var(--bg)}
+a{color:var(--cyan)}
+img,video{max-width:100%;display:block}
+.wrap{width:min(1080px,100%);margin:0 auto;padding:0 18px}
+h1,h2,h3{font-family:var(--hd);letter-spacing:.5px;margin:0}
+h2{font-size:clamp(22px,5.4vw,32px);color:#e9f9ff;text-shadow:0 0 18px rgba(40,220,255,.55);margin-bottom:14px}
+h2 .k{color:var(--gold);text-shadow:0 0 16px rgba(255,210,74,.6)}
+section{padding:46px 0}
+/* nav */
+nav{position:sticky;top:0;z-index:10;background:rgba(5,6,15,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(170,90,255,.25)}
+nav .wrap{display:flex;align-items:center;gap:10px;height:58px}
+nav .brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:#fff;font:800 17px var(--hd)}
+nav .brand img{width:34px;height:34px;border-radius:50%;box-shadow:0 0 12px rgba(40,220,255,.6)}
+nav .links{margin-left:auto;display:flex;gap:6px;align-items:center}
+nav .links a.t{display:none;color:var(--txt);text-decoration:none;font:600 13px var(--hd);padding:8px 10px;border-radius:10px}
+nav .links a.t:hover{color:#fff;background:rgba(255,255,255,.06)}
+@media(min-width:760px){nav .links a.t{display:inline-block}}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:50px;padding:0 20px;border-radius:14px;font:800 15px var(--hd);letter-spacing:.4px;
+  text-decoration:none;color:#fff;border:2px solid var(--c,var(--cyan));background:rgba(10,12,40,.85);box-shadow:0 0 16px color-mix(in srgb,var(--c,var(--cyan)) 45%,transparent),inset 0 0 12px color-mix(in srgb,var(--c,var(--cyan)) 18%,transparent);
+  transition:transform .12s,box-shadow .2s;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn:hover{transform:translateY(-2px);box-shadow:0 0 26px color-mix(in srgb,var(--c,var(--cyan)) 70%,transparent),inset 0 0 14px color-mix(in srgb,var(--c,var(--cyan)) 25%,transparent)}
+.btn:active{transform:scale(.98)}
+.btn.buy{--c:var(--green);background:linear-gradient(180deg,rgba(40,255,140,.22),rgba(10,40,26,.9))}
+.btn.x{--c:#e6e6ff}
+.btn.play{--c:var(--gold);background:linear-gradient(180deg,rgba(255,210,74,.2),rgba(40,28,4,.9))}
+.btn.sm{min-height:38px;padding:0 13px;font-size:12px;border-radius:11px}
+.btn svg{width:18px;height:18px;flex:none}
+/* hero */
+.hero{position:relative;padding:28px 0 40px;text-align:center;overflow:hidden}
+.hero .bnr{position:absolute;inset:0 0 auto 0;height:min(48vw,340px);background:url(assets/banner.webp) center/cover no-repeat;opacity:.35;
+  -webkit-mask-image:linear-gradient(#000 30%,transparent);mask-image:linear-gradient(#000 30%,transparent)}
+.logo{position:relative;width:min(56vw,230px);aspect-ratio:1;margin:18px auto 8px;border-radius:50%;padding:5px;
+  background:conic-gradient(from 0deg,var(--cyan),var(--purp),var(--pink),var(--gold),var(--cyan));animation:spin 8s linear infinite;box-shadow:0 0 40px rgba(170,90,255,.6),0 0 90px rgba(40,220,255,.25)}
+.logo img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#0a0a1c;animation:spin 8s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.logo,.logo img{animation:none}}
+.crown{font-size:28px;line-height:1;filter:drop-shadow(0 0 10px var(--gold))}
+.hero h1{position:relative;font-size:clamp(46px,15vw,92px);font-weight:900;line-height:1;margin-top:6px;color:#bff4ff;
+  text-shadow:0 0 10px var(--cyan),0 0 34px var(--cyan),0 0 70px var(--purp)}
+.hero .sub{font:700 clamp(15px,4.4vw,22px) var(--hd);color:#d9b8ff;text-shadow:0 0 14px rgba(170,90,255,.8);margin:8px 0 2px}
+.hero .tag{color:var(--mut);font-size:14px;margin:0 0 16px}
+.pitch{max-width:640px;margin:0 auto 22px;font-size:clamp(15px,4.1vw,18px);color:#e2e6ff}
+.pill{display:inline-block;font:700 11px var(--hd);letter-spacing:1px;color:var(--gold);border:1px solid rgba(255,210,74,.55);border-radius:99px;padding:5px 11px;margin-bottom:6px;background:rgba(40,28,4,.6)}
+.cta{display:grid;gap:12px;max-width:520px;margin:0 auto}
+@media(min-width:620px){.cta{grid-template-columns:1fr 1fr 1fr;max-width:760px}}
+/* CA */
+.ca{max-width:640px;margin:0 auto 18px;display:flex;align-items:center;gap:8px;background:var(--panel);border:1.5px solid rgba(40,220,255,.5);border-radius:14px;padding:8px 8px 8px 14px;box-shadow:0 0 18px rgba(40,220,255,.18)}
+.ca .lbl{font:800 12px var(--hd);color:var(--cyan);flex:none}
+.ca code{flex:1;min-width:0;font:600 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#e9e4ff;overflow-wrap:anywhere;text-align:left;line-height:1.35}
+.copy{flex:none;min-height:42px;min-width:84px;border-radius:10px;border:2px solid var(--purp);background:rgba(170,90,255,.16);color:#fff;font:800 13px var(--hd);cursor:pointer}
+.copy.ok{border-color:var(--green);background:rgba(40,255,140,.18)}
+.warn-ca{font-size:12.5px;color:var(--mut);margin:-8px auto 22px;max-width:640px}
+/* cards */
+.grid{display:grid;gap:16px}
+@media(min-width:820px){.grid.two{grid-template-columns:1fr 1fr;align-items:start}}
+.card{background:var(--panel);border:1.5px solid rgba(170,90,255,.38);border-radius:var(--r);padding:20px;box-shadow:0 0 24px rgba(120,60,255,.14)}
+.card.gold{border-color:rgba(255,210,74,.6);box-shadow:0 0 24px rgba(255,180,0,.14);background:linear-gradient(180deg,rgba(40,28,4,.55),rgba(12,12,38,.8))}
+.card h3{font-size:16px;color:#fff;margin-bottom:8px}
+.muted{color:var(--mut)}
+ul.ticks{list-style:none;padding:0;margin:10px 0 0}
+ul.ticks li{position:relative;padding:5px 0 5px 28px}
+ul.ticks li:before{content:"👑";position:absolute;left:0;top:4px;font-size:15px}
+/* game */
+.gamebox{position:relative;border-radius:var(--r);overflow:hidden;border:2px solid var(--cyan);box-shadow:0 0 30px rgba(40,220,255,.35);background:#0a0a1c;aspect-ratio:9/16;max-height:78vh;width:min(100%,460px);margin:0 auto}
+.gamebox iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.gamebox .start{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;border:0;width:100%;color:#fff;
+  background:linear-gradient(rgba(5,6,15,.35),rgba(5,6,15,.8)),url(assets/runner_poster.jpg) center/cover;font:800 18px var(--hd)}
+.gamebox .start .big{font-size:58px;filter:drop-shadow(0 0 16px var(--gold))}
+.under{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
+.how div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;font-size:14px}
+.how b{display:block;font:800 12px var(--hd);color:var(--cyan);margin-bottom:2px}
+/* video */
+.vid{border-radius:var(--r);overflow:hidden;border:2px solid var(--purp);box-shadow:0 0 30px rgba(170,90,255,.35);width:min(100%,560px);margin:0 auto;background:#000}
+.vid video{width:100%;aspect-ratio:1}
+/* rewards */
+.split{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0 6px}
+.split div{text-align:center;background:rgba(255,210,74,.08);border:1px solid rgba(255,210,74,.3);border-radius:10px;padding:7px 2px;font:800 12px var(--hd);color:#ffe9a8}
+.split small{display:block;color:var(--mut);font:600 10px system-ui}
+.board{width:100%;border-collapse:collapse;margin-top:6px;font-size:14px}
+.board th,.board td{padding:9px 8px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
+.board th{font:700 11px var(--hd);color:var(--mut);letter-spacing:.6px}
+.empty{padding:22px 10px;text-align:center;color:var(--mut);border:1.5px dashed rgba(255,255,255,.15);border-radius:12px;margin-top:10px}
+.status{display:inline-flex;align-items:center;gap:7px;font:700 12px var(--hd);color:var(--gold)}
+.status:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold)}
+/* disclaimer */
+.disc{border:2px solid var(--red);background:rgba(40,4,12,.75);border-radius:var(--r);padding:20px;box-shadow:0 0 26px rgba(255,50,80,.22)}
+.disc h2{color:#ffd0d8;text-shadow:0 0 16px rgba(255,50,80,.7)}
+.disc p{margin:8px 0}
+footer{padding:30px 0 calc(40px + env(safe-area-inset-bottom));text-align:center;color:var(--mut);font-size:13px;border-top:1px solid rgba(170,90,255,.2)}
+footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;margin-bottom:12px}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translate(-50%,120px);background:#0d2a1a;border:2px solid var(--green);color:#fff;font:800 13px var(--hd);padding:11px 16px;border-radius:12px;transition:transform .25s;z-index:20;box-shadow:0 0 20px rgba(40,255,140,.4)}
+.toast.on{transform:translate(-50%,0)}
+[hidden]{display:none!important}
+.ca.soon code{color:var(--gold);font:800 14px var(--hd)}
+.cd{font:800 clamp(18px,5vw,26px) var(--hd);color:#bff4ff;text-shadow:0 0 14px rgba(40,220,255,.6);margin:6px 0 2px}
+.tiers{width:100%;border-collapse:collapse;font-size:13.5px;margin:8px 0}.tiers td,.tiers th{padding:7px 6px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
+.tiers th{font:700 11px var(--hd);color:var(--mut)}
+.mini{font-size:13px;color:var(--mut)}
+.lst{max-height:260px;overflow:auto;font-size:13px}.lst code{font-size:12px;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="#top"><img src="assets/logo.webp" alt="" width="34" height="34">$BOSS</a>
+  <div class="links">
+    <a class="t" href="#play">Game</a><a class="t" href="#rewards">Rewards</a><a class="t" href="#transparency">Transparency</a><a class="t" href="#disclaimer">Disclaimer</a>
+    <a class="btn sm buy needs-ca" href="#" target="_blank" rel="noopener" hidden>Buy</a>
+  </div>
+</div></nav>
+
+<header class="hero" id="top">
+  <div class="bnr" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="logo"><img src="assets/logo.webp" alt="$BOSS crown logo" width="512" height="512"></div>
+    <div class="crown" aria-hidden="true">👑</div>
+    <h1>$BOSS</h1>
+    <p class="sub">OHIO FINAL BOSS</p>
+    <p class="tag">boss dodge the rugs 🦅 · on pump.fun (Solana)</p>
+    <span class="pill">JOKE COIN · NO ROADMAP · NO PROMISES</span>
+    <p class="pitch">A meme coin about a neon crown from Ohio who dodges red candles, rug pits and FUD clouds. That's the whole plan. No roadmap, no utility, no promises. There's a free little endless-runner game, and that's it.</p>
+    <div class="ca soon" id="ca">
+      <span class="lbl">CA</span>
+      <code id="ca-text">CA coming soon</code>
+      <button class="copy" id="copy" type="button" aria-label="Copy contract address" hidden>Copy</button>
+    </div>
+    <p class="warn-ca"><span id="ca-note">The new $BOSS contract address will be posted here and on X at launch. Ignore any CA from DMs or other accounts.</span> Always double-check the full contract address. Only trust links from <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>.</p>
+    <div class="cta">
+      <a class="btn buy needs-ca" href="#" target="_blank" rel="noopener" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M4 17l6-6 4 4 6-8"/><path d="M15 7h5v5"/></svg>Buy on pump.fun</a>
+      <a class="btn x" href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>Follow on X</a>
+      <a class="btn play" href="#play">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>Play the game</a>
+    </div>
+  </div>
+</header>
+
+<main>
+<section id="play"><div class="wrap">
+  <h2>🎮 $BOSS <span class="k">RUNNER</span></h2>
+  <p class="muted" style="margin-top:-6px">Free to play in your browser. No wallet, no purchase, no tokens, no download needed.</p>
+  <p class="pill" id="practice-note" style="margin:0 0 12px">🎮 PRACTICE MODE · NOT ELIGIBLE FOR PRIZES</p>
+  <p class="mini" style="margin-top:0">This version is just for practice. Prizes only count in ranked mode (Phantom, server-checked), which opens with round 1.</p>
+  <div class="gamebox" id="gamebox">
+    <button class="start" id="loadgame" type="button" aria-label="Load the game"><span class="big">▶</span>TAP TO LOAD THE GAME<span class="muted" style="font:600 12px system-ui">≈300 KB · sound on after first tap</span></button>
+  </div>
+  <div class="under">
+    <a class="btn sm play" href="game/" target="_blank" rel="noopener">Open fullscreen ↗</a>
+    <a class="btn sm" href="rules.html">Rewards rules (draft)</a>
+    <!-- RANKED MODE: once the score server is hosted, put its URL in href (e.g. https://boss-runner.onrender.com/) and the button appears -->
+    <a class="btn sm" id="ranked" href="" target="_blank" rel="noopener" hidden>Ranked mode (Phantom) ↗</a>
+  </div>
+  <div class="how">
+    <div><b>TAP</b>Jump · tap again to double jump</div>
+    <div><b>SWIPE DOWN</b>Slam: smash candles &amp; FUD</div>
+    <div><b>EVERY ~45s</b>Boss fight: dodge, then slam it 3×</div>
+    <div><b>DESKTOP</b>Space / ↑ jump · ↓ slam</div>
+  </div>
+</div></section>
+
+<section id="video"><div class="wrap">
+  <h2>📼 Gameplay</h2>
+  <div class="vid"><video src="assets/gameplay.mp4" poster="assets/gameplay_poster.jpg" controls playsinline muted loop preload="none" width="720" height="720"></video></div>
+</div></section>
+
+<section id="rewards"><div class="wrap">
+  <h2>🏆 Leaderboard <span class="k">rewards</span></h2>
+  <div class="grid two">
+    <div class="card gold">
+      <span class="status">NOT LIVE YET · RULES COMING ON X FIRST</span>
+      <p class="cd" id="round-cd">Rounds every 3 days</p>
+      <p class="mini" id="round-sub">Each round runs 3 days. Tries reset every round.</p>
+      <h3 style="margin-top:12px">Free to play. Top 10 can win rewards.</h3>
+      <ul class="ticks">
+        <li><b>Free to play</b>. No purchase necessary. You never need to hold, buy or burn $BOSS to play or win.</li>
+        <li><b>3-day rounds</b>, <b id="tries-txt">3 tries</b> per wallet per round. Every ranked score is checked by the server (signed and replayed).</li>
+        <li>Rewards come <b>only from pump.fun creator trading fees the dev actually receives</b>. Nothing is pre-funded and nothing is guaranteed. Few fees means small or skipped rewards.</li>
+        <li><b>The pool can grow with the coin.</b> Bigger market cap and more trading means bigger round caps (table). A falling coin means smaller caps. No promises either way.</li>
+        <li>One prize per person per round. Linked wallets count as one person, and there's a lifetime cap per person (<span id="life-cap">$200</span>).</li>
+        <li>Official rules get posted on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">X @TheBossCoin_SOL</a> <b>first</b>, before any round starts.</li>
+      </ul>
+      <p class="muted" style="font-size:13px;margin:12px 0 0">Not financial advice. Void where prohibited. <a href="rules.html">Read the draft rules</a> (pending legal review).</p>
+    </div>
+    <div class="card">
+      <h3>How each round's pool is sized</h3>
+      <p class="mini">Fees received are split <b id="split-txt">50% prize pot / 40% reserve / 10% ops</b>. Each round can pay at most half the prize pot, and never more than the tier cap below. Unpaid amounts carry over.</p>
+      <table class="tiers" aria-label="Reward tiers"><thead><tr><th>MARKET CAP</th><th>ROUND CAP</th><th>PER WINNER</th></tr></thead><tbody id="tier-rows">
+        <tr><td>&lt; $100K</td><td>$100</td><td>$20</td></tr><tr><td>$100K–500K</td><td>$400</td><td>$60</td></tr><tr><td>$500K–2M</td><td>$1,200</td><td>$180</td></tr><tr><td>&gt; $2M</td><td>$3,000</td><td>$450</td></tr></tbody></table>
+      <p class="mini">Caps are maximums, not targets. The tier uses the lower of the round's average and closing market cap. Shares of the round pool:</p>
+      <div class="split">
+        <div>#1<small>25%</small></div><div>#2<small>18%</small></div><div>#3<small>13%</small></div><div>#4<small>10%</small></div><div>#5<small>8%</small></div>
+        <div>#6<small>7%</small></div><div>#7<small>6%</small></div><div>#8<small>5%</small></div><div>#9<small>4%</small></div><div>#10<small>4%</small></div>
+      </div>
+      <table class="board" aria-label="Leaderboard">
+        <thead><tr><th>RANK</th><th>PLAYER</th><th style="text-align:right">SCORE</th></tr></thead>
+      </table>
+      <div class="empty">The leaderboard opens with the first ranked round.<br>Watch <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a> for the announcement.</div>
+    </div>
+  </div>
+</div></section>
+
+<section id="skins"><div class="wrap">
+  <h2>👑 Skins <span class="k">(optional)</span></h2>
+  <div class="card">
+    <p><b>Skins are cosmetic only.</b> They change how your crown and trail look in ranked mode. That's it: no effect on gameplay, score, tries, rank or rewards.
+    <b>Tokens are never needed to play or win.</b></p>
+    <p class="mini">To unlock a skin, you burn $BOSS from your own wallet (Phantom shows the exact amount before you sign). Burned tokens are gone forever. Skins are currently <b id="skin-net">devnet (test only)</b>.</p>
+    <ul class="ticks" id="skin-list"><li>Gold Rush Crown, Toxic Green Crown, Buckeye Red Crown, Void Crown</li></ul>
+  </div>
+</div></section>
+
+<section id="transparency"><div class="wrap">
+  <h2>🔎 Transparency</h2>
+  <div class="grid two">
+    <div class="card">
+      <h3>Self-imposed sell limit</h3>
+      <p>The dev and prize-pot wallets will sell at most <b id="sell-pct">1%</b> of their $BOSS holdings per day. This is a public promise about our own behaviour. The token itself can't enforce it, so check the wallets below.</p>
+      <p class="mini" id="sell-wallets">Wallet addresses get published here at launch.</p>
+    </div>
+    <div class="card">
+      <h3>Whale watch</h3>
+      <p class="mini">Read-only snapshot of the largest holders. Wallets above <span id="wh-pct">2%</span> of supply and wallets funded from the same source get flagged. Information only: nobody can be blocked from buying or selling.</p>
+      <div class="lst" id="whales"><div class="empty">CA coming soon. Whale watch starts at launch.</div></div>
+    </div>
+    <div class="card">
+      <h3>Burn history</h3>
+      <p class="mini">Every $BOSS burn (skin unlocks and dev burns), with its on-chain signature.</p>
+      <div class="lst" id="burns"><div class="empty">No burns yet.</div></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="disclaimer"><div class="wrap">
+  <div class="disc">
+    <h2>⚠ Joke coin. Not financial advice.</h2>
+    <p><b>$BOSS is a joke meme coin made for fun.</b> It has no intrinsic value, no utility, no team promises, no roadmap and no expectation of profit. <b>No promises of value</b>: the price can go to zero, and it probably will.</p>
+    <p>Nothing on this site is financial, investment, legal or tax advice. Meme coins are extremely risky and volatile. Only spend what you're fine losing completely. Do your own research.</p>
+    <p>The game is free and separate from buying the coin. Holding, buying or burning $BOSS never affects whether you can play or win; skins are cosmetic only. Leaderboard rewards (if any) follow the official rules posted on X and are void where prohibited. Not affiliated with pump.fun, X, Phantom or the State of Ohio.</p>
+  </div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <div class="row">
+    <a class="needs-ca" href="#" target="_blank" rel="noopener" hidden>pump.fun</a>
+    <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">X @TheBossCoin_SOL</a>
+    <a href="game/" target="_blank" rel="noopener">Game</a>
+    <a href="rules.html">Rules (draft)</a>
+  </div>
+  <div style="overflow-wrap:anywhere" id="foot-ca">CA coming soon</div>
+  <div style="margin-top:8px">$BOSS · Ohio Final Boss · joke coin, not financial advice, no promises of value.</div>
+</div></footer>
+<script src="config.js"></script>
+<div class="toast" id="toast" role="status" aria-live="polite">CA copied ✓</div>
+<script>
+(()=>{
+const C=window.BOSS_CONFIG||{},CA=(typeof C.ca==="string"&&/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(C.ca))?C.ca:null,$=id=>document.getElementById(id),btn=document.getElementById("copy"),toast=document.getElementById("toast");
+async function copy(){
+  let ok=false;
+  try{await navigator.clipboard.writeText(CA);ok=true;}catch(e){
+    const t=document.createElement("textarea");t.value=CA;t.setAttribute("readonly","");t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.select();
+    try{ok=document.execCommand("copy");}catch(_){}t.remove();}
+  btn.textContent=ok?"Copied ✓":"Select";btn.classList.toggle("ok",ok);toast.textContent=ok?"CA copied ✓":"Copy failed. Long-press the address to copy.";
+  toast.classList.add("on");setTimeout(()=>{toast.classList.remove("on");btn.textContent="Copy";btn.classList.remove("ok");},1800);
+  if(!ok){const r=document.createRange();r.selectNodeContents(document.getElementById("ca-text"));const s=getSelection();s.removeAllRanges();s.addRange(r);}
+}
+const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const usd=v=>"$"+Number(v).toLocaleString("en-US");
+if(CA){   // CA published: show it, the copy button and the pump.fun links
+  $("ca-text").textContent=CA;$("ca").classList.remove("soon");btn.hidden=false;$("ca-note").textContent="";$("foot-ca").textContent="CA: "+CA;
+  document.querySelectorAll(".needs-ca").forEach(a=>{a.href=C.pump_url||("https://pump.fun/coin/"+CA);a.hidden=false;});
+  btn.addEventListener("click",copy);
+}
+if(C.tries_per_round)$("tries-txt").textContent=C.tries_per_round+" tries";
+if(C.lifetime_prize_cap_usd)$("life-cap").textContent=usd(C.lifetime_prize_cap_usd);
+if(C.split_pct)$("split-txt").textContent=C.split_pct.prize+"% prize pot / "+C.split_pct.reserve+"% reserve / "+C.split_pct.ops+"% ops";
+if(C.tiers)$("tier-rows").innerHTML=C.tiers.map(t=>"<tr><td>"+esc(t.name.replace(/^T\d\s*/,""))+"</td><td>"+usd(t.pot_cap_usd)+"</td><td>"+usd(t.winner_cap_usd)+"</td></tr>").join("");
+if(C.sell_limit_pct_per_day!=null)$("sell-pct").textContent=C.sell_limit_pct_per_day+"%";
+if(C.whale_flag_pct!=null)$("wh-pct").textContent=C.whale_flag_pct+"%";
+if(C.skins_network)$("skin-net").textContent=C.skins_network;
+if(C.skins)$("skin-list").innerHTML=C.skins.map(k=>"<li>"+esc(k.name)+": burn "+Number(k.price_tokens).toLocaleString("en-US")+" $BOSS</li>").join("");
+const sw=Object.entries(C.sell_limit_wallets||{}).filter(([,v])=>v);
+if(sw.length)$("sell-wallets").innerHTML=sw.map(([k,v])=>esc(k)+": <a href=\"https://solscan.io/account/"+esc(v)+"\" target=\"_blank\" rel=\"noopener\"><code>"+esc(v)+"</code></a>").join("<br>");
+function fmt(ms){let s=Math.max(0,Math.floor(ms/1000));const d=Math.floor(s/86400);s%=86400;const p=v=>String(v).padStart(2,"0");return(d?d+"d ":"")+p(Math.floor(s/3600))+":"+p(Math.floor(s%3600/60))+":"+p(s%60);}
+function tick(){if(!C.round_start_ms||!C.round_ms)return;const now=Date.now();let t,end;
+  if(now<C.round_start_ms){t="Round 1 starts in ";end=C.round_start_ms;}else{const n=Math.floor((now-C.round_start_ms)/C.round_ms)+1;t="Round "+n+" ends in ";end=C.round_start_ms+n*C.round_ms;}
+  $("round-cd").textContent=t+fmt(end-now);}
+if(C.round_ms){$("round-sub").textContent="Each round runs "+(C.round_days||3)+" days. "+(C.tries_per_round||3)+" tries per wallet per round, reset every round. Round 1 start: "+new Date(C.round_start_ms).toLocaleString([], {dateStyle:"medium",timeStyle:"short"})+" (your time).";tick();setInterval(tick,1000);}
+const short=a=>a?a.slice(0,4)+"…"+a.slice(-4):"?";
+fetch("whale_watch.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(w=>{if(!w||w.status!=="ok"||!CA||w.mint!==CA)return;
+  const rows=(w.holders||[]).slice(0,20).map(h=>"<tr><td>"+h.pct_supply.toFixed(2)+"%</td><td><a href=\"https://solscan.io/account/"+esc(h.owner)+"\" target=\"_blank\" rel=\"noopener\">"+esc(short(h.owner))+"</a></td><td>"+(h.flagged?"⚠ ":"")+esc(h.label||"")+"</td></tr>").join("");
+  const bs=(w.bundles||[]).map(b=>"<li>"+(b.flagged?"⚠ ":"")+b.owners.length+" wallets from one funder hold "+b.pct_supply+"%</li>").join("");
+  $("whales").innerHTML="<table class=\"tiers\"><thead><tr><th>SUPPLY</th><th>OWNER</th><th>NOTE</th></tr></thead><tbody>"+rows+"</tbody></table>"+(bs?"<ul>"+bs+"</ul>":"")+"<p class=\"mini\">Snapshot "+esc(w.generated)+" UTC</p>";}).catch(()=>{});
+fetch("burns.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!(j.burns||[]).length)return;
+  $("burns").innerHTML="<table class=\"tiers\"><thead><tr><th>WHEN</th><th>AMOUNT</th><th>TX</th></tr></thead><tbody>"+j.burns.slice(0,50).map(b=>{const net=b.network==="mainnet"?"":"?cluster=devnet";
+    return "<tr><td>"+esc(b.block_time?new Date(b.block_time*1000).toLocaleDateString():"")+"</td><td>"+Number(b.amount).toLocaleString("en-US")+" $BOSS"+(b.network!=="mainnet"?" (devnet)":"")+"<br><span class=\"mini\">"+esc(b.kind==="skin"?"skin: "+b.skin:"dev burn")+"</span></td><td><a href=\"https://solscan.io/tx/"+esc(b.sig)+net+"\" target=\"_blank\" rel=\"noopener\">"+esc(short(b.sig))+"</a></td></tr>";}).join("")+"</tbody></table>";}).catch(()=>{});
+const rk=document.getElementById("ranked");if(rk.getAttribute("href"))rk.hidden=false;
+document.getElementById("loadgame").addEventListener("click",()=>{
+  const f=document.createElement("iframe");f.src="game/";f.title="$BOSS Runner game";f.allow="autoplay; fullscreen";
+  const box=document.getElementById("gamebox");box.innerHTML="";box.appendChild(f);f.focus();
+});
+})();
+</script>
+</body>
+</html>
