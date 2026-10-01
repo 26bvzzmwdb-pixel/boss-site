@@ -3,6 +3,7 @@ window.BOSS_CONFIG={
  "ca": null,
  "pump_url": null,
  "x_url": "https://x.com/TheBossCoin_SOL",
+ "ranked_url": null,
  "round_start_ms": 1791043200000,
  "round_ms": 259200000,
  "round_days": 3,

@@ -91,6 +91,7 @@ ul.ticks li:before{content:"👑";position:absolute;left:0;top:4px;font-size:15p
 .gamebox iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .gamebox .start{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;border:0;width:100%;color:#fff;
   background:linear-gradient(rgba(5,6,15,.35),rgba(5,6,15,.8)),url(assets/runner_poster.jpg) center/cover;font:800 18px var(--hd)}
+a.start{text-decoration:none}
 .gamebox .start .big{font-size:58px;filter:drop-shadow(0 0 16px var(--gold))}
 .under{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px}
 .how{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
@@ -156,8 +157,8 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M4 17l6-6 4 4 6-8"/><path d="M15 7h5v5"/></svg>Buy on pump.fun</a>
       <a class="btn x" href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>Follow on X</a>
-      <a class="btn play" href="#play">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>Play the game</a>
+      <a class="btn play" id="hero-play" href="#play">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span id="hero-play-txt">Play the game</span></a>
     </div>
   </div>
 </header>
@@ -165,17 +166,21 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
 <main>
 <section id="play"><div class="wrap">
   <h2>🎮 $BOSS <span class="k">RUNNER</span></h2>
-  <p class="muted" style="margin-top:-6px">Free to play in your browser. No wallet, no purchase, no tokens, no download needed.</p>
-  <p class="pill" id="practice-note" style="margin:0 0 12px">🎮 PRACTICE MODE · NOT ELIGIBLE FOR PRIZES</p>
-  <p class="mini" style="margin-top:0">This version is just for practice. Prizes only count in ranked mode (Phantom, server-checked), which opens with round 1.</p>
+  <p class="muted" style="margin-top:-6px" id="play-sub">Free to play in your browser. No wallet, no purchase, no tokens, no download needed.</p>
+  <div id="practice-main">
+    <p class="pill" id="practice-note" style="margin:0 0 12px">🎮 PRACTICE MODE · NOT ELIGIBLE FOR PRIZES</p>
+    <p class="mini" style="margin-top:0">This version is just for practice. Prizes only count in ranked mode (Phantom, server-checked), which opens with round 1.</p>
+  </div>
   <div class="gamebox" id="gamebox">
     <button class="start" id="loadgame" type="button" aria-label="Load the game"><span class="big">▶</span>TAP TO LOAD THE GAME<span class="muted" style="font:600 12px system-ui">≈300 KB · sound on after first tap</span></button>
+    <!-- ranked mode (deploy/set_server_url.sh sets ranked_url in boss_config.json -> config.js): the main game is the ranked server -->
+    <a class="start" id="rankedstart" href="#" hidden><span class="big">▶</span>PLAY RANKED<span class="muted" style="font:600 12px system-ui">Phantom wallet · free · 3 tries per round · scores checked by the server</span></a>
   </div>
   <div class="under">
-    <a class="btn sm play" href="game/" target="_blank" rel="noopener">Open fullscreen ↗</a>
+    <a class="btn sm play" id="ranked" href="#" hidden>▶ Play ranked (Phantom)</a>
+    <a class="btn sm play" id="fullscreen" href="game/" target="_blank" rel="noopener">Open fullscreen ↗</a>
     <a class="btn sm" href="rules.html">Rewards rules (draft)</a>
-    <!-- RANKED MODE: once the score server is hosted, put its URL in href (e.g. https://boss-runner.onrender.com/) and the button appears -->
-    <a class="btn sm" id="ranked" href="" target="_blank" rel="noopener" hidden>Ranked mode (Phantom) ↗</a>
+    <a class="btn sm" id="practice-link" href="game/" target="_blank" rel="noopener" hidden>Practice (not eligible for prizes) ↗</a>
   </div>
   <div class="how">
     <div><b>TAP</b>Jump · tap again to double jump</div>
@@ -321,7 +326,13 @@ fetch("whale_watch.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(w=
 fetch("burns.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!(j.burns||[]).length)return;
   $("burns").innerHTML="<table class=\"tiers\"><thead><tr><th>WHEN</th><th>AMOUNT</th><th>TX</th></tr></thead><tbody>"+j.burns.slice(0,50).map(b=>{const net=b.network==="mainnet"?"":"?cluster=devnet";
     return "<tr><td>"+esc(b.block_time?new Date(b.block_time*1000).toLocaleDateString():"")+"</td><td>"+Number(b.amount).toLocaleString("en-US")+" $BOSS"+(b.network!=="mainnet"?" (devnet)":"")+"<br><span class=\"mini\">"+esc(b.kind==="skin"?"skin: "+b.skin:"dev burn")+"</span></td><td><a href=\"https://solscan.io/tx/"+esc(b.sig)+net+"\" target=\"_blank\" rel=\"noopener\">"+esc(short(b.sig))+"</a></td></tr>";}).join("")+"</tbody></table>";}).catch(()=>{});
-const rk=document.getElementById("ranked");if(rk.getAttribute("href"))rk.hidden=false;
+const RU=(typeof C.ranked_url==="string"&&/^https:\/\/[^\s"'<>]+$/.test(C.ranked_url))?C.ranked_url:null;
+if(RU){   // ranked is the MAIN game; practice is only a secondary link
+  $("hero-play").href=RU;$("hero-play-txt").textContent="Play ranked";
+  $("ranked").href=RU;$("ranked").hidden=false;$("rankedstart").href=RU;$("rankedstart").hidden=false;$("loadgame").hidden=true;
+  $("practice-main").hidden=true;$("fullscreen").hidden=true;$("practice-link").hidden=false;
+  $("play-sub").textContent="Free to play. Connect Phantom (no purchase, no tokens, no transaction), 3 tries per 3-day round, top 10 can win.";
+}
 document.getElementById("loadgame").addEventListener("click",()=>{
   const f=document.createElement("iframe");f.src="game/";f.title="$BOSS Runner game";f.allow="autoplay; fullscreen";
   const box=document.getElementById("gamebox");box.innerHTML="";box.appendChild(f);f.focus();
