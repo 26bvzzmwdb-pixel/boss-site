@@ -1,10 +1,10 @@
 {
- "generated": "2026-10-02T00:45:45Z",
- "mint": null,
- "status": "ca_pending",
+ "generated": null,
+ "mint": "4AcmBHJaSqJCDT99W769ecEXupsj7mkr2Wdfien2pump",
+ "status": "pending_first_scan",
  "holders": [],
  "bundles": [],
  "flag_pct_of_supply": 2.0,
  "flagged_count": 0,
- "note": "CA coming soon. Whale watch starts once the official $BOSS contract address is published."
+ "note": "First whale-watch scan not run yet for this CA (python3 prize_pot/whale_watch.py)."
 }
