@@ -1,10 +1,55 @@
 {
- "generated": null,
+ "generated": "2026-10-02T00:55:19Z",
  "mint": "4AcmBHJaSqJCDT99W769ecEXupsj7mkr2Wdfien2pump",
- "status": "pending_first_scan",
- "holders": [],
- "bundles": [],
+ "status": "ok",
+ "supply": 1000000000.0,
  "flag_pct_of_supply": 2.0,
- "flagged_count": 0,
- "note": "First whale-watch scan not run yet for this CA (python3 prize_pot/whale_watch.py)."
+ "holders": [
+  {
+   "owner": "3CsbZdmMUSHUyitkGm5ncnu1HRrRRqsoApASBxmURzxS",
+   "token_account": "BNYKhFLfUsiH3ZhcJNofADJMeimHsArxZyXkU9Hads8g",
+   "amount": 964802400.441778,
+   "pct_supply": 96.48,
+   "label": "program-owned (likely bonding curve / AMM pool)",
+   "program_owned": true,
+   "flagged": false
+  },
+  {
+   "owner": "EeneS8NSbwvtRwL8RHuPPbyn4RqNvmLsNojTDRf5Qszn",
+   "token_account": "CJtppD9bQrtQJxacrWPGjY8RSFrX9kaXeLWMUZFrTKPW",
+   "amount": 34867038.64358,
+   "pct_supply": 3.487,
+   "label": "",
+   "program_owned": false,
+   "flagged": true,
+   "funder": null,
+   "funder_error": "HTTP Error 429: Too Many Requests"
+  },
+  {
+   "owner": "2Y2KwMLLaa9HwHbPWyRQHXabDLFP3ezY3NBaj9tXbmNy",
+   "token_account": "HUnfCjyg2FMMrHkJK1xevJPynrC6fHxGyxNzKkfKp25c",
+   "amount": 165306.775705,
+   "pct_supply": 0.017,
+   "label": "",
+   "program_owned": false,
+   "flagged": false,
+   "funder": null,
+   "funder_error": "{'code': -16401, 'message': \"Method 'getSignaturesForAddress' is not available f"
+  },
+  {
+   "owner": "HVdruB6MVafkCw1WDPjTWeZsUSeVvsJ47rBrPxLhS9YG",
+   "token_account": "EMf7CrzMnDZ5iHxTBP1kHDSRCEuNAd47uyVbEJNrPF9Q",
+   "amount": 165254.138937,
+   "pct_supply": 0.017,
+   "label": "",
+   "program_owned": false,
+   "flagged": false,
+   "funder": null,
+   "funder_error": "{'code': -16401, 'message': \"Method 'getSignaturesForAddress' is not available f"
+  }
+ ],
+ "bundles": [],
+ "funders_checked": true,
+ "flagged_count": 1,
+ "note": "Read-only snapshot of the 20 largest token accounts. Flags are informational only: the token contract has no limits, so nobody can be blocked from buying or selling."
 }
