@@ -4,7 +4,7 @@ window.BOSS_CONFIG={
  "pump_url": null,
  "x_url": "https://x.com/TheBossCoin_SOL",
  "ranked_url": "https://boss-runner-fto6.onrender.com/",
- "round_start_ms": 1791043200000,
+ "round_start_ms": 1790902800000,
  "round_ms": 259200000,
  "round_days": 3,
  "tries_per_round": 3,

@@ -133,7 +133,7 @@ let high=parseInt(LS.get("boss_runner_high","0"),10)||0;
 let bestDist=parseInt(LS.get("boss_runner_bestdist","0"),10)||0;
 function saveBank(){LS.set("boss_runner_coins",bank);LS.set("boss_runner_upg",JSON.stringify(upg));}
 // ---- 3-day rounds (from boss_config.json at build time). Tries reset every round. ----
-let ROUND_START=1791043200000,ROUND_MS=259200000;
+let ROUND_START=1790902800000,ROUND_MS=259200000;
 function roundState(now=Date.now()){if(now<ROUND_START)return{n:0,end:ROUND_START,pre:true};const n=Math.floor((now-ROUND_START)/ROUND_MS)+1;return{n,end:ROUND_START+n*ROUND_MS,pre:false};}
 function fmtLeft(ms){let s=Math.max(0,Math.floor(ms/1000));const d=Math.floor(s/86400);s%=86400;const p=v=>String(v).padStart(2,"0");return(d?d+"d ":"")+p(Math.floor(s/3600))+":"+p(Math.floor(s%3600/60))+":"+p(s%60);}
 function roundText(){const r=roundState();return r.pre?"⏱ ROUND 1 STARTS IN "+fmtLeft(r.end-Date.now()):"⏱ ROUND "+r.n+" ENDS IN "+fmtLeft(r.end-Date.now())+" · TRIES RESET";}
