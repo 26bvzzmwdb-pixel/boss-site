@@ -186,6 +186,10 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
     <a class="btn sm" href="rules.html">Rewards rules (draft)</a>
     <a class="btn sm" id="practice-link" href="game/" target="_blank" rel="noopener" hidden>Practice (not eligible for prizes) ↗</a>
   </div>
+  <div class="card" id="nophantom-note" style="margin-top:14px;text-align:center" hidden>
+    <p style="margin:0 0 10px"><b>On your phone?</b> Ranked needs the free <b>Phantom</b> wallet app. Open the game inside Phantom, or play practice now (free, not eligible for prizes).</p>
+    <div class="under" style="margin-top:0"><a class="btn sm play" id="np-open" href="#">Open in Phantom</a><a class="btn sm" href="game/">Play practice instead</a></div>
+  </div>
   <div class="how">
     <div><b>TAP</b>Jump · tap again to double jump</div>
     <div><b>SWIPE DOWN</b>Slam: smash candles &amp; FUD</div>
@@ -336,6 +340,10 @@ if(RU){   // ranked is the MAIN game; practice is only a secondary link
   $("ranked").href=RU;$("ranked").hidden=false;$("rankedstart").href=RU;$("rankedstart").hidden=false;$("loadgame").hidden=true;
   $("practice-main").hidden=true;$("fullscreen").hidden=true;$("practice-link").hidden=false;
   $("play-sub").textContent="Free to play. Connect Phantom (no purchase, no tokens, no transaction), 3 tries per 3-day round, top 10 can win.";
+  // phones without Phantom (Safari/Chrome/X in-app): show the Phantom deep link + practice right here (the ranked page shows the same panel)
+  const mob=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));
+  const hasPh=()=>{const p=(window.phantom&&window.phantom.solana)||window.solana;return !!(p&&p.isPhantom);};
+  if(mob)setTimeout(()=>{if(hasPh())return;$("np-open").href="https://phantom.app/ul/browse/"+encodeURIComponent(RU)+"?ref="+encodeURIComponent(new URL(RU).origin);$("nophantom-note").hidden=false;},800);
 }
 document.getElementById("loadgame").addEventListener("click",()=>{
   const f=document.createElement("iframe");f.src="game/";f.title="$BOSS Runner game";f.allow="autoplay; fullscreen";
