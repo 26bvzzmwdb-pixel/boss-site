@@ -140,7 +140,7 @@ function roundText(){const r=roundState();return r.pre?"⏱ ROUND 1 STARTS IN "+
 const MAX_PLAYS=3;
 function playsKey(){return "boss_runner_plays_r"+roundState().n;}
 function playsUsed(){return parseInt(LS.get(playsKey(),"0"),10)||0;}
-function limitInfo(){const u=playsUsed();return{used:u,left:Math.max(0,MAX_PLAYS-u),max:MAX_PLAYS,blocked:u>=MAX_PLAYS};}
+function limitInfo(){return{used:playsUsed(),left:Infinity,max:Infinity,blocked:false};} // practice = unlimited tries
 
 // ================= helpers =================
 let seed=1;const srand=s=>{seed=s>>>0||1;};
@@ -764,7 +764,7 @@ function drawScreens(time){
       glowText("New tries next round · Thanks for playing! 👑",W/2,oy+562,`700 20px ${FONT}`,"#78e6ff",10);
       button("shop",160,oy+616,W-320,72,"🛒 UPGRADES",GOLD);
     }else{
-      glowText(`Practice tries left: ${li.left}/${li.max}`,W/2,oy+442,`800 26px ${FONT}`,li.left>0?GREEN:RED,12);
+      glowText(`Practice mode · unlimited tries`,W/2,oy+442,`800 26px ${FONT}`,GREEN,12);
       button("play",130,oy+474,W-260,108,"▶ TAP TO PLAY",CYAN);
       button("shop",160,oy+600,W-320,72,"🛒 UPGRADES",GOLD);
     }
@@ -787,7 +787,7 @@ function drawScreens(time){
     if(newHigh){ctx.globalAlpha=0.5+0.5*Math.sin(time*8);glowText("NEW HIGH SCORE!",W/2,oy+596,`900 32px ${FONT}`,"#ffe45a",20);ctx.globalAlpha=1;}
     const li=limitInfo(),en=overT>0.8;
     if(li.blocked)button("again",110,oy+630,W-220,100,"NO TRIES LEFT",RED,false,"New tries next round · Thanks for playing! 👑");
-    else button("again",110,oy+630,W-220,100,"▶ PLAY AGAIN",CYAN,en,`Tries left: ${li.left}/${li.max}`);
+    else button("again",110,oy+630,W-220,100,"▶ PLAY AGAIN",CYAN,en,`Practice · unlimited tries`);
     button("shop",110,oy+746,(W-240)/2,72,"🛒 SHOP",GOLD,true);button("menu",130+(W-240)/2,oy+746,(W-240)/2,72,"MENU",PURP,true);
     drawPrizeNotice(oy+840);
   }else if(state==="shop"){
