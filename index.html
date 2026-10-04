@@ -84,6 +84,7 @@ nav .links a.t:hover{color:#fff;background:rgba(255,255,255,.06)}
 /* cards */
 .grid{display:grid;gap:16px}
 @media(min-width:820px){.grid.two{grid-template-columns:1fr 1fr;align-items:start}}
+.dropvid{border-radius:14px;overflow:hidden;border:2px solid var(--gold);box-shadow:0 0 26px rgba(255,210,74,.3);margin:14px auto 6px;max-width:960px;background:#000}.dropvid video{width:100%;height:auto;aspect-ratio:960/540}
 .drops{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:14px 0 6px}.drops figure{margin:0;text-align:center}.drops img{width:100%;height:auto;border-radius:12px;border:1.5px solid rgba(255,210,74,.5);display:block}.drops figcaption{font-size:12px;line-height:1.35;margin-top:6px;opacity:.9}
 .card{background:var(--panel);border:1.5px solid rgba(170,90,255,.38);border-radius:var(--r);padding:20px;box-shadow:0 0 24px rgba(120,60,255,.14)}
 .card.gold{border-color:rgba(255,210,74,.6);box-shadow:0 0 24px rgba(255,180,0,.14);background:linear-gradient(180deg,rgba(40,28,4,.55),rgba(12,12,38,.8))}
@@ -307,13 +308,7 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
       <li><b>Cosmetic only:</b> skins never change gameplay, score, tries, rank or prizes. Ranked play stays free for everyone, and you never need $BOSS to play or win.</li>
       <li><b>NFT upgrade coming before Round 3</b> (Wed Oct 7, 9 PM ET): an optional NFT version of skins you own (holders only).</li>
     </ul>
-    <div class="drops">
-      <figure><img src="assets/skins/grave.webp" alt="Pumpkin Crown skin preview" loading="lazy" width="432" height="540"><figcaption><b>Pumpkin Crown</b><br>Haunted Graveyard</figcaption></figure>
-      <figure><img src="assets/skins/factory.webp" alt="Golden Hard Hat skin preview" loading="lazy" width="432" height="540"><figcaption><b>Golden Hard Hat</b><br>Rug Pull Factory</figcaption></figure>
-      <figure><img src="assets/skins/moon.webp" alt="To The Moon Halo skin preview" loading="lazy" width="432" height="540"><figcaption><b>To The Moon Halo</b><br>Moon Mission</figcaption></figure>
-      <figure><img src="assets/skins/surf.webp" alt="Shark Fin Crown skin preview" loading="lazy" width="432" height="540"><figcaption><b>Shark Fin Crown</b><br>Shark Bay Surf</figcaption></figure>
-      <figure><img src="assets/skins/climb.webp" alt="Fossil Crown skin preview" loading="lazy" width="432" height="540"><figcaption><b>Fossil Crown</b><br>Prehistoric Climb</figcaption></figure>
-    </div>
+    <div class="dropvid"><video class="mapclip" src="assets/skins/skins_preview.mp4" poster="assets/skins/skins_poster.jpg" muted loop playsinline autoplay preload="none" width="960" height="540" aria-label="Animated preview of the 5 holder skins: Pumpkin Crown, Golden Hard Hat, To The Moon Halo, Shark Fin Crown, Fossil Crown"></video></div>
     <p class="mini">Previews. Try them on in the free <a href="game/">practice game</a> (👑 SKINS on the title screen). Skins and NFTs have no cash value and are not a purchase of a chance to win.</p>
   </div>
 </div></section>
