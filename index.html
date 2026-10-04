@@ -241,27 +241,24 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
       <span class="status">OFFICIAL RULES IN EFFECT · SEE RULES</span>
       <p class="cd" id="round-cd">Rounds every 3 days</p>
       <p class="mini" id="round-sub">Each round runs 3 days. Tries reset every round.</p>
-      <h3 style="margin-top:12px">Free to play. Top 10 can win rewards.</h3>
+      <h3 style="margin-top:12px">Free to play. Top 5 can win rewards.</h3>
       <ul class="ticks">
         <li><b>Free to play</b>. No purchase necessary. You never need to hold, buy or burn $BOSS to play or win.</li>
         <li><b>3-day rounds</b>, <b id="tries-txt">3 tries</b> per wallet per round. Every ranked score is checked by the server (signed and replayed).</li>
         <li>Rewards come <b>only from pump.fun creator trading fees the dev actually receives</b>. Nothing is pre-funded and nothing is guaranteed. Few fees means small or skipped rewards.</li>
-        <li><b>The pool can grow with the coin.</b> Bigger market cap and more trading means bigger round caps (table). A falling coin means smaller caps. No promises either way.</li>
-        <li>One prize per person per round. Linked wallets count as one person. Prizes scale with market cap.</li>
+        <li><b>From Round 2:</b> each round's prize pot is <b>20% of the creator fees actually received during that round</b> (the dev keeps 80%). More trading means a bigger pot; no trading means no pot. No promises either way.</li>
+        <li>One prize per person per round. Linked wallets count as one person.</li>
         <li><b>See official rules</b>: <a href="rules.html">read the official rules</a> (in effect from Oct 3, 2026). Nothing is guaranteed.</li>
       </ul>
       <p class="muted" style="font-size:13px;margin:12px 0 0">Not financial advice. Void where prohibited. <a href="rules.html">Read the official rules</a>.</p>
     </div>
     <div class="card">
-      <h3>How each round's pool is sized</h3>
-      <p class="mini">Fees received are split <b id="split-txt">50% prize pot / 40% reserve / 10% ops</b>. Each round can pay at most half the prize pot, and never more than the tier cap below. Unpaid amounts carry over.</p>
-      <table class="tiers" aria-label="Reward tiers"><thead><tr><th>MARKET CAP</th><th>ROUND CAP</th><th>PER WINNER</th></tr></thead><tbody id="tier-rows">
-        <tr><td>&lt; $100K</td><td>$100</td><td>$20</td></tr><tr><td>$100K–500K</td><td>$400</td><td>$60</td></tr><tr><td>$500K–2M</td><td>$1,200</td><td>$180</td></tr><tr><td>&gt; $2M</td><td>$3,000</td><td>$450</td></tr></tbody></table>
-      <p class="mini">Caps are maximums, not targets. The tier uses the lower of the round's average and closing market cap. Shares of the round pool:</p>
-      <div class="split">
-        <div>#1<small>25%</small></div><div>#2<small>18%</small></div><div>#3<small>13%</small></div><div>#4<small>10%</small></div><div>#5<small>8%</small></div>
-        <div>#6<small>7%</small></div><div>#7<small>6%</small></div><div>#8<small>5%</small></div><div>#9<small>4%</small></div><div>#10<small>4%</small></div>
+      <h3>How each round's pot is sized (Round 2 on)</h3>
+      <p class="mini"><b id="pot-txt">Prize pot = 20% of the creator fees actually received that round</b> (the dev keeps the other 80%). The whole pot goes to the <b>top 5</b>, split by place:</p>
+      <div class="split" id="split-row">
+        <div>#1<small>40%</small></div><div>#2<small>25%</small></div><div>#3<small>15%</small></div><div>#4<small>12%</small></div><div>#5<small>8%</small></div>
       </div>
+      <p class="mini">If a round's pot is under <b id="min-pot">0.05 SOL</b>, nothing is paid that round and the pot <b>rolls over</b> to the next round. Shares for places nobody filled roll over too. Round 1 follows the rules as originally posted (v1.1).</p>
       <table class="board" aria-label="Leaderboard">
         <thead><tr><th>RANK</th><th>PLAYER</th><th style="text-align:right">SCORE</th></tr></thead>
       </table>
@@ -345,8 +342,8 @@ if(CA){   // CA published: show it, the copy button and the pump.fun links
   btn.addEventListener("click",copy);
 }
 if(C.tries_per_round)$("tries-txt").textContent=C.tries_per_round+" tries";
-if(C.split_pct)$("split-txt").textContent=C.split_pct.prize+"% prize pot / "+C.split_pct.reserve+"% reserve / "+C.split_pct.ops+"% ops";
-if(C.tiers)$("tier-rows").innerHTML=C.tiers.map(t=>"<tr><td>"+esc(t.name.replace(/^T\d\s*/,""))+"</td><td>"+usd(t.pot_cap_usd)+"</td><td>"+usd(t.winner_cap_usd)+"</td></tr>").join("");
+if(C.prize){const P=C.prize;$("pot-txt").textContent="Prize pot = "+P.pot_pct_of_round_fees+"% of the creator fees actually received that round";
+  $("split-row").innerHTML=P.split.map((v,i)=>"<div>#"+(i+1)+"<small>"+v+"%</small></div>").join("");$("min-pot").textContent=P.min_pot_sol+" SOL";}
 if(C.sell_limit_pct_per_day!=null)$("sell-pct").textContent=C.sell_limit_pct_per_day+"%";
 if(C.whale_flag_pct!=null)$("wh-pct").textContent=C.whale_flag_pct+"%";
 if(C.skins_network)$("skin-net").textContent=C.skins_network;
@@ -371,7 +368,7 @@ if(RU){   // ranked is the MAIN game; practice is only a secondary link
   $("hero-play").href=RU;$("hero-play-txt").textContent="Play ranked";
   $("ranked").href=RU;$("ranked").hidden=false;$("rankedstart").href=RU;$("rankedstart").hidden=false;$("loadgame").hidden=true;
   $("practice-main").hidden=true;$("fullscreen").hidden=true;$("practice-link").hidden=false;
-  $("play-sub").textContent="Free to play. Connect Phantom (no purchase, no tokens, no transaction), 3 tries per 3-day round, top 10 can win.";
+  $("play-sub").textContent="Free to play. Connect Phantom (no purchase, no tokens, no transaction), 3 tries per 3-day round, top 5 can win.";
   // phones without Phantom (Safari/Chrome/X in-app): show the Phantom deep link + practice right here (the ranked page shows the same panel)
   const mob=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));
   const hasPh=()=>{const p=(window.phantom&&window.phantom.solana)||window.solana;return !!(p&&p.isPhantom);};

@@ -13,45 +13,21 @@ window.BOSS_CONFIG={
   "dev": null,
   "pot": null
  },
- "split_pct": {
-  "prize": 50,
-  "reserve": 40,
-  "ops": 10
+ "prize": {
+  "from_round": 2,
+  "pot_pct_of_round_fees": 20,
+  "sponsor_pct": 80,
+  "top_n": 5,
+  "split": [
+   40,
+   25,
+   15,
+   12,
+   8
+  ],
+  "min_pot_sol": 0.05,
+  "rollover": true
  },
- "top_split": [
-  25,
-  18,
-  13,
-  10,
-  8,
-  7,
-  6,
-  5,
-  4,
-  4
- ],
- "tiers": [
-  {
-   "name": "T1 <$100K",
-   "pot_cap_usd": 100,
-   "winner_cap_usd": 20
-  },
-  {
-   "name": "T2 $100K-500K",
-   "pot_cap_usd": 400,
-   "winner_cap_usd": 60
-  },
-  {
-   "name": "T3 $500K-2M",
-   "pot_cap_usd": 1200,
-   "winner_cap_usd": 180
-  },
-  {
-   "name": "T4 >$2M",
-   "pot_cap_usd": 3000,
-   "winner_cap_usd": 450
-  }
- ],
  "lifetime_prize_cap_usd": null,
  "whale_flag_pct": 2.0,
  "skins": [
