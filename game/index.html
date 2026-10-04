@@ -1171,11 +1171,11 @@ function drawClimb(time){
 // Claiming happens on the ranked page (👑 holders, free signed message). Owned skins can be worn on ANY map and switched anytime; the
 // equipped skin persists (localStorage). Ownership syncs from the server when you tap "👑 Holders". Anyone can try skins on in the SKINS menu.
 const SKINS=[
-  {id:"h_pumpkin",map:"grave",mapName:"HAUNTED GRAVEYARD",name:"PUMPKIN CROWN",desc:"Carved pumpkin crown, candle-lit eyes, ghost-fire tips, vines + bat buddies",aura:"255,138,30",trail:["#ff8a1e","#8a2ac0"]},
-  {id:"h_hardhat",map:"factory",mapName:"RUG PULL FACTORY",name:"GOLDEN HARD HAT",desc:"Riveted gold hard hat, hazard band, spinning beacon, gear badge + steam",aura:"255,190,40",trail:["#ffd24a","#ff7a14"]},
-  {id:"h_moonhalo",map:"moon",mapName:"MOON MISSION",name:"TO THE MOON HALO",desc:"Cratered mini-moon with a $BOSS flag, glowing ring + an orbiting rocket",aura:"150,190,255",trail:["#e6eaf2","#28dcff"]},
-  {id:"h_sharkfin",map:"surf",mapName:"SHARK BAY SURF",name:"SHARK FIN CROWN",desc:"Curling wave crown with a great-white fin, chompers, shell gem + spray",aura:"58,208,255",trail:["#3ad0ff","#14b8c8"]},
-  {id:"h_fossil",map:"climb",mapName:"PREHISTORIC CLIMB",name:"FOSSIL CROWN",desc:"Cracked stone band, bone spikes, raptor claw + an amber gem (bug inside)",aura:"255,160,40",trail:["#ffb020","#f4ecd8"]}
+  {id:"h_pumpkin",map:"grave",mapName:"HAUNTED GRAVEYARD",name:"PUMPKIN KING",desc:"Pumpkin head, purple vine coat, tattered cape + jack-o'-lantern, under a carved pumpkin crown",aura:"255,138,30",trail:["#ff8a1e","#8a2ac0"]},
+  {id:"h_hardhat",map:"factory",mapName:"RUG PULL FACTORY",name:"GOLD FOREMAN",desc:"Hi-vis vest, tool pack, steel-toe boots + glowing wrench, under a riveted gold hard hat",aura:"255,190,40",trail:["#ffd24a","#ff7a14"]},
+  {id:"h_moonhalo",map:"moon",mapName:"MOON MISSION",name:"MOON WALKER",desc:"Astronaut suit, gold visor, oxygen tanks + $BOSS flag, under a mini-moon halo",aura:"150,190,255",trail:["#e6eaf2","#28dcff"]},
+  {id:"h_sharkfin",map:"surf",mapName:"SHARK BAY SURF",name:"SHARK SURFER",desc:"Shark hood, wave wetsuit, flippers + surfboard, under a shark-fin wave crown",aura:"58,208,255",trail:["#3ad0ff","#14b8c8"]},
+  {id:"h_fossil",map:"climb",mapName:"PREHISTORIC CLIMB",name:"CAVE CHIEF",desc:"Leopard furs, tooth necklace, fur boots + bone club, under a fossil bone crown",aura:"255,160,40",trail:["#ffb020","#f4ecd8"]}
 ];
 const RARC={Legendary:"#ffd24a",Epic:"#c86bff",Rare:"#28a8ff",Common:"#9fb0c8"};
 let skinOwned={};try{skinOwned=JSON.parse(LS.get("boss_runner_skins_owned","{}"))||{};}catch(e){skinOwned={};}
@@ -1245,7 +1245,7 @@ for(const n of [3,5,10]){const m=SURV[n];S["m_survivor_"+n]={name:n+"-Round Surv
 const SLAY={ohio:["#ff3a3a","OHIO"],grave:["#b48aff","GRAVE"],factory:["#ff7a14","FACTORY"],moon:["#9fe8ff","MOON"],surf:["#3ad0ff","SURF"],climb:["#5ac83a","CLIMB"]};
 for(const k in SLAY){const c=SLAY[k][0];S["m_slayer_"+k]={name:"Boss Slayer: "+SLAY[k][1],head:"knight",accent:c,suit:["#e6eaf4","#8a94aa"],trim:c,pat:"knight",sleeve:"#9aa4ba",pants:"#5a6478",boot:"greave",bootc:["#8a94aa",c],glove:"#c8d0e0",gaunt:1,cape:"plain",capec:[c,"#1a1424"],back:"sword",held:"banner",label:"REKT",fx:"sparks",fxc:[c,"#ffffff","#ffd24a"],pad:"#c8d0e0",belt:c,aura:"255,80,80"};}
 const SCO={"10k":["#28dcff","10K"],"25k":["#ff4fd8","25K"],"50k":["#ffd24a","50K"]};
-for(const k in SCO){const c=SCO[k][0];S["m_score_"+k]={name:SCO[k][1]+" Club",head:"shades",tone:"#e8b88a",hair:"#1a1028",neon:c,suit:["#2a1a48","#0e0a1e"],trim:c,pat:"neon",sleeve:"#1a1230",pants:"#120c22",boot:"sneaker",bootc:["#1a1230",c],led:1,glove:c,back:"boombox",held:"neontrophy",label:SCO[k][1],fx:"pixels",fxc:[c,"#ff4fd8","#28dcff","#ffe27a"],belt:c,aura:k==="50k"?"255,210,74":k==="25k"?"255,79,216":"40,220,255"};}
+for(const k in SCO){const c=SCO[k][0];S["m_score_"+k]={name:"High Score "+SCO[k][1],head:"shades",tone:"#e8b88a",hair:"#1a1028",neon:c,suit:["#2a1a48","#0e0a1e"],trim:c,pat:"neon",sleeve:"#1a1230",pants:"#120c22",boot:"sneaker",bootc:["#1a1230",c],led:1,glove:c,back:"boombox",held:"neontrophy",label:SCO[k][1],fx:"pixels",fxc:[c,"#ff4fd8","#28dcff","#ffe27a"],belt:c,aura:k==="50k"?"255,210,74":k==="25k"?"255,79,216":"40,220,255"};}
 // ---------------------------------------------------------------- back items
 function cape(s,t,P,SY,HY){
   const c=s.capec,run=P.run||0,air=P.air?1:0,fl=0.35+0.45*run+0.35*air,w=Math.sin(t*9),w2=Math.sin(t*9+1.7);
@@ -1658,23 +1658,23 @@ function drawSkinPiece(id,x,y,k,time,rar){ // (x,y) = bottom-center of the float
 // ---------- EXTRA SKIN ART (cosmetic only): holder skin-vote candidates + milestone drops ----------
 // Same conventions as drawSkinPiece: origin = bottom-center of the headpiece, ~48px wide, drawn upward (negative y).
 const XSKINS=[
-  {id:"h_reaper",map:"grave",mapName:"HAUNTED GRAVEYARD",name:"REAPER'S LANTERN",desc:"Iron bone crown, grinning skull, swinging soul lanterns + a tiny scythe",aura:"120,255,170",trail:["#7affb0","#5a2a9a"],cand:true},
-  {id:"h_gearcrown",map:"factory",mapName:"RUG PULL FACTORY",name:"MOLTEN GEAR CROWN",desc:"Three spinning gears, piston spikes, molten gold drips + furnace core",aura:"255,150,30",trail:["#ffb020","#ff4a14"],cand:true},
-  {id:"h_liftoff",map:"moon",mapName:"MOON MISSION",name:"LIFTOFF CROWN",desc:"Launch-pad crown, a rocket blasting off, ringed-planet gem + satellite",aura:"140,200,255",trail:["#bfe8ff","#ff7ad8"],cand:true},
-  {id:"h_tidal",map:"surf",mapName:"SHARK BAY SURF",name:"TIDAL PEARL CROWN",desc:"Twin curling waves, giant pearl in a clam, leaping fish + bubbles",aura:"60,220,255",trail:["#5ae8ff","#2a6aff"],cand:true},
-  {id:"h_volcano",map:"climb",mapName:"PREHISTORIC CLIMB",name:"VOLCANO CROWN",desc:"Rock crown with an erupting volcano, lava cracks + a circling pterodactyl",aura:"255,90,30",trail:["#ff5a1e","#ffd24a"],cand:true},
-  {id:"m_survivor_3",name:"3-ROUND SURVIVOR",desc:"Bronze laurel wreath + ribbon: played ranked in 3 rounds",aura:"230,150,80",trail:["#e6965a","#ffd24a"],ms:{f:"surv",n:3,tier:0}},
-  {id:"m_survivor_5",name:"5-ROUND SURVIVOR",desc:"Silver laurel wreath + ribbon: played ranked in 5 rounds",aura:"200,220,255",trail:["#dfe8ff","#7ab8ff"],ms:{f:"surv",n:5,tier:1}},
-  {id:"m_survivor_10",name:"10-ROUND SURVIVOR",desc:"Gold laurel wreath, eternal flame: played ranked in 10 rounds",aura:"255,210,80",trail:["#ffd24a","#ff7ad8"],ms:{f:"surv",n:10,tier:2}},
-  {id:"m_slayer_ohio",name:"BOSS SLAYER: OHIO",desc:"Crown pierced by a sword, rekt boss horns + lightning",aura:"255,60,90",trail:["#ff3a5a","#ffd24a"],ms:{f:"slay",map:"ohio",gem:"#ff3a5a"}},
-  {id:"m_slayer_grave",name:"BOSS SLAYER: GRAVE",desc:"Crown pierced by a sword, rekt boss horns + lightning",aura:"255,140,30",trail:["#ff8a1e","#7affb0"],ms:{f:"slay",map:"grave",gem:"#ff8a1e"}},
-  {id:"m_slayer_factory",name:"BOSS SLAYER: FACTORY",desc:"Crown pierced by a sword, rekt boss horns + lightning",aura:"255,200,40",trail:["#ffd24a","#ff4a14"],ms:{f:"slay",map:"factory",gem:"#ffd24a"}},
-  {id:"m_slayer_moon",name:"BOSS SLAYER: MOON",desc:"Crown pierced by a sword, rekt boss horns + lightning",aura:"150,190,255",trail:["#bfe8ff","#28dcff"],ms:{f:"slay",map:"moon",gem:"#9fd0ff"}},
-  {id:"m_slayer_surf",name:"BOSS SLAYER: SURF",desc:"Crown pierced by a sword, rekt boss horns + lightning",aura:"60,210,255",trail:["#3ad0ff","#14b8c8"],ms:{f:"slay",map:"surf",gem:"#3ad0ff"}},
-  {id:"m_slayer_climb",name:"BOSS SLAYER: CLIMB",desc:"Crown pierced by a sword, rekt boss horns + lightning",aura:"255,170,40",trail:["#ffb020","#f4ecd8"],ms:{f:"slay",map:"climb",gem:"#ffb020"}},
-  {id:"m_score_10k",name:"HIGH SCORE 10K",desc:"Neon arcade crown with a live LED score ticker",aura:"40,220,255",trail:["#28dcff","#7affd8"],ms:{f:"score",k:"10K",c1:"#28dcff",c2:"#7affd8"}},
-  {id:"m_score_25k",name:"HIGH SCORE 25K",desc:"Neon arcade crown with a live LED score ticker",aura:"255,80,220",trail:["#ff50dc","#aa5aff"],ms:{f:"score",k:"25K",c1:"#ff50dc",c2:"#aa5aff"}},
-  {id:"m_score_50k",name:"HIGH SCORE 50K",desc:"Neon arcade crown with a live LED score ticker",aura:"255,210,60",trail:["#ffd24a","#ff7a14"],ms:{f:"score",k:"50K",c1:"#ffd24a",c2:"#ff7a14"}}
+  {id:"h_reaper",map:"grave",mapName:"HAUNTED GRAVEYARD",name:"GRIM REAPER",desc:"Glowing hooded robe, bone hands, tattered cape + scythe, under a skull crown with soul lanterns",aura:"120,255,170",trail:["#7affb0","#5a2a9a"],cand:true},
+  {id:"h_gearcrown",map:"factory",mapName:"RUG PULL FACTORY",name:"MOLTEN MECH",desc:"Iron plates with lava seams, spinning back gear + forge hammer, under a molten gear crown",aura:"255,150,30",trail:["#ffb020","#ff4a14"],cand:true},
+  {id:"h_liftoff",map:"moon",mapName:"MOON MISSION",name:"ROCKETEER",desc:"Racing flight suit, jetpack, rocket boots + raygun, under a launch-pad crown",aura:"140,200,255",trail:["#bfe8ff","#ff7ad8"],cand:true},
+  {id:"h_tidal",map:"surf",mapName:"SHARK BAY SURF",name:"TIDE KING",desc:"Pearl scale armor, seaweed cape + trident, under a pearl wave crown",aura:"60,220,255",trail:["#5ae8ff","#2a6aff"],cand:true},
+  {id:"h_volcano",map:"climb",mapName:"PREHISTORIC CLIMB",name:"LAVA WARLORD",desc:"Obsidian armor, lava mask, flame cape + obsidian spear, under an erupting volcano crown",aura:"255,90,30",trail:["#ff5a1e","#ffd24a"],cand:true},
+  {id:"m_survivor_3",name:"3-ROUND SURVIVOR",desc:"Champion tracksuit, laurel sash, cape + trophy: played ranked in 3 different rounds",aura:"230,150,80",trail:["#e6965a","#ffd24a"],ms:{f:"surv",n:3,tier:0}},
+  {id:"m_survivor_5",name:"5-ROUND SURVIVOR",desc:"Champion tracksuit, laurel sash, cape + trophy: played ranked in 5 different rounds",aura:"200,220,255",trail:["#dfe8ff","#7ab8ff"],ms:{f:"surv",n:5,tier:1}},
+  {id:"m_survivor_10",name:"10-ROUND SURVIVOR",desc:"Champion tracksuit, laurel sash, cape + trophy: played ranked in 10 different rounds",aura:"255,210,80",trail:["#ffd24a","#ff7ad8"],ms:{f:"surv",n:10,tier:2}},
+  {id:"m_slayer_ohio",name:"BOSS SLAYER: OHIO",desc:"Knight armor, map-color tabard + cape, REKT banner: first verified ranked boss kill on Ohio",aura:"255,60,90",trail:["#ff3a5a","#ffd24a"],ms:{f:"slay",map:"ohio",gem:"#ff3a5a"}},
+  {id:"m_slayer_grave",name:"BOSS SLAYER: GRAVE",desc:"Knight armor, map-color tabard + cape, REKT banner: first verified ranked boss kill on Haunted Graveyard",aura:"255,140,30",trail:["#ff8a1e","#7affb0"],ms:{f:"slay",map:"grave",gem:"#ff8a1e"}},
+  {id:"m_slayer_factory",name:"BOSS SLAYER: FACTORY",desc:"Knight armor, map-color tabard + cape, REKT banner: first verified ranked boss kill on Rug Pull Factory",aura:"255,200,40",trail:["#ffd24a","#ff4a14"],ms:{f:"slay",map:"factory",gem:"#ffd24a"}},
+  {id:"m_slayer_moon",name:"BOSS SLAYER: MOON",desc:"Knight armor, map-color tabard + cape, REKT banner: first verified ranked boss kill on Moon Mission",aura:"150,190,255",trail:["#bfe8ff","#28dcff"],ms:{f:"slay",map:"moon",gem:"#9fd0ff"}},
+  {id:"m_slayer_surf",name:"BOSS SLAYER: SURF",desc:"Knight armor, map-color tabard + cape, REKT banner: first verified ranked boss kill on Shark Bay Surf",aura:"60,210,255",trail:["#3ad0ff","#14b8c8"],ms:{f:"slay",map:"surf",gem:"#3ad0ff"}},
+  {id:"m_slayer_climb",name:"BOSS SLAYER: CLIMB",desc:"Knight armor, map-color tabard + cape, REKT banner: first verified ranked boss kill on Prehistoric Climb",aura:"255,170,40",trail:["#ffb020","#f4ecd8"],ms:{f:"slay",map:"climb",gem:"#ffb020"}},
+  {id:"m_score_10k",name:"HIGH SCORE 10K",desc:"LED jacket, neon shades, boombox + neon trophy: 10,000+ in one ranked run",aura:"40,220,255",trail:["#28dcff","#7affd8"],ms:{f:"score",k:"10K",c1:"#28dcff",c2:"#7affd8"}},
+  {id:"m_score_25k",name:"HIGH SCORE 25K",desc:"LED jacket, neon shades, boombox + neon trophy: 25,000+ in one ranked run",aura:"255,80,220",trail:["#ff50dc","#aa5aff"],ms:{f:"score",k:"25K",c1:"#ff50dc",c2:"#aa5aff"}},
+  {id:"m_score_50k",name:"HIGH SCORE 50K",desc:"LED jacket, neon shades, boombox + neon trophy: 50,000+ in one ranked run",aura:"255,210,60",trail:["#ffd24a","#ff7a14"],ms:{f:"score",k:"50K",c1:"#ffd24a",c2:"#ff7a14"}}
 ];
 function xCrownPath(pts,base=0){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.quadraticCurveTo(0,base+4,pts[0][0],pts[0][1]);ctx.closePath();}
 function xGem(x,y,r,c,time,ph=0){const p=0.7+0.3*Math.sin(time*3.5+ph);ctx.save();ctx.shadowColor=c;ctx.shadowBlur=16*p;const g=ctx.createRadialGradient(x-r*0.35,y-r*0.35,0.5,x,y,r*1.2);g.addColorStop(0,"#ffffff");g.addColorStop(0.35,c);g.addColorStop(1,"rgba(0,0,0,.65)");ctx.fillStyle=g;
@@ -1916,7 +1916,7 @@ function drawSkinsScreen(oy,time){
   if(fitDraw(time,{ground:true,idle:true})){}else if(M.id==="ohio"){if(spr.complete&&spr.naturalWidth)ctx.drawImage(spr,-52,-110,104,114);skinHat(-116,time);}else drawChar(M.id,time,{ground:true,vy:0,slam:false,hurt:false,surf:false,spin:false});
   ctx.restore();skinTry=prevTry;
   ctx.font=`700 13px ${FONT}`;ctx.fillStyle="#8a96c8";ctx.fillText("on "+M.name+" · shown with the Legendary look (#1-10 claims)",W/2,oy+168);
-  ctx.font=`900 22px ${FONT}`;ctx.fillStyle="#fff";ctx.fillText(show.name,W/2,oy+422);ctx.font=`600 14px ${FONT}`;ctx.fillStyle="#cfd8ff";ctx.fillText(show.desc,W/2,oy+446);
+  ctx.font=`900 22px ${FONT}`;ctx.fillStyle="#fff";ctx.fillText(show.name,W/2,oy+422);ctx.font=`600 ${show.desc.length>72?11:14}px ${FONT}`;ctx.fillStyle="#cfd8ff";ctx.fillText(show.desc,W/2,oy+446);
   SKINS.forEach((s,i)=>{
     const y=oy+466+i*90,sel=show.id===s.id,own=skinOwned[s.id],on=own&&skinId===s.id,live=skinLive===s.id,rc=own?RARC[own.rarity]||RARC.Common:null;
     panel(40,y,W-80,80,sel?s.trail[0]:(rc||"rgba(140,150,220,.55)"));buttons.push({id:"try:"+s.id,x:40,y,w:W-250,h:80,enabled:true});
