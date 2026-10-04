@@ -70,8 +70,12 @@ nav .links a.t:hover{color:#fff;background:rgba(255,255,255,.06)}
   text-shadow:0 0 10px var(--cyan),0 0 34px var(--cyan),0 0 70px var(--purp)}
 .hero .sub{font:700 clamp(15px,4.4vw,22px) var(--hd);color:#d9b8ff;text-shadow:0 0 14px rgba(170,90,255,.8);margin:8px 0 2px}
 .hero .tag{color:var(--mut);font-size:14px;margin:0 0 16px}
-.pitch{max-width:640px;margin:0 auto 22px;font-size:clamp(15px,4.1vw,18px);color:#e2e6ff}
+.pitch{max-width:640px;margin:0 auto 10px;font-size:clamp(15px,4.1vw,18px);color:#e2e6ff}
 .pill{display:inline-block;font:700 11px var(--hd);letter-spacing:1px;color:var(--gold);border:1px solid rgba(255,210,74,.55);border-radius:99px;padding:5px 11px;margin-bottom:6px;background:rgba(40,28,4,.6)}
+.hl{list-style:none;padding:0;margin:10px auto 14px;max-width:560px;text-align:left;display:grid;gap:7px}
+.hl li{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:9px 12px;font-size:15px;line-height:1.4}
+.herobtns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:560px;margin:0 auto 10px}.herobtns .btn{flex:1 1 200px}
+.fine{font-size:12px;color:var(--mut);margin:0 auto 16px;max-width:560px}
 .cta{display:grid;gap:12px;max-width:520px;margin:0 auto}
 @media(min-width:620px){.cta{grid-template-columns:1fr 1fr 1fr;max-width:760px}}
 /* CA */
@@ -171,8 +175,16 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
     <h1>$BOSS</h1>
     <p class="sub">OHIO FINAL BOSS</p>
     <p class="tag">boss dodge the rugs 🦅 · on pump.fun (Solana)</p>
-    <span class="pill">JOKE COIN · NO ROADMAP · NO PROMISES</span>
-    <p class="pitch">A meme coin about a neon crown from Ohio who dodges red candles, rug pits and FUD clouds. That's the whole plan. No roadmap, no utility, no promises. There's a free little endless-runner game, and that's it.</p>
+    <span class="pill">🎮 FREE-TO-PLAY · 6 MAPS · WIN SOL</span>
+    <p class="pitch"><b>Dodge the rugs. Beat the boss. Top the board.</b> A free neon endless runner where every 3-day round pays the top 5 in SOL.</p>
+    <ul class="hl">
+      <li>🗺️ <b>6 maps.</b> From Round 3 the ranked map rotates every 3 days by community vote.</li>
+      <li>🏆 <b>Top 5 win SOL</b> each round, paid from creator fees.</li>
+      <li>👑 <b>Holder skin drops</b> from Round 3. NFT upgrade coming before Round 3.</li>
+      <li>⚔️ <b>1v1 duels</b> coming in Round 4.</li>
+    </ul>
+    <div class="herobtns"><a class="btn play" href="#play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>Play free</a><a class="btn" href="#vote">🗳️ Vote the next map</a></div>
+    <p class="fine">Meme coin · not financial advice · prizes only from creator fees received · <a href="rules.html">official rules</a></p>
     <div class="ca soon" id="ca">
       <span class="lbl">CA</span>
       <code id="ca-text">4AcmBHJaSqJCDT99W769ecEXupsj7mkr2Wdfien2pump</code>
