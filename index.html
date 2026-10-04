@@ -155,6 +155,15 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
 .vmap.mine{border-color:var(--green);box-shadow:0 0 18px rgba(40,255,140,.35)}
 .vmap:disabled{cursor:default}
 #vote-status{min-height:1.4em}
+.sv-b{margin:14px 0;padding:12px;border:1px solid rgba(255,210,74,.25);border-radius:14px;background:rgba(0,0,0,.25)}
+.sv-t{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.sv-t small{font:700 12px var(--hd);color:var(--cyan)}
+.sv-cs{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px}
+.sv-c{text-align:center;padding:8px;border:2px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.03);font-size:13px}
+.sv-c img{width:100%;max-width:200px;aspect-ratio:4/5;object-fit:cover;border-radius:10px;display:block;margin:0 auto 6px}
+.sv-c.mine{border-color:var(--green);box-shadow:0 0 18px rgba(40,255,140,.3)}.sv-c.win{border-color:var(--gold);box-shadow:0 0 18px rgba(255,210,74,.35)}
+.sv-c .vbar{display:block;height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:6px 0}.sv-c .vbar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--pink,#ff4fd8))}
+.sv-c button{margin-top:6px;width:100%}
+.ms-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin:10px 0}.ms-row img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:10px}
 .lst{max-height:260px;overflow:auto;font-size:13px}.lst code{font-size:12px;overflow-wrap:anywhere}
 </style>
 </head>
@@ -340,6 +349,16 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
     </ul>
     <div class="dropvid"><video class="mapclip" src="assets/skins/skins_preview.mp4?v=nft" poster="assets/skins/skins_poster.jpg?v=nft" muted loop playsinline autoplay preload="none" width="960" height="540" aria-label="Animated preview of the 5 holder skins: Pumpkin Crown, Golden Hard Hat, To The Moon Halo, Shark Fin Crown, Fossil Crown"></video></div>
     <div class="under" style="justify-content:flex-start;margin:10px 0 4px"><a class="btn sm play" href="https://boss-runner-fto6.onrender.com/nft" target="_blank" rel="noopener">👑 Mint page</a><a class="btn sm" href="https://solscan.io/token/6eAN8Pi9GiWRGNLDNk62DyRJBqYE4MZWvEc3J67vZ5rb" target="_blank" rel="noopener">Collection on Solscan ↗</a></div>
+    <div id="skinvote" hidden>
+      <h3 style="margin-top:18px">🗳️ Holder skin vote</h3>
+      <p>Holders (100,000+ $BOSS) pick which design becomes each map's holder drop. One vote per wallet per map, a free signed message in Phantom (no transaction), final once cast. Voting closes when the round ends (<span id="sv-close">end of round</span>); ties go to the first design. Cosmetic only.</p>
+      <div id="sv-ballots"></div>
+      <p id="sv-status" class="mini" style="min-height:1.4em"></p>
+      <a id="sv-open" class="btn sm" hidden>Open in Phantom to vote</a>
+    </div>
+    <h3 style="margin-top:18px">🏅 Milestone drops</h3>
+    <p>Rare limited skins earned in ranked play, verified by the server's replay of each run: <b>Round Survivor</b> (play ranked in 3, 5 or 10 rounds), <b>Boss Slayer</b> (beat a boss on that round's ranked map) and <b>High Score</b> (10K / 25K / 50K in one run). Holders claim them free from the Skins menu in the ranked game. Each one is stamped with its achievement, round and date, and can be minted into the same NFT collection. One per person. They never affect score, tries, rank or prizes.</p>
+    <div class="ms-row"><img src="assets/skins/vote/m_survivor_10.webp" alt="Round 10 Survivor" loading="lazy"><img src="assets/skins/vote/m_slayer_grave.webp" alt="Boss Slayer: Graveyard" loading="lazy"><img src="assets/skins/vote/m_score_50k.webp" alt="50K Club" loading="lazy"></div>
     <p class="mini">Previews. Try them on in the free <a href="game/">practice game</a> (👑 SKINS on the title screen). Skins and NFTs are cosmetic only: no cash value promised, no effect on prizes, and not a purchase of a chance to win.</p>
   </div>
 </div></section>
@@ -475,6 +494,36 @@ if(RU){(()=>{
       const j=await r.json().catch(()=>({error:"server error"}));
       if(r.ok){V=j;say("");}else if(j.code==="already_voted"){await load();}else{say("Vote not counted: "+(j.error||("error "+r.status)));if(j.code==="wrong_round")await load();}
     }catch(e){say(e&&e.code===4001?"Cancelled in Phantom. Nothing was signed.":"Something went wrong: "+((e&&e.message)||e));}
+    finally{busy=false;render();}});
+  load();setInterval(()=>{if(!busy&&!document.hidden)load();},60000);
+})();}
+// ---- holder skin vote (server: GET /api/skinvote, POST /skinvote; Phantom signMessage, no transaction; cosmetic only) ----
+if(RU){(()=>{
+  const GU=new URL("api/skinvote",RU).href,PU=new URL("skinvote",RU).href,box=$("sv-ballots"),stt=$("sv-status");let V=null,wallet=null,busy=false;
+  const prov=()=>{const p=(window.phantom&&window.phantom.solana)||window.solana;return p&&p.isPhantom?p:null;};
+  const et=ms=>new Date(ms).toLocaleString("en-US",{timeZone:"America/New_York",weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})+" ET";
+  function render(){if(!V)return;const open=V.ballots.filter(b=>b.status==="open");
+    if(open.length)$("sv-close").textContent=et(open[0].closes_ms);
+    box.innerHTML=V.ballots.map(b=>{const tot=b.total||0;
+      const head=b.status==="open"?"Open · closes "+et(b.closes_ms):b.status==="upcoming"?"Opens "+et(b.opens_ms):"Closed · winner: "+esc((b.candidates.find(c=>c.id===b.winner)||{}).name||b.winner);
+      return '<div class="sv-b"><div class="sv-t"><b>'+esc(b.title||b.id)+'</b><small>'+head+'</small></div><div class="sv-cs">'+b.candidates.map(c=>{const n=b.tally[c.id]||0,pc=tot?Math.round(n*100/tot):0,mine=b.voted===c.id,win=b.status==="closed"&&b.winner===c.id;
+        return '<div class="sv-c'+(mine?" mine":win?" win":"")+'"><img src="assets/skins/vote/'+esc(c.id)+'.webp" alt="" loading="lazy"><b>'+esc(c.name)+(win?" 🏆":"")+'</b><span class="vbar"><i style="width:'+pc+'%"></i></span><span class="mini">'+n+' vote'+(n===1?"":"s")+(tot?" · "+pc+"%":"")+'</span>'+
+          (mine?'<div class="mini">✓ your vote</div>':(b.status==="open"&&!b.voted?'<button type="button" class="btn sm" data-b="'+esc(b.id)+'" data-c="'+esc(c.id)+'"'+(busy?" disabled":"")+'>Vote (sign, free)</button>':''))+'</div>';}).join("")+'</div></div>';}).join("");}
+  async function load(){try{const r=await fetch(GU+(wallet?"?wallet="+encodeURIComponent(wallet):""),{cache:"no-store"});if(!r.ok)throw 0;V=await r.json();if(V.ballots&&V.ballots.length)$("skinvote").hidden=false;render();}
+    catch(e){if(!V)setTimeout(load,15000);}}
+  box.addEventListener("click",async e=>{const b=e.target.closest("button[data-b]");if(!b||busy)return;const p=prov();
+    if(!p){const mob=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      if(mob){$("sv-open").href="https://phantom.app/ul/browse/"+encodeURIComponent(location.href.split("#")[0]+"#skinvote")+"?ref="+encodeURIComponent(location.origin);$("sv-open").hidden=false;stt.textContent="Voting needs the free Phantom wallet. Tap \"Open in Phantom to vote\".";}
+      else stt.textContent="Voting needs the Phantom wallet extension (phantom.app).";return;}
+    const bid=b.dataset.b,pick=b.dataset.c;busy=true;render();
+    try{if(!wallet){const r=await p.connect();wallet=r.publicKey.toString();await load();const bb=V.ballots.find(x=>x.id===bid);if(bb&&bb.voted){stt.textContent="This wallet already voted on that map.";return;}}
+      const msg=[V.message_header,"ballot: "+bid,"pick: "+pick,"wallet: "+wallet].join("\n");
+      stt.textContent="Check Phantom: sign the message (free, not a transaction).";
+      const s=await p.signMessage(new TextEncoder().encode(msg),"utf8"),sig=btoa(String.fromCharCode(...s.signature));
+      const r=await fetch(PU,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({wallet,ballot:bid,pick,signature:sig})});
+      const j=await r.json().catch(()=>({error:"server error"}));
+      if(r.ok){V=j;stt.textContent="✓ Vote counted (final). Thanks!";}else{stt.textContent="Vote not counted: "+(j.error||("error "+r.status));if(j.code==="already_voted")await load();}
+    }catch(e){stt.textContent=e&&e.code===4001?"Cancelled in Phantom. Nothing was signed.":"Something went wrong: "+((e&&e.message)||e);}
     finally{busy=false;render();}});
   load();setInterval(()=>{if(!busy&&!document.hidden)load();},60000);
 })();}
