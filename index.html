@@ -198,7 +198,7 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
   <p class="muted" style="margin-top:-6px" id="play-sub">Free to play in your browser. No wallet, no purchase, no tokens, no download needed.</p>
   <div id="practice-main">
     <p class="pill" id="practice-note" style="margin:0 0 12px">🎮 PRACTICE MODE · NOT ELIGIBLE FOR PRIZES</p>
-    <p class="mini" style="margin-top:0">This version is just for practice. Prizes only count in ranked mode (Phantom, server-checked), which opens with round 1.</p>
+    <p class="mini" style="margin-top:0">This version is just for practice. Prizes only count in ranked mode (Phantom, server-checked).</p>
   </div>
   <div class="gamebox" id="gamebox">
     <button class="start" id="loadgame" type="button" aria-label="Load the game"><span class="big">▶</span>TAP TO LOAD THE GAME<span class="muted" style="font:600 12px system-ui">≈300 KB · sound on after first tap</span></button>
@@ -261,14 +261,31 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
       <span class="status">OFFICIAL RULES IN EFFECT · SEE RULES</span>
       <p class="cd" id="round-cd">Rounds every 3 days</p>
       <p class="mini" id="round-sub">Each round runs 3 days. Tries reset every round.</p>
-      <h3 style="margin-top:12px">Free to play. Top 5 can win rewards.</h3>
+      <h3 style="margin-top:12px" id="enter">How to enter</h3>
       <ul class="ticks">
-        <li><b>Free to play</b>. No purchase necessary. You never need to hold, buy or burn $BOSS to play or win.</li>
-        <li><b>3-day rounds</b>, <b id="tries-txt">3 tries</b> per wallet per round. Every ranked score is checked by the server (signed and replayed).</li>
-        <li>Rewards come <b>only from pump.fun creator trading fees the dev actually receives</b>. Nothing is pre-funded and nothing is guaranteed. Few fees means small or skipped rewards.</li>
-        <li><b>From Round 2:</b> each round's prize pot is <b>20% of the creator fees actually received during that round</b> (the dev keeps 80%). More trading means a bigger pot; no trading means no pot. No promises either way.</li>
-        <li>One prize per person per round. Linked wallets count as one person.</li>
-        <li><b>See official rules</b>: <a href="rules.html">read the official rules</a> (in effect from Oct 3, 2026). Nothing is guaranteed.</li>
+        <li><b>Free to enter. No purchase necessary.</b> You never need to hold, buy or burn $BOSS to play or win.</li>
+        <li><b>Who:</b> 18+ (or the age of majority where you live), worldwide where legal. Void where prohibited; not open in sanctioned regions.</li>
+        <li><b>How:</b> play ranked with the free Phantom wallet. <b id="tries-txt">3 tries</b> per wallet per round. Every ranked score is checked by the server (signed and replayed).</li>
+        <li><b>Rounds last 3 days.</b> The leaderboard resets every round.</li>
+      </ul>
+      <h3 style="margin-top:12px">Ranked map: changes by vote</h3>
+      <ul class="ticks">
+        <li><b>Rounds 1 and 2:</b> Ohio.</li>
+        <li><b>From Round 3</b> (starts Wed Oct 7, 9 PM ET): the ranked map changes every 3 days by community vote: the <a href="#vote">site vote</a> (one per wallet) plus the X poll on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>.</li>
+        <li><b>Candidate maps:</b> 🎃 Haunted Graveyard · 🏭 Rug Pull Factory · 🚀 Moon Mission · 🏄 Shark Bay Surf · 🦖 Prehistoric Climb</li>
+      </ul>
+      <div class="under" style="justify-content:flex-start;margin-top:8px"><a class="btn sm play" href="#vote">🗳️ Vote now</a><a class="btn sm" href="game/">🎮 Practice all maps free</a></div>
+      <h3 style="margin-top:14px">Prizes (Round 2 on)</h3>
+      <ul class="ticks">
+        <li>Each round's prize pot is <b>20% of the creator fees actually received during that round</b> (the dev keeps 80%). Rewards come only from pump.fun creator fees; nothing is pre-funded or guaranteed.</li>
+        <li><b>Top 5 paid:</b> 40% / 25% / 15% / 12% / 8%. If the pot is under <b>0.05 SOL</b>, nothing is paid and it rolls over to the next round.</li>
+        <li>One prize per person per round. Linked wallets count as one person. Round 1 follows the rules as originally posted (v1.1).</li>
+      </ul>
+      <h3 style="margin-top:14px">Holder perks &amp; what's next</h3>
+      <ul class="ticks">
+        <li><b>👑 Holder perks are cosmetic only:</b> map <a href="#drops">skin drops</a> from Round 3, NFT upgrade coming before Round 3, a 👑 leaderboard badge and early map access. They never affect score, tries, rank or prizes.</li>
+        <li><b>⚔️ 1v1 duels</b> come in Round 4 (Sat Oct 10, 9 PM ET). Duel rules are released in Round 3.</li>
+        <li><b>See official rules</b>: <a href="rules.html">read the official rules</a> (v1.3). Nothing is guaranteed.</li>
       </ul>
       <p class="muted" style="font-size:13px;margin:12px 0 0">Not financial advice. Void where prohibited. <a href="rules.html">Read the official rules</a>.</p>
     </div>
@@ -282,7 +299,7 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
       <table class="board" aria-label="Leaderboard">
         <thead><tr><th>RANK</th><th>PLAYER</th><th style="text-align:right">SCORE</th></tr></thead>
       </table>
-      <div class="empty">The leaderboard opens with the first ranked round.<br>Watch <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a> for the announcement.</div>
+      <div class="empty">Live standings for the current round: <a href="https://boss-runner-fto6.onrender.com/leaderboard" target="_blank" rel="noopener">open the leaderboard ↗</a><br>Resets every round. Updates on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>.</div>
     </div>
   </div>
 </div></section>
