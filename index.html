@@ -129,6 +129,19 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
 .tiers{width:100%;border-collapse:collapse;font-size:13.5px;margin:8px 0}.tiers td,.tiers th{padding:7px 6px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
 .tiers th{font:700 11px var(--hd);color:var(--mut)}
 .mini{font-size:13px;color:var(--mut)}
+/* map vote */
+.vmaps{display:grid;gap:10px;margin:14px 0}
+@media(min-width:620px){.vmaps{grid-template-columns:1fr 1fr}}
+.vmap{display:block;width:100%;text-align:left;color:var(--txt);font:inherit;background:rgba(10,12,40,.85);border:1.5px solid rgba(170,90,255,.38);border-radius:14px;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.vmap b{font:800 14px var(--hd);color:#fff;letter-spacing:.3px}
+.vmap .vd{display:block;font-size:13px;color:var(--mut);margin:3px 0 8px}
+.vmap .vbar{display:block;height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.vmap .vbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--purp),var(--cyan));transition:width .4s}
+.vmap .vn{float:right;font:700 12px var(--hd);color:var(--gold)}
+.vmap.sel{border-color:var(--gold);box-shadow:0 0 18px rgba(255,210,74,.35)}
+.vmap.mine{border-color:var(--green);box-shadow:0 0 18px rgba(40,255,140,.35)}
+.vmap:disabled{cursor:default}
+#vote-status{min-height:1.4em}
 .lst{max-height:260px;overflow:auto;font-size:13px}.lst code{font-size:12px;overflow-wrap:anywhere}
 </style>
 </head>
@@ -136,7 +149,7 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
 <nav><div class="wrap">
   <a class="brand" href="#top"><img src="assets/logo.webp" alt="" width="34" height="34">$BOSS</a>
   <div class="links">
-    <a class="t" href="#play">Game</a><a class="t" href="#rewards">Rewards</a><a class="t" href="#transparency">Transparency</a><a class="t" href="#disclaimer">Disclaimer</a>
+    <a class="t" href="#play">Game</a><a class="t" href="#vote">Vote</a><a class="t" href="#rewards">Rewards</a><a class="t" href="#transparency">Transparency</a><a class="t" href="#disclaimer">Disclaimer</a>
     <a class="btn sm buy needs-ca" href="#" target="_blank" rel="noopener" hidden>Buy</a>
   </div>
 </div></nav>
@@ -198,6 +211,21 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
     <div><b>SWIPE DOWN</b>Slam: smash candles &amp; FUD</div>
     <div><b>EVERY ~45s</b>Boss fight: dodge, then slam it 3×</div>
     <div><b>DESKTOP</b>Space / ↑ jump · ↓ slam</div>
+  </div>
+</div></section>
+
+<section id="vote" hidden><div class="wrap">
+  <h2>🗳️ Vote the next <span class="k">ranked map</span></h2>
+  <div class="card">
+    <p style="margin-top:0" id="vote-head">Pick the map for the next round's ranked leaderboard. <b>Free</b>: no purchase, no tokens, no transaction. One vote per Phantom wallet per round, and votes are final.</p>
+    <div class="vmaps" id="vote-maps"></div>
+    <div class="under" style="margin-top:0">
+      <button class="btn sm play" id="vote-btn" type="button">Connect Phantom to vote</button>
+      <a class="btn sm" id="vote-open" href="#" hidden>Open in Phantom to vote</a>
+      <a class="btn sm" href="game/" target="_blank" rel="noopener">Try the maps in practice ↗</a>
+    </div>
+    <p class="mini" id="vote-status" role="status" aria-live="polite"></p>
+    <p class="mini" style="margin-bottom:0">The winner is <b>site votes + the X poll on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a> combined</b>, and becomes the ranked map for <b id="vote-next">the next round</b>. Voting closes when this round ends (<span id="vote-close">round end</span>). The tally above shows site votes only; X poll votes are added when the round ends. Phantom asks you to sign a short text message to prove the wallet is yours. It is not a transaction and costs nothing.</p>
   </div>
 </div></section>
 
@@ -349,6 +377,45 @@ if(RU){   // ranked is the MAIN game; practice is only a secondary link
   const hasPh=()=>{const p=(window.phantom&&window.phantom.solana)||window.solana;return !!(p&&p.isPhantom);};
   if(mob)setTimeout(()=>{if(hasPh())return;$("np-open").href="https://phantom.app/ul/browse/"+encodeURIComponent(RU)+"?ref="+encodeURIComponent(new URL(RU).origin);$("nophantom-note").hidden=false;},800);
 }
+// ---- vote next round's ranked map (server: GET/POST /vote; Phantom signMessage, no transaction) ----
+const VMAPS={ohio:["Ohio 🌽","The original: red candles, RUG pits, FUD clouds and the bear boss."],
+  grave:["Haunted Graveyard 🎃","Ghosts only hurt while solid, floaty spirit zones, candy corn showers. Boss: the Pumpkin King."],
+  factory:["Rug Pull Factory 🏭","Turbo and slow conveyor belts, ceiling crushers that blink before they drop."],
+  moon:["Moon Mission 🌙","Low gravity, floating asteroids to hop on, meteor showers."],
+  surf:["Shark Bay Surf 🦈","Dodge sharks, pull tricks off waves for bonus points, stop mid-run to catch a fish for an extra life."]};
+if(RU){(()=>{
+  const VU=new URL("vote",RU).href,box=$("vote-maps"),vb=$("vote-btn"),stt=$("vote-status");let V=null,pick=null,wallet=null,busy=false;
+  const prov=()=>{const p=(window.phantom&&window.phantom.solana)||window.solana;return p&&p.isPhantom?p:null;};
+  const say=t=>{stt.textContent=t;};
+  function render(){if(!V)return;const tot=V.total||0,mine=V.voted||null;
+    box.innerHTML=V.maps.map(id=>{const m=VMAPS[id]||[id,""],n=V.tally[id]||0,pc=tot?Math.round(n*100/tot):0;
+      return '<button type="button" class="vmap'+(mine===id?" mine":pick===id?" sel":"")+'" data-id="'+esc(id)+'"'+(mine||!V.open?" disabled":"")+'><span class="vn">'+n+' vote'+(n===1?"":"s")+(tot?" · "+pc+"%":"")+'</span><b>'+esc(m[0])+(mine===id?" ✓ your vote":"")+'</b><span class="vd">'+esc(m[1])+'</span><span class="vbar"><i style="width:'+pc+'%"></i></span></button>';}).join("");
+    $("vote-next").textContent="Round "+V.for_round;$("vote-close").textContent=new Date(V.closes_ms).toLocaleString([],{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})+" your time";
+    $("vote-head").firstChild.textContent="Pick the map for Round "+V.for_round+"'s ranked leaderboard. ";
+    if(!V.open){vb.hidden=true;say("Voting is closed right now.");}
+    else if(mine){vb.hidden=true;say("✓ Your vote for "+(VMAPS[mine]||[mine])[0]+" is in for Round "+V.round+". Thanks! Votes are final.");}
+    else{vb.hidden=false;vb.disabled=busy;vb.textContent=!wallet?"Connect Phantom to vote":pick?"Vote "+(VMAPS[pick]||[pick])[0]+" (sign, free)":"Pick a map above";}}
+  async function load(){try{const r=await fetch(VU+(wallet?"?wallet="+encodeURIComponent(wallet):""),{cache:"no-store"});if(!r.ok)throw 0;V=await r.json();$("vote").hidden=false;render();}
+    catch(e){if(V)say("Couldn't refresh the tally. The vote server may be waking up, try again in a minute.");else setTimeout(load,15000);}}
+  box.addEventListener("click",e=>{const b=e.target.closest(".vmap");if(!b||b.disabled)return;pick=b.dataset.id;render();});
+  vb.addEventListener("click",async()=>{if(busy)return;const p=prov();
+    if(!p){const mob=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      if(mob){$("vote-open").href="https://phantom.app/ul/browse/"+encodeURIComponent(location.href.split("#")[0]+"#vote")+"?ref="+encodeURIComponent(location.origin);$("vote-open").hidden=false;say("Voting needs the free Phantom wallet. Tap \"Open in Phantom to vote\".");}
+      else say("Voting needs the free Phantom wallet extension (phantom.app). No purchase or tokens needed.");return;}
+    busy=true;render();
+    try{
+      if(!wallet){const r=await p.connect();wallet=r.publicKey.toString();await load();if(V&&V.voted){busy=false;render();return;}if(!pick){say("Connected. Pick a map, then tap Vote.");return;}}
+      if(!pick){say("Pick a map first.");return;}
+      const msg=["$BOSS map vote (free, no transaction)","round: "+V.round,"picks ranked map for round: "+(V.round+1),"map: "+pick,"wallet: "+wallet].join("\n");
+      say("Check Phantom: sign the message (free, not a transaction).");
+      const s=await p.signMessage(new TextEncoder().encode(msg),"utf8"),sig=btoa(String.fromCharCode(...s.signature));
+      const r=await fetch(VU,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({wallet,map:pick,round:V.round,signature:sig})});
+      const j=await r.json().catch(()=>({error:"server error"}));
+      if(r.ok){V=j;say("");}else if(j.code==="already_voted"){await load();}else{say("Vote not counted: "+(j.error||("error "+r.status)));if(j.code==="wrong_round")await load();}
+    }catch(e){say(e&&e.code===4001?"Cancelled in Phantom. Nothing was signed.":"Something went wrong: "+((e&&e.message)||e));}
+    finally{busy=false;render();}});
+  load();setInterval(()=>{if(!busy&&!document.hidden)load();},60000);
+})();}
 document.getElementById("loadgame").addEventListener("click",()=>{
   const f=document.createElement("iframe");f.src="game/";f.title="$BOSS Runner game";f.allow="autoplay; fullscreen";
   const box=document.getElementById("gamebox");box.innerHTML="";box.appendChild(f);f.focus();
