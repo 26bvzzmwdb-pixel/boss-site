@@ -52,7 +52,7 @@ window.BOSS_CONFIG={
    "winner_cap_usd": 450
   }
  ],
- "lifetime_prize_cap_usd": 200,
+ "lifetime_prize_cap_usd": null,
  "whale_flag_pct": 2.0,
  "skins": [
   {
