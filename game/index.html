@@ -1417,7 +1417,7 @@ function drawSkinsScreen(oy,time){
   const ny=oy+926;ctx.textAlign="center";ctx.textBaseline="middle";ctx.font=`700 14px ${FONT}`;ctx.fillStyle="#cfe8ff";
   ctx.fillText("First drop: Round 3 (Wed Oct 7, 9 PM ET) = the map that wins the vote.",W/2,ny);
   ctx.fillText("Then one drop per map. No drops in Rounds 1-2. Tap a skin to try it on.",W/2,ny+22);
-  ctx.fillStyle="#c8a0ff";ctx.fillText("Own one? Tap 👑 Holders to sync. Tradable NFT upgrade coming later.",W/2,ny+44);
+  ctx.fillStyle="#c8a0ff";ctx.fillText("Own one? Tap 👑 Holders to sync. NFT upgrade coming before Round 3.",W/2,ny+44);
   if(skinId&&ownsSkin(skinId))button("eq:",60,ny+70,(W-140)/2,64,"NO SKIN","#8a86c8",true);
   button("back",skinId&&ownsSkin(skinId)?80+(W-140)/2:180,ny+70,skinId&&ownsSkin(skinId)?(W-140)/2:W-360,64,"◀ BACK",CYAN);
 }
