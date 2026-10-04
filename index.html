@@ -199,7 +199,7 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
   <div class="under">
     <a class="btn sm play" id="ranked" href="#" hidden>▶ Play ranked (Phantom)</a>
     <a class="btn sm play" id="fullscreen" href="game/" target="_blank" rel="noopener">Open fullscreen ↗</a>
-    <a class="btn sm" href="rules.html">Rewards rules (draft)</a>
+    <a class="btn sm" href="rules.html">Official rules</a>
     <a class="btn sm" id="practice-link" href="game/" target="_blank" rel="noopener" hidden>Practice (not eligible for prizes) ↗</a>
   </div>
   <div class="card" id="nophantom-note" style="margin-top:14px;text-align:center" hidden>
@@ -238,7 +238,7 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
   <h2>🏆 Leaderboard <span class="k">rewards</span></h2>
   <div class="grid two">
     <div class="card gold">
-      <span class="status">REWARDS PENDING · OFFICIAL RULES ON X FIRST</span>
+      <span class="status">OFFICIAL RULES IN EFFECT · SEE RULES</span>
       <p class="cd" id="round-cd">Rounds every 3 days</p>
       <p class="mini" id="round-sub">Each round runs 3 days. Tries reset every round.</p>
       <h3 style="margin-top:12px">Free to play. Top 10 can win rewards.</h3>
@@ -247,10 +247,10 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
         <li><b>3-day rounds</b>, <b id="tries-txt">3 tries</b> per wallet per round. Every ranked score is checked by the server (signed and replayed).</li>
         <li>Rewards come <b>only from pump.fun creator trading fees the dev actually receives</b>. Nothing is pre-funded and nothing is guaranteed. Few fees means small or skipped rewards.</li>
         <li><b>The pool can grow with the coin.</b> Bigger market cap and more trading means bigger round caps (table). A falling coin means smaller caps. No promises either way.</li>
-        <li>One prize per person per round. Linked wallets count as one person, and there's a lifetime cap per person (<span id="life-cap">$200</span>).</li>
-        <li><b>Rewards are pending</b>: none are paid until the official rules are posted on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">X @TheBossCoin_SOL</a>. Nothing is guaranteed.</li>
+        <li>One prize per person per round. Linked wallets count as one person. Prizes scale with market cap.</li>
+        <li><b>See official rules</b>: <a href="rules.html">read the official rules</a> (in effect from Oct 3, 2026). Nothing is guaranteed.</li>
       </ul>
-      <p class="muted" style="font-size:13px;margin:12px 0 0">Not financial advice. Void where prohibited. <a href="rules.html">Read the draft rules</a> (pending legal review).</p>
+      <p class="muted" style="font-size:13px;margin:12px 0 0">Not financial advice. Void where prohibited. <a href="rules.html">Read the official rules</a>.</p>
     </div>
     <div class="card">
       <h3>How each round's pool is sized</h3>
@@ -317,7 +317,7 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
     <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">X @TheBossCoin_SOL</a>
     <a href="https://t.me/TheBossCoinohio" target="_blank" rel="noopener">Telegram</a>
     <a href="game/" target="_blank" rel="noopener">Game</a>
-    <a href="rules.html">Rules (draft)</a>
+    <a href="rules.html">Official rules</a>
   </div>
   <div style="overflow-wrap:anywhere" id="foot-ca">CA: 4AcmBHJaSqJCDT99W769ecEXupsj7mkr2Wdfien2pump</div>
   <div style="margin-top:8px">$BOSS · Ohio Final Boss · joke coin, not financial advice, no promises of value.</div>
@@ -344,7 +344,6 @@ if(CA){   // CA published: show it, the copy button and the pump.fun links
   btn.addEventListener("click",copy);
 }
 if(C.tries_per_round)$("tries-txt").textContent=C.tries_per_round+" tries";
-if(C.lifetime_prize_cap_usd)$("life-cap").textContent=usd(C.lifetime_prize_cap_usd);
 if(C.split_pct)$("split-txt").textContent=C.split_pct.prize+"% prize pot / "+C.split_pct.reserve+"% reserve / "+C.split_pct.ops+"% ops";
 if(C.tiers)$("tier-rows").innerHTML=C.tiers.map(t=>"<tr><td>"+esc(t.name.replace(/^T\d\s*/,""))+"</td><td>"+usd(t.pot_cap_usd)+"</td><td>"+usd(t.winner_cap_usd)+"</td></tr>").join("");
 if(C.sell_limit_pct_per_day!=null)$("sell-pct").textContent=C.sell_limit_pct_per_day+"%";
