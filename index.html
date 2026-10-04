@@ -104,8 +104,15 @@ a.start{text-decoration:none}
 .how div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;font-size:14px}
 .how b{display:block;font:800 12px var(--hd);color:var(--cyan);margin-bottom:2px}
 /* video */
-.vid{border-radius:var(--r);overflow:hidden;border:2px solid var(--purp);box-shadow:0 0 30px rgba(170,90,255,.35);width:min(100%,560px);margin:0 auto;background:#000}
-.vid video{width:100%;aspect-ratio:1}
+.maps{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px}
+.maps figure{margin:0;border-radius:12px;overflow:hidden;border:2px solid var(--mc,var(--purp));box-shadow:0 0 18px color-mix(in srgb,var(--mc,#aa5aff) 35%,transparent);background:#000}
+.maps video{width:100%;aspect-ratio:360/760;height:auto;object-fit:cover}
+.swipe{display:none}
+.maps figcaption{font:800 11px var(--hd);text-align:center;padding:7px 4px;color:#fff;background:rgba(0,0,0,.55);letter-spacing:.4px}
+@media(max-width:760px){.maps{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:6px}.maps figure{flex:0 0 44%;scroll-snap-align:center}.swipe{display:block;text-align:center;margin:6px 0 0}}
+.vid{border-radius:var(--r);overflow:hidden;border:2px solid var(--purp);box-shadow:0 0 30px rgba(170,90,255,.35);width:min(100%,960px);margin:12px auto 0;background:#000}
+.vid video{width:100%;aspect-ratio:16/9;height:auto}
+details.allmaps summary{cursor:pointer;font:700 13px var(--hd);color:var(--cyan);text-align:center;margin-top:14px}
 /* rewards */
 .split{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0 6px}
 .split div{text-align:center;background:rgba(255,210,74,.08);border:1px solid rgba(255,210,74,.3);border-radius:10px;padding:7px 2px;font:800 12px var(--hd);color:#ffe9a8}
@@ -231,8 +238,19 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
 </div></section>
 
 <section id="video"><div class="wrap">
-  <h2>📼 Gameplay</h2>
-  <div class="vid"><video src="assets/gameplay.mp4" poster="assets/gameplay_poster.jpg" controls playsinline muted loop preload="none" width="720" height="720"></video></div>
+  <h2>📼 Gameplay: <span class="k">all 5 maps</span></h2>
+  <p class="mini" style="text-align:center">Real practice-mode runs, boss fights included. Every map is free to play in <a href="game/">practice</a>.</p>
+  <div class="maps">
+    <figure style="--mc:#ff8a1f"><video class="mapclip" src="assets/maps/grave.mp4" poster="assets/maps/grave.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Haunted Graveyard practice gameplay"></video><figcaption>🎃 Haunted Graveyard</figcaption></figure>
+    <figure style="--mc:#ffc83a"><video class="mapclip" src="assets/maps/factory.mp4" poster="assets/maps/factory.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Rug Pull Factory practice gameplay"></video><figcaption>🏭 Rug Pull Factory</figcaption></figure>
+    <figure style="--mc:#9ec8ff"><video class="mapclip" src="assets/maps/moon.mp4" poster="assets/maps/moon.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Moon Mission practice gameplay"></video><figcaption>🚀 Moon Mission</figcaption></figure>
+    <figure style="--mc:#3ad0ff"><video class="mapclip" src="assets/maps/surf.mp4" poster="assets/maps/surf.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Shark Bay Surf practice gameplay"></video><figcaption>🏄 Shark Bay Surf</figcaption></figure>
+    <figure style="--mc:#ffb03a"><video class="mapclip" src="assets/maps/climb.mp4" poster="assets/maps/climb.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Prehistoric Climb practice gameplay"></video><figcaption>🦖 Prehistoric Climb</figcaption></figure>
+  </div>
+  <p class="mini swipe">swipe for more maps →</p>
+  <details class="allmaps"><summary>Watch all 5 side by side</summary>
+    <div class="vid"><video src="assets/maps/all_maps.mp4" poster="assets/maps/all_maps.jpg" controls playsinline muted preload="none" width="1280" height="720"></video></div>
+  </details>
 </div></section>
 
 <section id="rewards"><div class="wrap">
@@ -439,6 +457,14 @@ document.getElementById("loadgame").addEventListener("click",()=>{
   const box=document.getElementById("gamebox");box.innerHTML="";box.appendChild(f);f.focus();
 });
 })();
+</script>
+<script>
+(function(){var v=[].slice.call(document.querySelectorAll('video.mapclip'));if(!v.length)return;
+var rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+v.forEach(function(e){e.muted=true;if(rm){e.removeAttribute('autoplay');e.autoplay=false;e.controls=true;}});
+if(rm||!('IntersectionObserver' in window))return;
+var io=new IntersectionObserver(function(es){es.forEach(function(x){var e=x.target;if(x.isIntersecting){if(e.preload==='none')e.preload='auto';var p=e.play();if(p&&p.catch)p.catch(function(){e.controls=true;});}else e.pause();});},{threshold:.25});
+v.forEach(function(e){e.autoplay=false;e.removeAttribute('autoplay');e.pause();io.observe(e);});})();
 </script>
 </body>
 </html>
