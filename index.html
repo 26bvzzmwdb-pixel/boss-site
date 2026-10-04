@@ -215,9 +215,9 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
 </div></section>
 
 <section id="vote" hidden><div class="wrap">
-  <h2>🗳️ Vote the next <span class="k">ranked map</span></h2>
+  <h2>🗳️ Vote the <span id="vote-h">Round 3</span> <span class="k">ranked map</span></h2>
   <div class="card">
-    <p style="margin-top:0" id="vote-head">Pick the map for the next round's ranked leaderboard. <b>Free</b>: no purchase, no tokens, no transaction. One vote per Phantom wallet per round, and votes are final.</p>
+    <p style="margin-top:0" id="vote-head">Round 2 stays on <b>Ohio</b>. This vote picks the ranked map for <b>Round 3</b>. <b>Free</b>: no purchase, no tokens, no transaction. One vote per Phantom wallet, and votes are final.</p>
     <div class="vmaps" id="vote-maps"></div>
     <div class="under" style="margin-top:0">
       <button class="btn sm play" id="vote-btn" type="button">Connect Phantom to vote</button>
@@ -225,7 +225,7 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
       <a class="btn sm" href="game/" target="_blank" rel="noopener">Try the maps in practice ↗</a>
     </div>
     <p class="mini" id="vote-status" role="status" aria-live="polite"></p>
-    <p class="mini" style="margin-bottom:0">The winner is <b>site votes + the X poll on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a> combined</b>, and becomes the ranked map for <b id="vote-next">the next round</b>. Voting closes when this round ends (<span id="vote-close">round end</span>). The tally above shows site votes only; X poll votes are added when the round ends. Phantom asks you to sign a short text message to prove the wallet is yours. It is not a transaction and costs nothing.</p>
+    <p class="mini" style="margin-bottom:0">The winner is <b>site votes + the X poll on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a> combined</b>, and becomes the ranked map for <b id="vote-next">Round 3</b>. Voting closes when Round 2 ends (<span id="vote-close">Wed Oct 7, 9:00 PM ET</span>). The tally above shows site votes only; X poll votes are added when voting closes. Phantom asks you to sign a short text message to prove the wallet is yours. It is not a transaction and costs nothing.</p>
   </div>
 </div></section>
 
@@ -390,10 +390,9 @@ if(RU){(()=>{
   function render(){if(!V)return;const tot=V.total||0,mine=V.voted||null;
     box.innerHTML=V.maps.map(id=>{const m=VMAPS[id]||[id,""],n=V.tally[id]||0,pc=tot?Math.round(n*100/tot):0;
       return '<button type="button" class="vmap'+(mine===id?" mine":pick===id?" sel":"")+'" data-id="'+esc(id)+'"'+(mine||!V.open?" disabled":"")+'><span class="vn">'+n+' vote'+(n===1?"":"s")+(tot?" · "+pc+"%":"")+'</span><b>'+esc(m[0])+(mine===id?" ✓ your vote":"")+'</b><span class="vd">'+esc(m[1])+'</span><span class="vbar"><i style="width:'+pc+'%"></i></span></button>';}).join("");
-    $("vote-next").textContent="Round "+V.for_round;$("vote-close").textContent=new Date(V.closes_ms).toLocaleString([],{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})+" your time";
-    $("vote-head").firstChild.textContent="Pick the map for Round "+V.for_round+"'s ranked leaderboard. ";
+    $("vote-next").textContent=$("vote-h").textContent="Round "+V.for_round;$("vote-close").textContent=new Date(V.closes_ms).toLocaleString("en-US",{timeZone:"America/New_York",weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})+" ET";
     if(!V.open){vb.hidden=true;say("Voting is closed right now.");}
-    else if(mine){vb.hidden=true;say("✓ Your vote for "+(VMAPS[mine]||[mine])[0]+" is in for Round "+V.round+". Thanks! Votes are final.");}
+    else if(mine){vb.hidden=true;say("✓ Your vote for "+(VMAPS[mine]||[mine])[0]+" is in for the Round "+V.for_round+" map. Thanks! Votes are final.");}
     else{vb.hidden=false;vb.disabled=busy;vb.textContent=!wallet?"Connect Phantom to vote":pick?"Vote "+(VMAPS[pick]||[pick])[0]+" (sign, free)":"Pick a map above";}}
   async function load(){try{const r=await fetch(VU+(wallet?"?wallet="+encodeURIComponent(wallet):""),{cache:"no-store"});if(!r.ok)throw 0;V=await r.json();$("vote").hidden=false;render();}
     catch(e){if(V)say("Couldn't refresh the tally. The vote server may be waking up, try again in a minute.");else setTimeout(load,15000);}}
@@ -406,10 +405,10 @@ if(RU){(()=>{
     try{
       if(!wallet){const r=await p.connect();wallet=r.publicKey.toString();await load();if(V&&V.voted){busy=false;render();return;}if(!pick){say("Connected. Pick a map, then tap Vote.");return;}}
       if(!pick){say("Pick a map first.");return;}
-      const msg=["$BOSS map vote (free, no transaction)","round: "+V.round,"picks ranked map for round: "+(V.round+1),"map: "+pick,"wallet: "+wallet].join("\n");
+      const msg=["$BOSS map vote (free, no transaction)","picks ranked map for round: "+V.for_round,"map: "+pick,"wallet: "+wallet].join("\n");
       say("Check Phantom: sign the message (free, not a transaction).");
       const s=await p.signMessage(new TextEncoder().encode(msg),"utf8"),sig=btoa(String.fromCharCode(...s.signature));
-      const r=await fetch(VU,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({wallet,map:pick,round:V.round,signature:sig})});
+      const r=await fetch(VU,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify({wallet,map:pick,for_round:V.for_round,signature:sig})});
       const j=await r.json().catch(()=>({error:"server error"}));
       if(r.ok){V=j;say("");}else if(j.code==="already_voted"){await load();}else{say("Vote not counted: "+(j.error||("error "+r.status)));if(j.code==="wrong_round")await load();}
     }catch(e){say(e&&e.code===4001?"Cancelled in Phantom. Nothing was signed.":"Something went wrong: "+((e&&e.message)||e));}
