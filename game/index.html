@@ -2697,8 +2697,11 @@ function render(){
   if(fish&&state==="play")drawFishUI(clock);
   drawScreens(clock);
   if(state==="shop"||state==="skins")drawFx();
-  if(!scanPat){const s=document.createElement("canvas");s.width=4;s.height=3;const g=s.getContext("2d");g.fillStyle="rgba(0,0,0,0.2)";g.fillRect(0,0,4,1);scanPat=ctx.createPattern(s,"repeat");}
-  ctx.fillStyle=scanPat;ctx.fillRect(0,0,W,H);
+  // CRT scanlines. Built in DEVICE pixels and filled with an identity transform: a tiny pattern repeated under the non-integer
+  // DPR*scale transform made iOS Safari draw thin white seam lines down the screen (pattern-tiling seam bug).
+  const scanK=cv.width+"x"+cv.height+"@"+(DPR*scale).toFixed(4);
+  if(!scanPat||scanPat.__k!==scanK){const P=DPR*scale,per=Math.max(3,Math.round(3*P)),dk=Math.max(1,Math.round(P));const s=document.createElement("canvas");s.width=8;s.height=per;const g=s.getContext("2d");g.fillStyle="rgba(0,0,0,0.2)";g.fillRect(0,0,8,dk);scanPat=ctx.createPattern(s,"repeat");scanPat.__k=scanK;}
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=scanPat;ctx.fillRect(0,0,cv.width,cv.height);ctx.restore();
   const vg=ctx.createRadialGradient(W/2,H/2,H*0.35,W/2,H/2,H*0.75);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,0.4)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
 }
 reset();resize();
