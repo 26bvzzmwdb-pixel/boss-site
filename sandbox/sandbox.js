@@ -36,7 +36,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, 1, 0.05, 500);
 camera.rotation.order = "YXZ";
 scene.add(camera);
-scene.fog = new THREE.Fog(0x2a1040, 26, 72);
+scene.fog = new THREE.Fog(0x2a1040, IS_TOUCH ? 18 : 26, IS_TOUCH ? 52 : 72);
 const hemi = new THREE.HemisphereLight(0xb8a8ff, 0x201030, 1.0); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffd0e0, 1.0); scene.add(sun); scene.add(sun.target);
 
@@ -251,7 +251,7 @@ const dGrip = vm(new THREE.BoxGeometry(.07, .16, .08), new THREE.MeshLambertMate
 drill.scale.setScalar(.75); drill.rotation.y = .08; camera.add(drill);
 const laser = new THREE.Mesh(new THREE.CylinderGeometry(.012, .02, 1, 6).translate(0, .5, 0).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x14f195, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
 laser.visible = false; scene.add(laser);
-const PN = 500, pPos = new Float32Array(PN * 3), pCol = new Float32Array(PN * 3), pVel = new Float32Array(PN * 3), pLife = new Float32Array(PN); let pHead = 0;
+const PN = IS_TOUCH ? 220 : 500, pPos = new Float32Array(PN * 3), pCol = new Float32Array(PN * 3), pVel = new Float32Array(PN * 3), pLife = new Float32Array(PN); let pHead = 0;
 const pGeo = new THREE.BufferGeometry(); pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3)); pGeo.setAttribute("color", new THREE.BufferAttribute(pCol, 3));
 const dotTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 32; const g = c.getContext("2d"); const r = g.createRadialGradient(16, 16, 0, 16, 16, 16); r.addColorStop(0, "rgba(255,255,255,1)"); r.addColorStop(.4, "rgba(255,255,255,.8)"); r.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = r; g.fillRect(0, 0, 32, 32); return new THREE.CanvasTexture(c); })();
 const parts = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: .2, map: dotTex, alphaTest: .01, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true }));
@@ -297,29 +297,44 @@ function aim() {
   for (const f of fuds) { const o = f.s.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z;
     if (t < 0 || t > best) continue; const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < .8 * .8) { best = t; fudHit = f; } }
 }
+let mineGrace = 0; // keeps mining briefly if the thumb wobbles off the button
+function breakBlock(x, y, z, id) {
+  setBlock(x, y, z, 0); const c = B[id];
+  burst(x + .5, y + .5, z + .5, [c.col, 0xffffff, c.drop ? 0x14f195 : c.col], IS_TOUCH ? (c.drop ? 36 : 18) : (c.drop ? 70 : 35), c.drop ? 6 : 4);
+  const gain = (c.drop || 0) + (c.cost || 0);
+  if (gain) { shards += gain; updShards(); pop(`◆ +${gain} ${c.drop ? c.name.replace(" VEIN", "") : "REFUND"}`, c.drop >= 10 ? "#fff2b0" : c.drop >= 3 ? "#14f195" : "#c69bff"); sfx.shard(c.drop || 1); }
+  else sfx.brk();
+  mineKey = ""; mineT = 0;
+}
+function trySoftTapMine() {
+  aim();
+  if (fudHit) return false;
+  if (!hit || B[hit.id].hard === Infinity) return false;
+  // one-tap mine for soft pieces (hard <= 0.45) on phone
+  if (B[hit.id].hard > 0.45) return false;
+  breakBlock(hit.x, hit.y, hit.z, hit.id); return true;
+}
 function updMining(dt, time) {
   aim();
   const tgt = $("target");
   if (hit && !fudHit) { outline.visible = true; outline.position.set(hit.x + .5, hit.y + .5, hit.z + .5); const bd = B[hit.id]; tgt.textContent = bd.name + (bd.drop ? `  ◆+${bd.drop}` : bd.hard === Infinity ? "  (unbreakable)" : ""); }
   else { outline.visible = false; tgt.textContent = fudHit ? "FUD CLOUD · HOLD TO ZAP" : ""; }
+  if (input.mine) mineGrace = IS_TOUCH ? 0.28 : 0; else if (mineGrace > 0) mineGrace -= dt;
+  const mining = input.mine || mineGrace > 0;
   let prog = 0;
-  if (input.mine && fudHit) { fudHit.hp -= dt; prog = 1 - fudHit.hp / .7; if (fudHit.hp <= 0) { const p = fudHit.s.position; burst(p.x, p.y, p.z, ["#ff6a8a", "#ff3250", "#ffd0d8"], 60, 6); scene.remove(fudHit.s); fuds.splice(fuds.indexOf(fudHit), 1); shards += 2; updShards(); pop("FUD CLEARED ◆+2", "#14f195"); sfx.zap(); } mineKey = ""; mineT = 0; }
-  else if (input.mine && hit && B[hit.id].hard !== Infinity) {
+  if (mining && fudHit) { fudHit.hp -= dt; prog = 1 - fudHit.hp / .7; if (fudHit.hp <= 0) { const p = fudHit.s.position; burst(p.x, p.y, p.z, ["#ff6a8a", "#ff3250", "#ffd0d8"], IS_TOUCH ? 30 : 60, 6); scene.remove(fudHit.s); fuds.splice(fuds.indexOf(fudHit), 1); shards += 2; updShards(); pop("FUD CLEARED ◆+2", "#14f195"); sfx.zap(); } mineKey = ""; mineT = 0; }
+  else if (mining && hit && B[hit.id].hard !== Infinity) {
     const key = hit.x + "," + hit.y + "," + hit.z; if (key !== mineKey) { mineKey = key; mineT = 0; }
-    mineT += dt; const bd = B[hit.id]; prog = Math.min(1, mineT / bd.hard);
+    mineT += dt; const bd = B[hit.id]; const need = Math.max(0.18, bd.hard * (IS_TOUCH ? 0.85 : 1)); // slightly faster on phone
+    prog = Math.min(1, mineT / need);
     const s = 1.004 - prog * .12 + Math.sin(time * 60) * .01 * prog; outline.scale.setScalar(s);
     coreGlow.material.color.setHex(bd.col); coreGlow.material.opacity = prog * .55;
-    if (Math.random() < dt * 30) burst(hit.x + .5 + hit.n[0] * .55, hit.y + .5 + hit.n[1] * .55, hit.z + .5 + hit.n[2] * .55, [bd.col, 0xffffff], 1, 2);
-    if (prog >= 1) {
-      const id = hit.id; setBlock(hit.x, hit.y, hit.z, 0); const c = B[id]; burst(hit.x + .5, hit.y + .5, hit.z + .5, [c.col, 0xffffff, c.drop ? 0x14f195 : c.col], c.drop ? 70 : 35, c.drop ? 6 : 4);
-      const gain = (c.drop || 0) + (c.cost || 0); if (gain) { shards += gain; updShards(); pop(`◆ +${gain} ${c.drop ? c.name.replace(" VEIN", "") : "REFUND"}`, c.drop >= 10 ? "#fff2b0" : c.drop >= 3 ? "#14f195" : "#c69bff"); sfx.shard(c.drop || 1); } else sfx.brk();
-      mineKey = ""; mineT = 0;
-    }
-  } else { mineT = 0; mineKey = ""; outline.scale.setScalar(1); coreGlow.material.opacity = 0; }
-  if (!input.mine) { outline.scale.setScalar(1); coreGlow.material.opacity = 0; }
+    if (Math.random() < dt * (IS_TOUCH ? 14 : 30)) burst(hit.x + .5 + hit.n[0] * .55, hit.y + .5 + hit.n[1] * .55, hit.z + .5 + hit.n[2] * .55, [bd.col, 0xffffff], 1, 2);
+    if (prog >= 1) breakBlock(hit.x, hit.y, hit.z, hit.id);
+  } else if (!mining) { mineT = 0; mineKey = ""; outline.scale.setScalar(1); coreGlow.material.opacity = 0; }
+  if (!mining) { outline.scale.setScalar(1); coreGlow.material.opacity = 0; }
   $("ring").setAttribute("stroke-dashoffset", (94.25 * (1 - prog)).toFixed(2));
-  // laser beam + drill animation
-  const firing = input.mine && (fudHit || (hit && B[hit.id].hard !== Infinity));
+  const firing = mining && (fudHit || (hit && B[hit.id].hard !== Infinity));
   laser.visible = !!firing; dTip.material.color.setHex(firing ? (Math.sin(time * 40) > 0 ? 0x14f195 : 0xffffff) : 0x9945ff); dRing.rotation.z += dt * (firing ? 30 : 2);
   if (firing) { dTip.getWorldPosition(tmpV); const end = fudHit ? fudHit.s.position.clone() : new THREE.Vector3(hit.x + .5 + hit.n[0] * .5, hit.y + .5 + hit.n[1] * .5, hit.z + .5 + hit.n[2] * .5);
     laser.position.copy(tmpV); laser.lookAt(end); laser.scale.set(1, 1, tmpV.distanceTo(end)); laser.material.opacity = .6 + Math.random() * .4; }
@@ -358,7 +373,13 @@ function initAudio() { if (AC) { if (AC.state === "suspended") AC.resume(); retu
 
 // ---------------- controls: desktop ----------------
 let running = false, locked = false;
+function maybeShowTip() {
+  if (!IS_TOUCH || Q.has("notip")) return;
+  try { if (localStorage.getItem(TIP_KEY) === "1") return; } catch (e) {}
+  $("tip").classList.add("show");
+}
 function startGame() { initAudio(); $("menu").classList.add("hide"); running = true; last = performance.now();
+  maybeShowTip();
   if (!IS_TOUCH && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
 function pause() { running = false; input.mine = false; $("menu").classList.remove("hide"); $("playBtn").textContent = "RESUME"; save(); if (document.pointerLockElement) document.exitPointerLock(); }
 document.addEventListener("pointerlockchange", () => { locked = document.pointerLockElement === canvas; if (!locked && running && !IS_TOUCH && !window.__SB_TEST) pause(); });
@@ -376,26 +397,111 @@ window.addEventListener("blur", () => { input.keys = {}; input.mine = false; });
 function look(dx, dy) { P.yaw -= dx; P.pitch = Math.max(-1.55, Math.min(1.55, P.pitch - dy)); }
 
 // ---------------- controls: touch (left joystick, right drag-look, buttons) ----------------
-const joy = { id: null, ox: 0, oy: 0, active: false, mag: 0 }, lookT = { id: null, x: 0, y: 0 };
+const joy = { id: null, ox: 0, oy: 0, active: false, mag: 0, R: 64, dead: 0.18 };
+const lookT = { id: null, x: 0, y: 0, moved: false };
+let lookSlow = false;
+const LOOK_SENS = () => lookSlow ? 0.0020 : 0.0032; // was 0.0058; slower default for iPhone thumbs
+const TIP_KEY = "boss_sandbox_tip_v2";
+function overUI(x, y) {
+  // Don't start look/joystick on HUD buttons, palette, tip, or pause.
+  const el = document.elementFromPoint(x, y);
+  if (!el || el === $("touch") || el === $("game") || el === $("lookPad") || el === document.body) return false;
+  return !!(el.closest && el.closest(".tbtn, #palette, #pauseBtn, #lookSlow, #tip, #menu, .chip, #badge, #shards"));
+}
+function inLookZone(x, y) {
+  // Right side of the screen, above the action buttons, so look doesn't fight MINE/BUILD/JUMP.
+  const w = innerWidth, h = innerHeight;
+  if (x < w * 0.42) return false;
+  // leave the bottom-right button cluster alone (~42% height in portrait, ~48% in landscape)
+  const btnTop = h * (w > h ? 0.48 : 0.52);
+  return y < btnTop;
+}
+function inMoveZone(x, y) {
+  const w = innerWidth, h = innerHeight;
+  if (x > w * 0.50) return false;
+  // leave bottom-left palette + LOOK:SLOW alone (bottom ~22% in portrait)
+  return y < h * 0.82;
+}
+function applyJoy(dx, dy) {
+  const R = joy.R;
+  let ox = joy.ox, oy = joy.oy, fx = ox + dx, fy = oy + dy;
+  let d = Math.hypot(dx, dy);
+  // sticky: follow the thumb when it leaves the rim so the stick doesn't snap back
+  if (d > R * 1.2) {
+    const over = d - R;
+    const nx = dx / d, ny = dy / d;
+    joy.ox += nx * over * 0.7; joy.oy += ny * over * 0.7;
+    $("stick").style.left = joy.ox + "px"; $("stick").style.top = joy.oy + "px";
+    dx = fx - joy.ox; dy = fy - joy.oy; d = Math.hypot(dx, dy);
+  }
+  const clx = d > R ? dx * R / d : dx, cly = d > R ? dy * R / d : dy;
+  const mag = Math.min(1, d / R); joy.mag = mag;
+  $("stick").firstElementChild.style.transform = `translate(${clx}px,${cly}px)`;
+  if (mag < joy.dead) { input.s = 0; input.f = 0; return; }
+  const t = (mag - joy.dead) / (1 - joy.dead); // 0..1 after dead zone
+  let sx = (clx / R) * t, sf = (-cly / R) * t;
+  const len = Math.hypot(sx, sf); if (len > 1) { sx /= len; sf /= len; }
+  input.s = sx; input.f = sf;
+}
 if (IS_TOUCH) {
-  const T = $("touch"); T.style.display = "block"; for (const b of ["bMine", "bBuild", "bJump"]) $(b).style.display = "block"; $("stickHint").style.display = "block";
+  const T = $("touch"); T.style.display = "block";
+  for (const b of ["bMine", "bBuild", "bJump"]) $(b).style.display = "block";
+  $("lookSlow").style.display = "block"; $("stickHint").style.display = "block"; $("lookPad").style.display = "block";
   $("ctlDesk").style.display = "none"; $("ctlTouch").style.display = "grid";
   const st = $("stick"), knob = st.firstElementChild;
-  T.addEventListener("touchstart", e => { e.preventDefault(); for (const t of e.changedTouches) {
-    if (t.clientX < innerWidth * .45 && joy.id === null) { joy.id = t.identifier; joy.ox = t.clientX; joy.oy = t.clientY; joy.active = true; st.style.display = "block"; st.style.left = t.clientX + "px"; st.style.top = t.clientY + "px"; knob.style.transform = ""; $("stickHint").style.display = "none"; }
-    else if (lookT.id === null) { lookT.id = t.identifier; lookT.x = t.clientX; lookT.y = t.clientY; } } }, { passive: false });
-  T.addEventListener("touchmove", e => { e.preventDefault(); for (const t of e.changedTouches) {
-    if (t.identifier === joy.id) { let dx = t.clientX - joy.ox, dy = t.clientY - joy.oy; const d = Math.hypot(dx, dy), R = 52; if (d > R) { dx *= R / d; dy *= R / d; } joy.mag = Math.min(1, d / R);
-      input.s = dx / R; input.f = -dy / R; knob.style.transform = `translate(${dx}px,${dy}px)`; }
-    else if (t.identifier === lookT.id) { look((t.clientX - lookT.x) * .0058, (t.clientY - lookT.y) * .0058); lookT.x = t.clientX; lookT.y = t.clientY; } } }, { passive: false });
-  const end = e => { for (const t of e.changedTouches) { if (t.identifier === joy.id) { joy.id = null; joy.active = false; input.f = input.s = 0; st.style.display = "none"; } if (t.identifier === lookT.id) lookT.id = null; } };
+  // First-run tip overlay (shown when PLAY is tapped — see maybeShowTip)
+  $("tipGot").addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY, "1"); } catch (_) {} initAudio(); });
+  const toggleLookSlow = () => { lookSlow = !lookSlow; $("lookSlow").classList.toggle("on", lookSlow); $("lookSlow").textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; };
+  $("lookSlow").addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); toggleLookSlow(); });
+
+  T.addEventListener("touchstart", e => { e.preventDefault();
+    for (const t of e.changedTouches) {
+      if (overUI(t.clientX, t.clientY)) continue; // buttons/palette own their pointers
+      if (inMoveZone(t.clientX, t.clientY) && joy.id === null) {
+        joy.id = t.identifier; joy.ox = t.clientX; joy.oy = Math.min(t.clientY, innerHeight * 0.72); joy.active = true; joy.mag = 0;
+        st.style.display = "block"; st.style.left = joy.ox + "px"; st.style.top = joy.oy + "px"; knob.style.transform = "";
+        $("stickHint").style.display = "none"; input.f = input.s = 0;
+      } else if (inLookZone(t.clientX, t.clientY) && lookT.id === null) {
+        lookT.id = t.identifier; lookT.x = t.clientX; lookT.y = t.clientY; lookT.moved = false;
+      }
+    }
+  }, { passive: false });
+  T.addEventListener("touchmove", e => { e.preventDefault();
+    for (const t of e.changedTouches) {
+      if (t.identifier === joy.id) applyJoy(t.clientX - joy.ox, t.clientY - joy.oy);
+      else if (t.identifier === lookT.id) {
+        const dx = t.clientX - lookT.x, dy = t.clientY - lookT.y;
+        if (!lookT.moved && Math.hypot(dx, dy) < 4) continue; // tiny wiggle ignore
+        lookT.moved = true;
+        look(dx * LOOK_SENS(), dy * LOOK_SENS());
+        lookT.x = t.clientX; lookT.y = t.clientY;
+      }
+    }
+  }, { passive: false });
+  const end = e => { for (const t of e.changedTouches) {
+    if (t.identifier === joy.id) { joy.id = null; joy.active = false; joy.mag = 0; input.f = input.s = 0; st.style.display = "none"; knob.style.transform = ""; }
+    if (t.identifier === lookT.id) lookT.id = null;
+  }; };
   T.addEventListener("touchend", end); T.addEventListener("touchcancel", end);
-  const hold = (id, on, off) => { const b = $(id); b.addEventListener("pointerdown", e => { e.preventDefault(); b.classList.add("on"); on(); try { b.setPointerCapture(e.pointerId); } catch (_) {} });
-    const up = e => { b.classList.remove("on"); off && off(); }; b.addEventListener("pointerup", up); b.addEventListener("pointercancel", up); b.addEventListener("lostpointercapture", up); };
-  hold("bMine", () => input.mine = true, () => input.mine = false);
-  hold("bBuild", () => { aim(); place(); });
-  hold("bJump", () => input.jump = true);
+
+  // Action buttons: capture pointer so look-drag never steals them. Soft-tap mine on quick release.
+  let mineDownAt = 0;
+  const hold = (id, onDown, onUp) => {
+    const b = $(id);
+    b.addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); b.classList.add("on"); onDown(e); try { b.setPointerCapture(e.pointerId); } catch (_) {} });
+    const up = e => { b.classList.remove("on"); onUp && onUp(e); };
+    b.addEventListener("pointerup", up); b.addEventListener("pointercancel", up); b.addEventListener("lostpointercapture", up);
+  };
+  hold("bMine", () => { input.mine = true; mineDownAt = performance.now(); mineGrace = 0.28; },
+    () => { const held = performance.now() - mineDownAt; input.mine = false;
+      if (held < 220) trySoftTapMine(); // short tap = soft-block one-shot
+      else mineGrace = 0.28; // brief grace after a hold so wobble doesn't cancel
+    });
+  hold("bBuild", () => { aim(); place(); }, null);
+  hold("bJump", () => { input.jump = true; }, null);
   document.addEventListener("gesturestart", e => e.preventDefault());
+  // Prevent iOS double-tap zoom stealing inputs
+  let lastTouchEnd = 0; document.addEventListener("touchend", e => { const now = Date.now(); if (now - lastTouchEnd < 320) e.preventDefault(); lastTouchEnd = now; }, { passive: false });
 }
 $("pauseBtn").addEventListener("click", () => { if (running) pause(); else startGame(); });
 $("playBtn").addEventListener("click", startGame);
@@ -495,4 +601,4 @@ requestAnimationFrame(frame);
 // test / debug hooks (harmless; used by automated checks)
 window.__SB = { P, input, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
   state: () => ({ x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, ground: P.ground, shards, sel, running, tris, fps: Math.round(fps), fuds: fuds.length, tod, mp: mp.on ? { id: mp.id, rejects: mp.rejects || 0, lastEmote: mp.lastEmote || null, others: [...mp.others.values()].map(o => ({ name: o.p.name, x: o.p.x, y: o.p.y, z: o.p.z })) } : null, info: renderer.info.render }),
-  select, respawn, save, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };
+  select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };

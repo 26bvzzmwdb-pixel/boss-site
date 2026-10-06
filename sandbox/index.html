@@ -41,19 +41,46 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden;touch-actio
 @keyframes up{from{opacity:1;transform:translateY(0) scale(1.1)}to{opacity:0;transform:translateY(-46px) scale(1)}}
 #hurt{inset:0;background:radial-gradient(ellipse at center,rgba(255,50,80,0) 50%,rgba(255,50,80,.45));opacity:0;transition:opacity .35s}
 /* touch controls */
-.tbtn{position:fixed;z-index:4;display:none;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(10,8,30,.5);color:#fff;font:900 11px Orbitron,sans-serif;letter-spacing:1px;touch-action:none;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
-.tbtn.on{background:rgba(40,220,255,.35);border-color:var(--cyan)}
-#bMine{width:84px;height:84px;right:max(18px,env(safe-area-inset-right));bottom:calc(max(18px,env(safe-area-inset-bottom)) + 92px);border-color:rgba(153,69,255,.9);box-shadow:0 0 16px rgba(153,69,255,.6)}
-#bBuild{width:64px;height:64px;right:calc(max(18px,env(safe-area-inset-right)) + 92px);bottom:calc(max(18px,env(safe-area-inset-bottom)) + 120px);border-color:rgba(40,220,255,.9)}
-#bJump{width:70px;height:70px;right:calc(max(18px,env(safe-area-inset-right)) + 8px);bottom:calc(max(18px,env(safe-area-inset-bottom)) + 4px);border-color:rgba(20,241,149,.9)}
-#stick{position:fixed;z-index:3;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:2px solid rgba(40,220,255,.5);background:rgba(40,220,255,.08);display:none;pointer-events:none}
-#stick i{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:rgba(40,220,255,.45);box-shadow:0 0 14px var(--cyan)}
-#stickHint{position:fixed;z-index:2;left:max(26px,env(safe-area-inset-left));bottom:calc(max(18px,env(safe-area-inset-bottom)) + 96px);font-size:9px;opacity:.5;display:none;pointer-events:none;letter-spacing:1px}
-body.touch #palette{top:calc(max(10px,env(safe-area-inset-top)) + 58px);bottom:auto;max-width:96vw;overflow-x:auto;gap:4px;padding:4px}
-body.touch .chip{width:40px;height:40px;border-radius:11px;flex:0 0 auto}
-body.touch #matName{top:calc(max(10px,env(safe-area-inset-top)) + 112px);bottom:auto}
+.tbtn{position:fixed;z-index:6;display:none;border-radius:50%;border:3px solid rgba(255,255,255,.55);background:rgba(8,6,28,.72);color:#fff;font:900 12px Orbitron,sans-serif;letter-spacing:1px;touch-action:none;-webkit-tap-highlight-color:transparent;box-shadow:0 0 18px rgba(0,0,0,.45),inset 0 0 12px rgba(255,255,255,.06);text-shadow:0 1px 2px #000}
+.tbtn.on{transform:scale(.94);filter:brightness(1.25)}
+#bMine{width:72px;height:72px;right:max(14px,env(safe-area-inset-right));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 86px);border-color:#c69bff;background:rgba(80,20,140,.78);box-shadow:0 0 22px rgba(153,69,255,.75),inset 0 0 14px rgba(153,69,255,.35);font-size:13px}
+#bBuild{width:64px;height:64px;right:calc(max(14px,env(safe-area-inset-right)) + 86px);bottom:calc(max(14px,env(safe-area-inset-bottom)) + 118px);border-color:#28dcff;background:rgba(10,40,70,.78);box-shadow:0 0 18px rgba(40,220,255,.55)}
+#bJump{width:64px;height:64px;right:calc(max(14px,env(safe-area-inset-right)) + 10px);bottom:calc(max(14px,env(safe-area-inset-bottom)) + 8px);border-color:#14f195;background:rgba(8,50,40,.78);box-shadow:0 0 18px rgba(20,241,149,.5)}
+#lookPad{position:fixed;z-index:2;display:none;pointer-events:none;right:0;top:0;width:55%;height:58%;background:transparent}
+#stick{position:fixed;z-index:3;width:148px;height:148px;margin:-74px 0 0 -74px;border-radius:50%;border:3px solid rgba(40,220,255,.65);background:rgba(10,20,50,.35);display:none;pointer-events:none;box-shadow:inset 0 0 24px rgba(40,220,255,.15)}
+#stick i{position:absolute;left:50%;top:50%;width:68px;height:68px;margin:-34px 0 0 -34px;border-radius:50%;background:rgba(40,220,255,.55);box-shadow:0 0 18px var(--cyan),inset 0 0 10px rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.35)}
+#stickHint{position:fixed;z-index:2;left:max(22px,env(safe-area-inset-left));bottom:calc(max(18px,env(safe-area-inset-bottom)) + 130px);font-size:10px;opacity:.55;display:none;pointer-events:none;letter-spacing:1.5px;text-shadow:0 0 6px #000}
+#tip{position:fixed;inset:0;z-index:20;display:none;align-items:flex-end;justify-content:center;padding:0 14px calc(max(18px,env(safe-area-inset-bottom)) + 8px);background:radial-gradient(ellipse at 50% 70%,rgba(5,6,15,.15),rgba(5,6,15,.72));pointer-events:auto}
+#tip.show{display:flex}
+#tip .box{max-width:380px;width:100%;background:rgba(8,6,28,.92);border:2px solid rgba(40,220,255,.7);border-radius:16px;padding:14px 14px 12px;box-shadow:0 0 28px rgba(153,69,255,.45);text-align:center}
+#tip h3{margin:0 0 8px;font-size:14px;letter-spacing:2px;color:var(--cyan)}
+#tip .rows{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;text-align:left;margin:8px 0 10px}
+#tip .rows div{background:rgba(255,255,255,.05);border-radius:8px;padding:8px 9px;line-height:1.35}
+#tip .rows b{color:var(--gold);display:block;margin-bottom:2px}
+#tip .got{width:100%;padding:12px;border-radius:12px;border:2px solid var(--teal);background:linear-gradient(180deg,rgba(20,241,149,.3),rgba(20,241,149,.08));color:#fff;font:900 13px Orbitron,sans-serif;letter-spacing:2px;touch-action:manipulation}
+#lookSlow{position:fixed;z-index:5;display:none;left:max(10px,env(safe-area-inset-left));bottom:calc(max(12px,env(safe-area-inset-bottom)) + 58px);min-width:86px;height:36px;border-radius:12px;border:2px solid rgba(255,210,74,.85);background:rgba(8,6,24,.82);color:#ffe9a8;font:900 10px Orbitron,sans-serif;letter-spacing:1px;touch-action:manipulation;padding:0 10px;box-shadow:0 0 10px rgba(255,210,74,.25)}
+#lookSlow.on{background:rgba(255,210,74,.28);box-shadow:0 0 12px rgba(255,210,74,.45)}
+/* portrait phone: compact top HUD, palette bottom-left away from buttons, keep play center clear */
+body.touch #badge{font-size:9px;padding:5px 8px;max-width:42vw}body.touch #badge b{font-size:11px}body.touch #badge span{font-size:8px;display:block}
+body.touch #shards{padding:5px 9px 4px;margin-right:50px}body.touch #shards .n{font-size:17px}body.touch #shards .l{font-size:9px}body.touch #shards .nv{font-size:7.5px;max-width:110px}
+body.touch #pauseBtn{width:44px;height:44px;font-size:13px}
 body.touch #clock{display:none}
-body.touch #badge{font-size:9px;padding:5px 8px}body.touch #badge b{font-size:11px}body.touch #badge span{font-size:8px}body.touch #shards{padding:4px 8px 4px}body.touch #shards .n{font-size:15px}body.touch #shards .nv{font-size:7.5px}
+body.touch #palette{left:max(8px,env(safe-area-inset-left));right:auto;transform:none;top:auto;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 8px);max-width:min(46vw,210px);overflow-x:auto;-webkit-overflow-scrolling:touch;gap:3px;padding:4px;border-radius:14px;background:rgba(8,6,24,.7)}
+body.touch .chip{width:36px;height:36px;border-radius:10px;flex:0 0 auto}
+body.touch .chip .k{font-size:8px}body.touch .chip .c{font-size:7.5px;padding:0 2px}
+body.touch #matName{left:max(10px,env(safe-area-inset-left));transform:none;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 54px);top:auto;font-size:10px;letter-spacing:1px;opacity:.9;max-width:46vw;text-align:left}
+body.touch #cross{width:36px;height:36px;margin:-18px 0 0 -18px}body.touch #cross svg{width:36px;height:36px}
+body.touch #target{font-size:9px;top:calc(50% + 22px)}
+/* landscape: buttons sit lower-right with more room; palette as thin top strip */
+@media (orientation:landscape){
+  body.touch #bMine{width:64px;height:64px;right:max(10px,env(safe-area-inset-right));bottom:calc(max(8px,env(safe-area-inset-bottom)) + 72px)}
+  body.touch #bBuild{width:56px;height:56px;right:calc(max(10px,env(safe-area-inset-right)) + 76px);bottom:calc(max(8px,env(safe-area-inset-bottom)) + 96px)}
+  body.touch #bJump{width:56px;height:56px;right:calc(max(10px,env(safe-area-inset-right)) + 6px);bottom:calc(max(8px,env(safe-area-inset-bottom)) + 4px)}
+  body.touch #palette{left:50%;transform:translateX(-50%);top:calc(max(6px,env(safe-area-inset-top)) + 4px);bottom:auto;max-width:70vw;padding:3px}
+  body.touch #matName{left:50%;transform:translateX(-50%);top:calc(max(6px,env(safe-area-inset-top)) + 48px);bottom:auto;text-align:center;max-width:70vw}
+  body.touch #lookSlow{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 6px)}
+  body.touch #stickHint{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 70px)}
+}
 /* menu */
 #menu{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(60,20,110,.75),rgba(5,6,15,.94));padding:16px;overflow:auto}
 #menu.hide{display:none}
@@ -89,9 +116,24 @@ body.touch #badge{font-size:9px;padding:5px 8px}body.touch #badge b{font-size:11
 <div class="hud" id="palette"></div>
 <div id="stick"><i></i></div>
 <div id="stickHint">DRAG TO MOVE</div>
-<button class="tbtn" id="bMine">MINE</button>
-<button class="tbtn" id="bBuild">BUILD</button>
-<button class="tbtn" id="bJump">JUMP</button>
+<button class="tbtn" id="bMine" aria-label="Hold to mine">MINE</button>
+<button class="tbtn" id="bBuild" aria-label="Place piece">BUILD</button>
+<button class="tbtn" id="bJump" aria-label="Jump">JUMP</button>
+<button id="lookSlow" aria-label="Slower look" type="button">LOOK: NORM</button>
+<div id="lookPad" aria-hidden="true"></div>
+<div id="tip">
+ <div class="box">
+  <h3>PHONE CONTROLS</h3>
+  <div class="rows">
+   <div><b>LEFT</b>drag to move</div>
+   <div><b>RIGHT</b>drag to look</div>
+   <div><b>HOLD MINE</b>dig / zap FUD</div>
+   <div><b>BUILD</b>places a piece</div>
+  </div>
+  <p style="margin:0 0 8px;font-size:10px;opacity:.75">Soft tiles mine with a quick tap. Use LOOK: SLOW if looking feels too fast.</p>
+  <button class="got" id="tipGot" type="button">GOT IT</button>
+ </div>
+</div>
 <div id="menu">
  <div class="card">
   <img src="../assets/logo.webp" alt="$BOSS">
@@ -104,9 +146,9 @@ body.touch #badge{font-size:9px;padding:5px 8px}body.touch #badge b{font-size:11
    <div><b>1–8 / WHEEL</b> pick piece</div><div><b>R</b> back to plaza · <b>ESC</b> menu</div>
   </div>
   <div class="ctl" id="ctlTouch" style="display:none">
-   <div><b>LEFT THUMB</b> drag to move</div><div><b>RIGHT THUMB</b> drag to look</div>
-   <div><b>HOLD MINE</b> dig / zap FUD</div><div><b>BUILD</b> place piece · <b>JUMP</b></div>
-   <div><b>TOP STRIP</b> pick piece</div><div><b>II</b> menu / save</div>
+   <div><b>LEFT</b> drag to move</div><div><b>RIGHT</b> drag to look (slower by default)</div>
+   <div><b>HOLD MINE</b> dig · tap soft tiles</div><div><b>BUILD</b> place · <b>JUMP</b></div>
+   <div><b>BOTTOM-LEFT</b> pick piece</div><div><b>LOOK: SLOW</b> toggle · <b>II</b> menu</div>
   </div>
   <button class="btn" id="playBtn">PLAY</button><br>
   <button class="btn sm" id="resetBtn">NEW WORLD</button><a class="btn sm" href="../">$BOSS SITE</a><a class="btn sm pk" href="../game/">RUNNER (PRACTICE)</a>
