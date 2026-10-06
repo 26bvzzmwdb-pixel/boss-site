@@ -167,91 +167,249 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
 .sv-c button{margin-top:6px;width:100%}
 .ms-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin:10px 0}.ms-row img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:10px}
 .lst{max-height:260px;overflow:auto;font-size:13px}.lst code{font-size:12px;overflow-wrap:anywhere}
+/* ===== polish pass 2026-10-06 ===== */
+section{padding:64px 0;scroll-margin-top:64px}
+section.band{background:linear-gradient(180deg,rgba(170,90,255,.06),rgba(40,220,255,.04));border-top:1px solid rgba(170,90,255,.14);border-bottom:1px solid rgba(170,90,255,.14)}
+.sh{text-align:center;max-width:720px;margin:0 auto 26px}
+.sh h2{margin-bottom:8px}
+.eyebrow{display:inline-block;font:800 11px var(--hd);letter-spacing:2.2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px}
+.sh p{color:var(--mut);margin:0}
+/* nav */
+nav .links .t{white-space:nowrap}
+nav .links a.t{display:none}
+@media(min-width:1000px){nav .links a.t{display:inline-block;padding:8px 8px}}
+nav .play-n{--c:var(--gold);background:linear-gradient(180deg,rgba(255,210,74,.2),rgba(40,28,4,.9))}
+.burger{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:11px;border:1.5px solid rgba(170,90,255,.5);background:rgba(10,12,40,.85);color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.burger svg{width:22px;height:22px}
+@media(min-width:1000px){.burger{display:none}}
+.mnav{display:none;border-top:1px solid rgba(170,90,255,.25);background:rgba(5,6,15,.97);padding:8px 18px 16px}
+nav.open .mnav{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mnav a{color:var(--txt);text-decoration:none;font:700 14px var(--hd);padding:12px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
+@media(min-width:1000px){nav.open .mnav{display:none}}
+/* hero */
+.hero{padding:22px 0 30px}
+.logo{width:min(44vw,190px);margin:14px auto 6px}
+.offer{position:relative;max-width:680px;margin:6px auto 14px;padding:14px 16px;border-radius:16px;border:1.5px solid rgba(122,200,58,.75);background:linear-gradient(180deg,rgba(60,90,20,.45),rgba(12,12,38,.85));box-shadow:0 0 26px rgba(122,200,58,.22)}
+.offer .ot{font:800 clamp(17px,4.6vw,22px)/1.25 var(--hd);color:#fff;margin:0}
+.offer .os{font-size:14px;color:#cfe7b8;margin:6px 0 0}
+.offer .cdn{display:inline-block;font:800 13px var(--hd);color:#e8ffd0;background:rgba(0,0,0,.35);border:1px solid rgba(122,200,58,.5);border-radius:99px;padding:4px 10px;margin-top:8px}
+.offer.generic{border-color:rgba(255,210,74,.55);background:linear-gradient(180deg,rgba(40,28,4,.55),rgba(12,12,38,.85));box-shadow:0 0 26px rgba(255,210,74,.18)}
+.offer.generic .os{color:#e9dcb4}
+.btn.xl{min-height:58px;font-size:17px;padding:0 28px}
+.herobtns{max-width:620px}
+.socials{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:760px;margin:12px auto 0}
+.socials .btn{min-height:42px;font-size:13px;padding:0 14px;border-radius:12px;flex:1 1 140px;max-width:190px}
+/* facts strip */
+.facts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:22px auto 0;max-width:1080px}
+@media(min-width:820px){.facts{grid-template-columns:repeat(5,1fr)}}
+.facts div{background:var(--panel);border:1.5px solid rgba(40,220,255,.25);border-radius:14px;padding:12px 12px;text-align:left;font-size:13px;color:var(--mut);line-height:1.35}
+.facts b{display:block;font:800 14px var(--hd);color:#fff;margin:4px 0 2px}
+.facts .fi{font-size:22px}
+.facts div:last-child:nth-child(odd){grid-column:1/-1}
+@media(min-width:820px){.facts div:last-child:nth-child(odd){grid-column:auto}}
+/* game layout */
+.gamegrid{display:grid;gap:22px;align-items:start}
+@media(min-width:900px){.gamegrid{grid-template-columns:460px 1fr}}
+.shots{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.shots figure{margin:0;border-radius:14px;overflow:hidden;border:1.5px solid rgba(40,220,255,.4);background:#000}
+.shots img{width:100%;height:auto;aspect-ratio:3/4;object-fit:cover;object-position:top}
+.shots figcaption{font:700 11px var(--hd);padding:7px 8px;color:#fff;background:rgba(0,0,0,.6);text-align:center}
+.how{grid-template-columns:repeat(2,1fr)}
+/* maps 6 */
+.maps{grid-template-columns:repeat(6,1fr)}
+.maps img{width:100%;height:auto;aspect-ratio:360/760;object-fit:cover;object-position:top}
+/* leaderboard */
+.podium{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;align-items:end;margin:16px 0 8px}
+.podium div{text-align:center;border-radius:12px 12px 6px 6px;background:linear-gradient(180deg,rgba(255,210,74,.28),rgba(255,210,74,.06));border:1px solid rgba(255,210,74,.45);font:800 13px var(--hd);color:#ffe9a8;padding:10px 2px 8px;display:flex;flex-direction:column;justify-content:flex-end}
+.podium small{display:block;color:var(--mut);font:600 11px system-ui;margin-top:2px}
+.lbcta{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+/* skins gallery */
+.feature{display:grid;gap:18px;align-items:center}
+@media(min-width:860px){.feature{grid-template-columns:1.25fr 1fr}}
+.feature img{width:100%;height:auto;border-radius:14px;border:2px solid #7ac83a;box-shadow:0 0 26px rgba(122,200,58,.3)}
+.tagline{display:inline-block;font:800 11px var(--hd);letter-spacing:1px;padding:4px 10px;border-radius:99px;margin:0 6px 8px 0}
+.tag-live{color:#0b1a04;background:#9fe35a}
+.tag-closed{color:#fff;background:rgba(255,255,255,.15)}
+.tag-soon{color:#1a1204;background:var(--gold)}
+.tag-ms{color:#fff;background:var(--purp)}
+.gal{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}
+@media(min-width:700px){.gal{grid-template-columns:repeat(5,1fr)}}
+.gal figure{margin:0;text-align:center;background:rgba(255,255,255,.03);border:1.5px solid rgba(255,210,74,.35);border-radius:14px;padding:8px}
+.gal img{width:100%;height:auto;aspect-ratio:240/288;object-fit:cover;border-radius:10px}
+.gal figcaption{font-size:12.5px;line-height:1.35;margin-top:6px;color:var(--mut)}
+.gal figcaption b{display:block;color:#fff;font:800 13px var(--hd)}
+.gal figure:last-child:nth-child(odd){grid-column:1/-1;max-width:50%;margin:0 auto}
+@media(min-width:700px){.gal figure:last-child:nth-child(odd){grid-column:auto;max-width:none}}
+details.more{margin-top:16px;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:4px 14px;background:rgba(0,0,0,.2)}
+details.more summary{cursor:pointer;font:700 13px var(--hd);color:var(--cyan);padding:10px 0}
+/* roadmap */
+.road{display:grid;gap:16px}
+@media(min-width:820px){.road{grid-template-columns:1fr 1fr}}
+.tl{list-style:none;margin:10px 0 0;padding:0}
+.tl li{position:relative;padding:8px 0 8px 30px;border-left:2px solid rgba(255,255,255,.1);margin-left:8px}
+.tl li:before{content:"";position:absolute;left:-7px;top:13px;width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+.tl.next li:before{background:var(--gold);box-shadow:0 0 10px var(--gold)}
+.tl li b{color:#fff}
+.tl li span{display:block;font-size:13px;color:var(--mut)}
+/* steps */
+.steps{display:grid;gap:12px;counter-reset:s}
+@media(min-width:820px){.steps{grid-template-columns:repeat(4,1fr)}}
+.steps div{position:relative;background:var(--panel);border:1.5px solid rgba(40,255,140,.3);border-radius:16px;padding:44px 14px 14px;font-size:14px}
+.steps div:before{counter-increment:s;content:counter(s);position:absolute;left:14px;top:12px;width:24px;height:24px;border-radius:50%;background:var(--green);color:#03140a;font:900 13px/24px var(--hd);text-align:center}
+.steps b{display:block;color:#fff;font:800 14px var(--hd);margin-bottom:4px}
+.note{margin-top:14px;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(255,50,80,.55);background:rgba(40,4,12,.55);font-size:14px}
+.note.ok{border-color:rgba(40,220,255,.45);background:rgba(4,24,40,.55)}
+/* community + trust */
+.comm{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
+@media(min-width:820px){.comm{grid-template-columns:repeat(4,1fr)}}
+.comm a{display:block;text-decoration:none;color:var(--txt);background:var(--panel);border:1.5px solid rgba(170,90,255,.35);border-radius:16px;padding:16px;transition:transform .15s,border-color .2s}
+.comm a:hover{transform:translateY(-3px);border-color:var(--cyan)}
+.comm b{display:block;font:800 15px var(--hd);color:#fff;margin:6px 0 2px}
+.comm span{font-size:13px;color:var(--mut)}
+.comm .ci{font-size:26px}
+.trust{display:grid;gap:12px}
+@media(min-width:700px){.trust{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1000px){.trust{grid-template-columns:repeat(3,1fr)}}
+.trust div{background:var(--panel);border:1.5px solid rgba(40,220,255,.25);border-radius:16px;padding:16px;font-size:14px}
+.trust b{display:block;font:800 14px var(--hd);color:#fff;margin:6px 0 4px}
+.trust .ti{font-size:22px}
+/* faq */
+.faq{max-width:820px;margin:0 auto;display:grid;gap:10px}
+.faq details{background:var(--panel);border:1.5px solid rgba(170,90,255,.3);border-radius:14px;padding:0 16px}
+.faq summary{cursor:pointer;list-style:none;font:700 15px var(--hd);color:#fff;padding:15px 26px 15px 0;position:relative}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:after{content:"+";position:absolute;right:0;top:12px;font-size:22px;color:var(--cyan)}
+.faq details[open] summary:after{content:"–"}
+.faq details p{margin:0 0 14px;color:var(--txt);font-size:15px}
+/* footer */
+footer{text-align:left}
+.fcols{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-bottom:22px}
+@media(min-width:820px){.fcols{grid-template-columns:1.4fr repeat(4,1fr)}}
+.fcols h4{font:800 12px var(--hd);letter-spacing:1.5px;color:#fff;margin:0 0 8px}
+.fcols a{display:block;color:var(--mut);text-decoration:none;padding:3px 0}
+.fcols a:hover{color:var(--cyan)}
+.fbrand{grid-column:1/-1}
+@media(min-width:820px){.fbrand{grid-column:auto}}
+.fbrand img{width:44px;height:44px;border-radius:50%;margin-bottom:8px}
+@media(max-width:600px){.logo{width:min(34vw,140px);margin:8px auto 4px}.hero h1{font-size:clamp(40px,12vw,64px)}.hero .tag{font-size:13px;margin-bottom:10px}.offer{padding:12px 13px}.offer .os{font-size:13px}}
+.fdisc{border-top:1px solid rgba(170,90,255,.2);padding-top:14px;font-size:12.5px;line-height:1.5}
 </style>
 </head>
 <body>
-<nav><div class="wrap">
+<nav id="nav"><div class="wrap">
   <a class="brand" href="#top"><img src="assets/logo.webp" alt="" width="34" height="34">$BOSS</a>
   <div class="links">
-    <a class="t" href="#play">Game</a><a class="t" href="#vote">Vote</a><a class="t" href="#rewards">Rewards</a><a class="t" href="#transparency">Transparency</a><a class="t" href="#disclaimer">Disclaimer</a>
-    <a class="btn sm buy needs-ca" href="#" target="_blank" rel="noopener" hidden>Buy</a>
+    <a class="t" href="#play">Game</a><a class="t" href="#maps">Maps</a><a class="t" href="#drops">Skins</a><a class="t" href="#rewards">Leaderboard</a><a class="t" href="#roadmap">Roadmap</a><a class="t" href="#get">Get $BOSS</a><a class="t" href="#faq">FAQ</a>
+    <a class="btn sm play-n" href="#play">▶ Play</a>
+    <button class="burger" id="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mnav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </div>
+</div>
+<div class="mnav" id="mnav">
+  <a href="#play">🎮 Game</a><a href="#maps">🗺️ Maps</a><a href="#vote">🗳️ Map vote</a><a href="#drops">👑 Skins</a><a href="#rewards">🏆 Leaderboard</a><a href="#roadmap">🛠️ Roadmap</a><a href="#get">🪙 Get $BOSS</a><a href="#community">💬 Community</a><a href="#transparency">🔎 Transparency</a><a href="#faq">❓ FAQ</a>
 </div></nav>
 
 <header class="hero" id="top">
   <div class="bnr" aria-hidden="true"></div>
   <div class="wrap">
     <div class="logo"><img src="assets/logo.webp" alt="$BOSS crown logo" width="512" height="512"></div>
-    <div class="crown" aria-hidden="true">👑</div>
     <h1>$BOSS</h1>
     <p class="sub">OHIO FINAL BOSS</p>
-    <p class="tag">boss dodge the rugs 🦅 · on pump.fun (Solana)</p>
-    <span class="pill">🎮 FREE-TO-PLAY · 6 MAPS · WIN SOL</span>
-    <p class="pitch"><b>Dodge the rugs. Beat the boss. Top the board.</b> A free neon endless runner where every 3-day round pays the top 5 in SOL.</p>
-    <ul class="hl">
-      <li>🗺️ <b>6 maps.</b> From Round 3 the ranked map rotates every 3 days by community vote. New maps added to the vote every round.</li>
-      <li>🏆 <b>Top 5 win SOL</b> each round, paid from creator fees.</li>
-      <li>👑 <b>Holder skins are real Solana NFTs</b> (compressed, verified collection “$BOSS Holder Skins”). Launch drop now: <a href="#drops">Troglodyte Fudder</a> (Round 2, through Wed Oct 7, 9 PM ET). Map drops from Round 3.</li>
-      <li>⚔️ <b>1v1 duels</b> coming in Round 4.</li>
-    </ul>
-    <div class="herobtns"><a class="btn play" href="#play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>Play free</a><a class="btn" href="#vote">🗳️ Vote the next map</a></div>
-    <p class="fine">Meme coin · not financial advice · prizes only from creator fees received · <a href="rules.html">official rules</a></p>
+    <p class="tag">A free neon endless runner + joke meme coin · on pump.fun (Solana)</p>
+    <!-- headline offer: JS swaps to the generic version after the Troglodyte Fudder claim closes (Wed Oct 7, 9 PM ET) -->
+    <div class="offer" id="offer">
+      <p class="ot" id="offer-t">Play the $BOSS runner free. Troglodyte Fudder skin claim closes Wed Oct 7, 9 PM ET.</p>
+      <p class="os" id="offer-s">Dodge the rugs, beat the boss, top the board. Holders (100K+ $BOSS) claim the limited caveman skin free in the ranked game. Cosmetic only.</p>
+      <span class="cdn" id="offer-cd" hidden></span>
+    </div>
+    <div class="herobtns"><a class="btn play xl" id="hero-play" href="#play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span id="hero-play-txt">Play now, free</span></a><a class="btn" id="hero-sec" href="#drops">👑 See the skins</a></div>
+    <p class="fine">No purchase or tokens needed to play or win · prizes only from creator fees received · <a href="rules.html">official rules</a> · meme coin, not financial advice</p>
     <div class="ca soon" id="ca">
       <span class="lbl">CA</span>
       <code id="ca-text">4AcmBHJaSqJCDT99W769ecEXupsj7mkr2Wdfien2pump</code>
       <button class="copy" id="copy" type="button" aria-label="Copy contract address" hidden>Copy</button>
     </div>
-    <p class="warn-ca"><span id="ca-note">The new $BOSS contract address will be posted here and on X at launch. Ignore any CA from DMs or other accounts.</span> Always double-check the full contract address. Only trust links from <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>.</p>
-    <div class="cta">
-      <a class="btn buy needs-ca" href="#" target="_blank" rel="noopener" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M4 17l6-6 4 4 6-8"/><path d="M15 7h5v5"/></svg>Buy on pump.fun</a>
-      <a class="btn x" href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>Follow on X</a>
-      <a class="btn tg" href="https://t.me/TheBossCoinohio" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.8 3.2 18.5 20c-.25 1.2-.92 1.5-1.87.94l-5.15-3.8-2.49 2.4c-.28.28-.52.52-1.06.52l.38-5.27 9.6-8.67c.42-.38-.09-.59-.65-.21L5.38 13.52.25 11.91c-1.12-.35-1.14-1.12.23-1.65L20.55 2.4c.93-.35 1.74.22 1.25.8Z"/></svg>Telegram</a>
-      <a class="btn tt" href="https://www.tiktok.com/@bosscoinrunner" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>TikTok</a>
-      <a class="btn dc" href="https://discord.gg/ftTwgfZja" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.32 4.37A19.8 19.8 0 0 0 15.4 2.84a13.7 13.7 0 0 0-.63 1.29 18.4 18.4 0 0 0-5.53 0 12.6 12.6 0 0 0-.64-1.29 19.7 19.7 0 0 0-4.93 1.53C.54 9.06-.3 13.63.12 18.14a19.9 19.9 0 0 0 6.04 3.05c.49-.66.92-1.36 1.3-2.1a12.9 12.9 0 0 1-2.04-.98c.17-.13.34-.26.5-.39a14.2 14.2 0 0 0 12.16 0c.17.14.33.27.5.39-.65.39-1.33.71-2.05.98.38.74.81 1.44 1.3 2.1a19.8 19.8 0 0 0 6.05-3.05c.5-5.23-.84-9.76-3.56-13.77ZM8.02 15.37c-1.18 0-2.16-1.09-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.1 2.16 2.42c0 1.33-.95 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.16-1.09-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.1 2.16 2.42c0 1.33-.95 2.42-2.16 2.42Z"/></svg>Discord</a>
-      <a class="btn play" id="hero-play" href="#play">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span id="hero-play-txt">Play the game</span></a>
+    <p class="warn-ca"><span id="ca-note">The $BOSS contract address is posted here and on X.</span> Always double-check the full contract address. Only trust links from <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>. Ignore any CA sent in DMs.</p>
+    <div class="socials">
+      <a class="btn buy needs-ca" href="#" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M4 17l6-6 4 4 6-8"/><path d="M15 7h5v5"/></svg>pump.fun</a>
+      <a class="btn x" href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>X</a>
+      <a class="btn tg" href="https://t.me/TheBossCoinohio" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.8 3.2 18.5 20c-.25 1.2-.92 1.5-1.87.94l-5.15-3.8-2.49 2.4c-.28.28-.52.52-1.06.52l.38-5.27 9.6-8.67c.42-.38-.09-.59-.65-.21L5.38 13.52.25 11.91c-1.12-.35-1.14-1.12.23-1.65L20.55 2.4c.93-.35 1.74.22 1.25.8Z"/></svg>Telegram</a>
+      <a class="btn dc" href="https://discord.gg/ftTwgfZja" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.32 4.37A19.8 19.8 0 0 0 15.4 2.84a13.7 13.7 0 0 0-.63 1.29 18.4 18.4 0 0 0-5.53 0 12.6 12.6 0 0 0-.64-1.29 19.7 19.7 0 0 0-4.93 1.53C.54 9.06-.3 13.63.12 18.14a19.9 19.9 0 0 0 6.04 3.05c.49-.66.92-1.36 1.3-2.1a12.9 12.9 0 0 1-2.04-.98c.17-.13.34-.26.5-.39a14.2 14.2 0 0 0 12.16 0c.17.14.33.27.5.39-.65.39-1.33.71-2.05.98.38.74.81 1.44 1.3 2.1a19.8 19.8 0 0 0 6.05-3.05c.5-5.23-.84-9.76-3.56-13.77ZM8.02 15.37c-1.18 0-2.16-1.09-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.1 2.16 2.42c0 1.33-.95 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.16-1.09-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.1 2.16 2.42c0 1.33-.95 2.42-2.16 2.42Z"/></svg>Discord</a>
+      <a class="btn tt" href="https://www.tiktok.com/@bosscoinrunner" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>TikTok</a>
+    </div>
+    <div class="facts">
+      <div><span class="fi">🎮</span><b>Free to play</b>Practice in any browser. Ranked with the free Phantom wallet.</div>
+      <div><span class="fi">🗺️</span><b>6 maps</b>Ohio plus 5 themed maps, each with its own boss fight.</div>
+      <div><span class="fi">⏱️</span><b>3-day rounds</b>3 ranked tries per wallet each round. Fresh board every round.</div>
+      <div><span class="fi">🏆</span><b>Top 5 paid in SOL</b>From 20% of the creator fees received that round.</div>
+      <div><span class="fi">🛡️</span><b>Server-checked</b>Every ranked run is signed and replayed by the server.</div>
     </div>
   </div>
 </header>
 
 <main>
-<section id="play"><div class="wrap">
-  <h2>🎮 $BOSS <span class="k">RUNNER</span></h2>
-  <p class="muted" style="margin-top:-6px" id="play-sub">Free to play in your browser. No wallet, no purchase, no tokens, no download needed.</p>
-  <div id="practice-main">
-    <p class="pill" id="practice-note" style="margin:0 0 12px">🎮 PRACTICE MODE · NOT ELIGIBLE FOR PRIZES</p>
-    <p class="mini" style="margin-top:0">This version is just for practice. Prizes only count in ranked mode (Phantom, server-checked).</p>
-  </div>
-  <div class="gamebox" id="gamebox">
-    <button class="start" id="loadgame" type="button" aria-label="Load the game"><span class="big">▶</span>TAP TO LOAD THE GAME<span class="muted" style="font:600 12px system-ui">≈300 KB · sound on after first tap</span></button>
-    <!-- ranked mode (deploy/set_server_url.sh sets ranked_url in boss_config.json -> config.js): the main game is the ranked server -->
-    <a class="start" id="rankedstart" href="#" hidden><span class="big">▶</span>PLAY RANKED<span class="muted" style="font:600 12px system-ui">Phantom wallet · free · 3 tries per round · scores checked by the server</span></a>
-  </div>
-  <div class="under">
-    <a class="btn sm play" id="ranked" href="#" hidden>▶ Play ranked (Phantom)</a>
-    <a class="btn sm play" id="fullscreen" href="game/" target="_blank" rel="noopener">Open fullscreen ↗</a>
-    <a class="btn sm" href="rules.html">Official rules</a>
-    <a class="btn sm" id="practice-link" href="game/" target="_blank" rel="noopener" hidden>Practice (not eligible for prizes) ↗</a>
-  </div>
-  <div class="card" id="nophantom-note" style="margin-top:14px;text-align:center" hidden>
-    <p style="margin:0 0 10px"><b>On your phone?</b> Ranked needs the free <b>Phantom</b> wallet app. Open the game inside Phantom, or play practice now (free, not eligible for prizes).</p>
-    <div class="under" style="margin-top:0"><a class="btn sm play" id="np-open" href="#">Open in Phantom</a><a class="btn sm" href="game/">Play practice instead</a></div>
-  </div>
-  <div class="how">
-    <div><b>TAP</b>Jump · tap again to double jump</div>
-    <div><b>SWIPE DOWN</b>Slam: smash candles &amp; FUD</div>
-    <div><b>EVERY ~45s</b>Boss fight: dodge, then slam it 3×</div>
-    <div><b>DESKTOP</b>Space / ↑ jump · ↓ slam</div>
+<section id="play" class="band"><div class="wrap">
+  <div class="sh"><span class="eyebrow">The game</span>
+    <h2>🎮 $BOSS <span class="k">RUNNER</span></h2>
+    <p id="play-sub">Free to play in your browser. No wallet, no purchase, no tokens, no download needed.</p></div>
+  <div class="gamegrid">
+    <div>
+      <div id="practice-main">
+        <p class="pill" id="practice-note" style="margin:0 0 12px">🎮 PRACTICE MODE · NOT ELIGIBLE FOR PRIZES</p>
+        <p class="mini" style="margin-top:0">This version is just for practice. Prizes only count in ranked mode (Phantom, server-checked).</p>
+      </div>
+      <div class="gamebox" id="gamebox">
+        <button class="start" id="loadgame" type="button" aria-label="Load the game"><span class="big">▶</span>TAP TO LOAD THE GAME<span class="muted" style="font:600 12px system-ui">≈300 KB · sound on after first tap</span></button>
+        <!-- ranked mode (deploy/set_server_url.sh sets ranked_url in boss_config.json -> config.js): the main game is the ranked server -->
+        <a class="start" id="rankedstart" href="#" hidden><span class="big">▶</span>PLAY RANKED<span class="muted" style="font:600 12px system-ui">Phantom wallet · free · 3 tries per round · scores checked by the server</span></a>
+      </div>
+      <div class="under">
+        <a class="btn sm play" id="ranked" href="#" hidden>▶ Play ranked (Phantom)</a>
+        <a class="btn sm play" id="fullscreen" href="game/" target="_blank" rel="noopener">Open fullscreen ↗</a>
+        <a class="btn sm" href="rules.html">Official rules</a>
+        <a class="btn sm" id="practice-link" href="game/" target="_blank" rel="noopener" hidden>Practice (not eligible for prizes) ↗</a>
+      </div>
+      <div class="card" id="nophantom-note" style="margin-top:14px;text-align:center" hidden>
+        <p style="margin:0 0 10px"><b>On your phone?</b> Ranked needs the free <b>Phantom</b> wallet app. Open the game inside Phantom, or play practice now (free, not eligible for prizes).</p>
+        <div class="under" style="margin-top:0"><a class="btn sm play" id="np-open" href="#">Open in Phantom</a><a class="btn sm" href="game/">Play practice instead</a></div>
+      </div>
+    </div>
+    <div>
+      <div class="shots">
+        <figure><img src="assets/shots/ohio_run.webp" width="540" height="1169" loading="lazy" alt="Gameplay screenshot: the crown runner on the neon Ohio map, collecting $BOSS coins"><figcaption>🌽 Ohio run</figcaption></figure>
+        <figure><img src="assets/shots/ohio_boss.webp" width="540" height="1169" loading="lazy" alt="Gameplay screenshot: boss fight against The Rug Puller on the Ohio map"><figcaption>🎩 Boss fight: The Rug Puller</figcaption></figure>
+      </div>
+      <h3 style="margin:18px 0 8px;font-size:15px;color:#fff">How to play</h3>
+      <div class="how" style="margin-top:0">
+        <div><b>TAP</b>Jump · tap again to double jump</div>
+        <div><b>SWIPE DOWN</b>Slam: smash candles &amp; FUD</div>
+        <div><b>EVERY ~45s</b>Boss fight: dodge, then slam it 3×</div>
+        <div><b>DESKTOP</b>Space / ↑ jump · ↓ slam</div>
+      </div>
+    </div>
   </div>
 </div></section>
 
-<section id="vote" hidden><div class="wrap">
-  <h2>🗳️ Vote the <span id="vote-h">Round 3</span> <span class="k">ranked map</span></h2>
+<section id="maps"><div class="wrap">
+  <div class="sh"><span class="eyebrow">Maps</span>
+    <h2>📼 Gameplay: <span class="k">6 maps</span></h2>
+    <p>Real practice-mode runs, boss fights included. Every map is free to play in <a href="game/">practice</a>.</p></div>
+  <div class="maps">
+    <figure style="--mc:#ff4fd8"><img src="assets/runner_poster.jpg" width="540" height="1169" loading="lazy" alt="Ohio map gameplay"><figcaption>🌽 Ohio</figcaption></figure>
+    <figure style="--mc:#ff8a1f"><video class="mapclip" src="assets/maps/grave.mp4" poster="assets/maps/grave.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Haunted Graveyard practice gameplay"></video><figcaption>🎃 Haunted Graveyard</figcaption></figure>
+    <figure style="--mc:#ffc83a"><video class="mapclip" src="assets/maps/factory.mp4" poster="assets/maps/factory.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Rug Pull Factory practice gameplay"></video><figcaption>🏭 Rug Pull Factory</figcaption></figure>
+    <figure style="--mc:#9ec8ff"><video class="mapclip" src="assets/maps/moon.mp4" poster="assets/maps/moon.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Moon Mission practice gameplay"></video><figcaption>🚀 Moon Mission</figcaption></figure>
+    <figure style="--mc:#3ad0ff"><video class="mapclip" src="assets/maps/surf.mp4" poster="assets/maps/surf.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Shark Bay Surf practice gameplay"></video><figcaption>🏄 Shark Bay Surf</figcaption></figure>
+    <figure style="--mc:#ffb03a"><video class="mapclip" src="assets/maps/climb.mp4" poster="assets/maps/climb.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Prehistoric Climb practice gameplay"></video><figcaption>🦖 Prehistoric Climb</figcaption></figure>
+  </div>
+  <p class="mini swipe">swipe for more maps →</p>
+  <details class="allmaps"><summary>Watch the 5 themed maps side by side</summary>
+    <div class="vid"><video src="assets/maps/all_maps.mp4" poster="assets/maps/all_maps.jpg" controls playsinline muted preload="none" width="1280" height="720"></video></div>
+  </details>
+</div></section>
+
+<section id="vote" class="band" hidden><div class="wrap">
+  <div class="sh"><span class="eyebrow">Community vote</span>
+  <h2>🗳️ Vote the <span id="vote-h">Round 3</span> <span class="k">ranked map</span></h2></div>
   <div class="card">
     <p style="margin-top:0" id="vote-head">Round 2 stays on <b>Ohio</b>. This vote picks the ranked map for <b>Round 3</b>. <b>Free</b>: no purchase, no tokens, no transaction. One vote per Phantom wallet, and votes are final.</p>
     <div class="vmaps" id="vote-maps"></div>
@@ -265,98 +423,80 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
   </div>
 </div></section>
 
-<section id="video"><div class="wrap">
-  <h2>📼 Gameplay: <span class="k">all 5 maps</span></h2>
-  <p class="mini" style="text-align:center">Real practice-mode runs, boss fights included. Every map is free to play in <a href="game/">practice</a>.</p>
-  <div class="maps">
-    <figure style="--mc:#ff8a1f"><video class="mapclip" src="assets/maps/grave.mp4" poster="assets/maps/grave.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Haunted Graveyard practice gameplay"></video><figcaption>🎃 Haunted Graveyard</figcaption></figure>
-    <figure style="--mc:#ffc83a"><video class="mapclip" src="assets/maps/factory.mp4" poster="assets/maps/factory.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Rug Pull Factory practice gameplay"></video><figcaption>🏭 Rug Pull Factory</figcaption></figure>
-    <figure style="--mc:#9ec8ff"><video class="mapclip" src="assets/maps/moon.mp4" poster="assets/maps/moon.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Moon Mission practice gameplay"></video><figcaption>🚀 Moon Mission</figcaption></figure>
-    <figure style="--mc:#3ad0ff"><video class="mapclip" src="assets/maps/surf.mp4" poster="assets/maps/surf.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Shark Bay Surf practice gameplay"></video><figcaption>🏄 Shark Bay Surf</figcaption></figure>
-    <figure style="--mc:#ffb03a"><video class="mapclip" src="assets/maps/climb.mp4" poster="assets/maps/climb.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Prehistoric Climb practice gameplay"></video><figcaption>🦖 Prehistoric Climb</figcaption></figure>
-  </div>
-  <p class="mini swipe">swipe for more maps →</p>
-  <details class="allmaps"><summary>Watch all 5 side by side</summary>
-    <div class="vid"><video src="assets/maps/all_maps.mp4" poster="assets/maps/all_maps.jpg" controls playsinline muted preload="none" width="1280" height="720"></video></div>
-  </details>
-</div></section>
-
 <section id="rewards"><div class="wrap">
-  <h2>🏆 Leaderboard <span class="k">rewards</span></h2>
+  <div class="sh"><span class="eyebrow">Leaderboard</span>
+    <h2>🏆 Leaderboard <span class="k">&amp; rewards</span></h2>
+    <p>Free to enter. Top 5 each round split the prize pot. Every score on the board is checked by the server.</p></div>
   <div class="grid two">
-    <div class="card gold">
-      <span class="status">OFFICIAL RULES IN EFFECT · SEE RULES</span>
+    <div class="card">
+      <span class="status">LIVE ROUND</span>
       <p class="cd" id="round-cd">Rounds every 3 days</p>
       <p class="mini" id="round-sub">Each round runs 3 days. Tries reset every round.</p>
-      <h3 style="margin-top:12px" id="enter">How to enter</h3>
+      <h3 style="margin-top:14px">How each round's pot is split</h3>
+      <div class="podium" aria-label="Prize split by place">
+        <div style="height:96px">#1<small>40%</small></div><div style="height:80px">#2<small>25%</small></div><div style="height:68px">#3<small>15%</small></div><div style="height:60px">#4<small>12%</small></div><div style="height:54px">#5<small>8%</small></div>
+      </div>
+      <div class="split" id="split-row" hidden>
+        <div>#1<small>40%</small></div><div>#2<small>25%</small></div><div>#3<small>15%</small></div><div>#4<small>12%</small></div><div>#5<small>8%</small></div>
+      </div>
+      <p class="mini"><b id="pot-txt">Prize pot = 20% of the creator fees actually received that round</b> (the dev keeps the other 80%). If a round's pot is under <b id="min-pot">0.05 SOL</b>, nothing is paid that round and the pot <b>rolls over</b>. Shares for places nobody filled roll over too. Nothing is pre-funded or guaranteed.</p>
+      <div class="lbcta">
+        <a class="btn sm play" href="https://boss-runner-fto6.onrender.com/leaderboard" target="_blank" rel="noopener">📊 Open the live leaderboard ↗</a>
+        <a class="btn sm" href="rules.html">Official rules (v1.5.1)</a>
+      </div>
+      <p class="mini" style="margin-bottom:0">Live standings for the current round, straight from the game server. Resets every round. Results are posted on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>.</p>
+    </div>
+    <div class="card gold">
+      <h3 id="enter">How to enter</h3>
       <ul class="ticks">
         <li><b>Free to enter. No purchase necessary.</b> You never need to hold, buy or burn $BOSS to play or win.</li>
         <li><b>Who:</b> 18+ (or the age of majority where you live), worldwide where legal. Void where prohibited; not open in sanctioned regions.</li>
         <li><b>How:</b> play ranked with the free Phantom wallet. <b id="tries-txt">3 tries</b> per wallet per round. Every ranked score is checked by the server (signed and replayed).</li>
-        <li><b>Rounds last 3 days.</b> The leaderboard resets every round.</li>
-      </ul>
-      <h3 style="margin-top:12px">Ranked map: changes by vote</h3>
-      <ul class="ticks">
-        <li><b>Rounds 1 and 2:</b> Ohio.</li>
-        <li><b>From Round 3</b> (starts Wed Oct 7, 9 PM ET): the ranked map changes every 3 days by community vote: the <a href="#vote">site vote</a> (one per wallet) plus the X poll on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>.</li>
-        <li><b>Candidate maps:</b> 🎃 Haunted Graveyard · 🏭 Rug Pull Factory · 🚀 Moon Mission · 🏄 Shark Bay Surf · 🦖 Prehistoric Climb</li>
-        <li><b>New maps are added to the vote every round.</b></li>
-      </ul>
-      <div class="under" style="justify-content:flex-start;margin-top:8px"><a class="btn sm play" href="#vote">🗳️ Vote now</a><a class="btn sm" href="game/">🎮 Practice all maps free</a></div>
-      <h3 style="margin-top:14px">Prizes (Round 2 on)</h3>
-      <ul class="ticks">
-        <li>Each round's prize pot is <b>20% of the creator fees actually received during that round</b> (the dev keeps 80%). Rewards come only from pump.fun creator fees; nothing is pre-funded or guaranteed.</li>
-        <li><b>Top 5 paid:</b> 40% / 25% / 15% / 12% / 8%. If the pot is under <b>0.05 SOL</b>, nothing is paid and it rolls over to the next round.</li>
         <li>One prize per person per round. Linked wallets count as one person. Round 1 follows the rules as originally posted (v1.1).</li>
       </ul>
-      <h3 style="margin-top:14px">Holder perks &amp; what's next</h3>
+      <h3 style="margin-top:14px">Ranked map: changes by vote</h3>
       <ul class="ticks">
-        <li><b>👑 Holder perks are cosmetic only:</b> the <a href="#drops">Troglodyte Fudder launch drop</a> (Round 2) and map skin drops from Round 3 (real Solana NFTs you can mint on the <a href="https://boss-runner-fto6.onrender.com/nft" target="_blank" rel="noopener">mint page</a>), a 👑 leaderboard badge and early map access. They never affect score, tries, rank or prizes.</li>
-        <li><b>⚔️ 1v1 duels</b> come in Round 4 (Sat Oct 10, 9 PM ET). Duel rules are released in Round 3.</li>
-        <li><b>See official rules</b>: <a href="rules.html">read the official rules</a> (v1.5.1). Nothing is guaranteed.</li>
+        <li><b>Rounds 1 and 2:</b> Ohio.</li>
+        <li><b>From Round 3</b> (starts Wed Oct 7, 9 PM ET): the ranked map changes every 3 days by community vote: the <a href="#vote">site vote</a> (one per wallet) plus the X poll on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>. New maps are added to the vote every round.</li>
       </ul>
+      <div class="under" style="justify-content:flex-start;margin-top:8px"><a class="btn sm play" href="#vote">🗳️ Vote now</a><a class="btn sm" href="game/">🎮 Practice all maps free</a></div>
       <p class="muted" style="font-size:13px;margin:12px 0 0">Not financial advice. Void where prohibited. <a href="rules.html">Read the official rules</a>.</p>
     </div>
-    <div class="card">
-      <h3>How each round's pot is sized (Round 2 on)</h3>
-      <p class="mini"><b id="pot-txt">Prize pot = 20% of the creator fees actually received that round</b> (the dev keeps the other 80%). The whole pot goes to the <b>top 5</b>, split by place:</p>
-      <div class="split" id="split-row">
-        <div>#1<small>40%</small></div><div>#2<small>25%</small></div><div>#3<small>15%</small></div><div>#4<small>12%</small></div><div>#5<small>8%</small></div>
-      </div>
-      <p class="mini">If a round's pot is under <b id="min-pot">0.05 SOL</b>, nothing is paid that round and the pot <b>rolls over</b> to the next round. Shares for places nobody filled roll over too. Round 1 follows the rules as originally posted (v1.1).</p>
-      <table class="board" aria-label="Leaderboard">
-        <thead><tr><th>RANK</th><th>PLAYER</th><th style="text-align:right">SCORE</th></tr></thead>
-      </table>
-      <div class="empty">Live standings for the current round: <a href="https://boss-runner-fto6.onrender.com/leaderboard" target="_blank" rel="noopener">open the leaderboard ↗</a><br>Resets every round. Updates on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>.</div>
-    </div>
   </div>
 </div></section>
 
-<section id="skins"><div class="wrap">
-  <h2>👑 Skins <span class="k">(optional)</span></h2>
-  <div class="card">
-    <p><b>Skins are cosmetic only.</b> They change how your crown and trail look in ranked mode. That's it: no effect on gameplay, score, tries, rank or rewards.
-    <b>Tokens are never needed to play or win.</b></p>
-    <p class="mini">To unlock a skin, you burn $BOSS from your own wallet (Phantom shows the exact amount before you sign). Burned tokens are gone forever. Skins are currently <b id="skin-net">devnet (test only)</b>.</p>
-    <p class="mini"><b>👑 Holder perks (cosmetic only):</b> wallets holding 100,000+ $BOSS get a 👑 badge on the leaderboard, can claim the holder-only map skin drops for free and optionally mint them as real Solana NFTs (see <a href="#drops">Skins &amp; Drops</a>) and see new practice maps first. Holder perks never affect gameplay, score, tries, rank or rewards.</p>
-    <ul class="ticks" id="skin-list"><li>Gold Rush Crown, Toxic Green Crown, Buckeye Red Crown, Void Crown</li></ul>
-  </div>
-</div></section>
-
-<section id="drops"><div class="wrap">
-  <h2>🎁 Skins <span class="k">&amp; Drops</span></h2>
+<section id="drops" class="band"><div class="wrap">
+  <div class="sh"><span class="eyebrow">Skins &amp; collectibles</span>
+    <h2>👑 Skins <span class="k">&amp; Drops</span></h2>
+    <p>Full-outfit skins you can wear on any map. Cosmetic only: skins never change gameplay, score, tries, rank or prizes.</p></div>
   <div class="card gold">
-    <p><b>One holder-only skin per map.</b> Each practice map gets its own collectible skin: a <b>full outfit</b> (clothes, boots, gloves, cape or back gear, a themed held item and particle effects) topped with its crown. Wear any skin you own on <b>any</b> map, and switch anytime from the title screen or the Skins menu (practice and ranked).</p>
-    <ul class="ticks">
-      <li><b>Holders only:</b> wallets holding 100,000+ $BOSS claim a drop for free during its round (signed message in Phantom, no transaction). Kept forever. The earlier you claim, the rarer it looks (#1–10 Legendary, #11–50 Epic, #51–200 Rare, then Common).</li>
-      <li><b>Launch drop: Troglodyte Fudder</b> 🧀 claimable in <b>Round 2 only</b> (Sun Oct 4, 9 PM ET to Wed Oct 7, 9 PM ET), wearable on any map. A grumpy, warty caveman FUDder with a forehead horn, green boogers, a leopard pelt and cheese-puff fingers, clutching his Cheesy Puffs and yelling “IT'S A RUG!”</li>
-      <li><b>Map drops start in Round 3</b> (Wed Oct 7, 9 PM ET): the skin of the map that wins the <a href="#vote">map vote</a>. After that, one drop per map as maps rotate.</li>
-      <li><b>Cosmetic only:</b> skins never change gameplay, score, tries, rank or prizes. Ranked play stays free for everyone, and you never need $BOSS to play or win.</li>
-      <li><b>Holder skins are real Solana NFTs</b> (compressed, verified collection “$BOSS Holder Skins”). How it works: <b>1.</b> claim the drop free during its map's round (holders 100K+). <b>2.</b> Optionally mint it as an NFT on the <a href="https://boss-runner-fto6.onrender.com/nft" target="_blank" rel="noopener">mint page</a> for about 0.00001 SOL (network fee, paid from your own wallet). It keeps its rarity number (e.g. #7 Legendary) and is tradable like any NFT. <a href="https://solscan.io/token/6eAN8Pi9GiWRGNLDNk62DyRJBqYE4MZWvEc3J67vZ5rb" target="_blank" rel="noopener">View the collection on Solscan ↗</a></li>
-    </ul>
-    <figure class="fudder" style="margin:14px 0 10px"><img src="assets/skins/fudder_wide.webp" width="960" height="540" loading="lazy" alt="Troglodyte Fudder: a warty green caveman with a forehead horn, green boogers and a leopard pelt in an RGB gaming chair, holding Cheesy Puffs. Caption: Yall still trying to grift this trash like its 2021 lol." style="width:100%;height:auto;border-radius:14px;border:2px solid #7ac83a"><figcaption class="mini">Troglodyte Fudder · Round 2 launch drop · holders 100K+ claim free in the <a href="https://boss-runner-fto6.onrender.com/" target="_blank" rel="noopener">ranked game</a> (Skins menu), then optionally mint on the <a href="https://boss-runner-fto6.onrender.com/nft" target="_blank" rel="noopener">mint page</a>. Cosmetic only.</figcaption></figure>
+    <div class="feature">
+      <figure style="margin:0"><img src="assets/skins/fudder_wide.webp" width="960" height="540" loading="lazy" alt="Troglodyte Fudder: a warty green caveman with a forehead horn, green boogers and a leopard pelt in an RGB gaming chair, holding Cheesy Puffs. Caption: Yall still trying to grift this trash like its 2021 lol."></figure>
+      <div>
+        <span class="tagline tag-live" id="fud-tag">LAUNCH DROP · CLAIM OPEN</span>
+        <h3 style="font-size:20px">Troglodyte Fudder 🧀</h3>
+        <p class="cd" id="fud-cd" style="font-size:18px">Claim closes Wed Oct 7, 9 PM ET</p>
+        <p style="margin:6px 0">A grumpy, warty caveman FUDder with a forehead horn, green boogers, a leopard pelt and cheese-puff fingers, clutching his Cheesy Puffs and yelling “IT'S A RUG!”</p>
+        <ul class="ticks">
+          <li><b>Who:</b> wallets holding 100,000+ $BOSS.</li>
+          <li><b>When:</b> Round 2 only (Sun Oct 4, 9 PM ET to Wed Oct 7, 9 PM ET).</li>
+          <li><b>How:</b> claim free in the <a href="https://boss-runner-fto6.onrender.com/" target="_blank" rel="noopener">ranked game</a> (Skins menu). It's a signed message in Phantom, not a transaction. Kept forever, wearable on any map.</li>
+          <li><b>Rarity by claim order:</b> #1–10 Legendary, #11–50 Epic, #51–200 Rare, then Common.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="margin-top:26px">🗺️ Map skins: one holder drop per map</h3>
+    <p class="mini" style="margin-top:4px">Each themed map gets its own full outfit (clothes, boots, gloves, cape or back gear, a themed held item and particle effects) topped with its crown. <b>Map drops start in Round 3</b> (Wed Oct 7, 9 PM ET) with the skin of the map that wins the <a href="#vote">map vote</a>, then one drop per map as maps rotate. Try them all on now in the free <a href="game/">practice game</a> (👑 SKINS on the title screen).</p>
+    <div class="gal">
+      <figure><img src="assets/skins/vote/h_pumpkin.webp" width="240" height="288" loading="lazy" alt="Pumpkin King skin"><figcaption><b>Pumpkin King</b>🎃 Haunted Graveyard</figcaption></figure>
+      <figure><img src="assets/skins/vote/h_hardhat.webp" width="240" height="288" loading="lazy" alt="Gold Foreman skin"><figcaption><b>Gold Foreman</b>🏭 Rug Pull Factory</figcaption></figure>
+      <figure><img src="assets/skins/vote/h_moonhalo.webp" width="240" height="288" loading="lazy" alt="Moon Walker skin"><figcaption><b>Moon Walker</b>🚀 Moon Mission</figcaption></figure>
+      <figure><img src="assets/skins/vote/h_sharkfin.webp" width="240" height="288" loading="lazy" alt="Shark Surfer skin"><figcaption><b>Shark Surfer</b>🏄 Shark Bay Surf</figcaption></figure>
+      <figure><img src="assets/skins/vote/h_fossil.webp" width="240" height="288" loading="lazy" alt="Cave Chief skin"><figcaption><b>Cave Chief</b>🦖 Prehistoric Climb</figcaption></figure>
+    </div>
     <div class="dropvid"><video class="mapclip" src="assets/skins/skins_preview.mp4?v=outfit2" poster="assets/skins/skins_poster.jpg?v=outfit2" muted loop playsinline autoplay preload="none" width="960" height="540" aria-label="Animated preview of the 5 holder full-outfit skins: Pumpkin King (jack-o'-lantern), Gold Foreman (glowing wrench), Moon Walker ($BOSS flag), Shark Surfer (surfboard), Cave Chief (bone club)"></video></div>
-    <div class="under" style="justify-content:flex-start;margin:10px 0 4px"><a class="btn sm play" href="https://boss-runner-fto6.onrender.com/nft" target="_blank" rel="noopener">👑 Mint page</a><a class="btn sm" href="https://solscan.io/token/6eAN8Pi9GiWRGNLDNk62DyRJBqYE4MZWvEc3J67vZ5rb" target="_blank" rel="noopener">Collection on Solscan ↗</a></div>
+
     <div id="skinvote" hidden>
       <h3 style="margin-top:18px">🗳️ Holder skin vote</h3>
       <p>Holders (100,000+ $BOSS) pick which design becomes each map's holder drop. One vote per wallet per map, a free signed message in Phantom (no transaction), final once cast. Voting closes when the round ends (<span id="sv-close">end of round</span>); ties go to the first design. Cosmetic only.</p>
@@ -364,20 +504,106 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
       <p id="sv-status" class="mini" style="min-height:1.4em"></p>
       <a id="sv-open" class="btn sm" hidden>Open in Phantom to vote</a>
     </div>
-    <h3 style="margin-top:18px">🏅 Milestone drops</h3>
-    <p>Rare limited skins earned in ranked play, verified by the server's replay of each run: <b>Round Survivor</b> (play ranked in 3, 5 or 10 rounds), <b>Boss Slayer</b> (beat a boss on that round's ranked map) and <b>High Score</b> (10K / 25K / 50K in one run). Holders claim them free from the Skins menu in the ranked game. Each one is stamped with its achievement, round and date, and can be minted into the same NFT collection. One per person. They never affect score, tries, rank or prizes.</p>
-    <div class="ms-row"><img src="assets/skins/vote/m_survivor_10.webp" alt="Round 10 Survivor" loading="lazy"><img src="assets/skins/vote/m_slayer_grave.webp" alt="Boss Slayer: Graveyard" loading="lazy"><img src="assets/skins/vote/m_score_50k.webp" alt="50K Club" loading="lazy"></div>
-    <p class="mini">Previews. Try them on in the free <a href="game/">practice game</a> (👑 SKINS on the title screen). Skins and NFTs are cosmetic only: no cash value promised, no effect on prizes, and not a purchase of a chance to win.</p>
+
+    <h3 style="margin-top:22px">🏅 Milestone drops</h3>
+    <p class="mini" style="margin-top:4px">Rare limited skins earned in ranked play, verified by the server's replay of each run: <b>Round Survivor</b> (play ranked in 3, 5 or 10 rounds), <b>Boss Slayer</b> (beat a boss on that round's ranked map) and <b>High Score</b> (10K / 25K / 50K in one run). Holders claim them free from the Skins menu in the ranked game. Each one is stamped with its achievement, round and date. One per person.</p>
+    <div class="gal" style="grid-template-columns:repeat(3,1fr);max-width:560px">
+      <figure><img src="assets/skins/vote/m_survivor_10.webp" width="256" height="307" loading="lazy" alt="Round 10 Survivor milestone skin"><figcaption><b>Round Survivor</b>3, 5 or 10 rounds</figcaption></figure>
+      <figure><img src="assets/skins/vote/m_slayer_grave.webp" width="256" height="307" loading="lazy" alt="Boss Slayer: Graveyard milestone skin"><figcaption><b>Boss Slayer</b>Beat the round's boss</figcaption></figure>
+      <figure><img src="assets/skins/vote/m_score_50k.webp" width="256" height="307" loading="lazy" alt="50K Club milestone skin"><figcaption><b>High Score</b>10K / 25K / 50K</figcaption></figure>
+    </div>
+
+    <h3 style="margin-top:22px">💎 Real Solana NFTs (optional)</h3>
+    <p class="mini" style="margin-top:4px">Holder skins are compressed NFTs in the verified collection “$BOSS Holder Skins”. <b>1.</b> Claim a drop free during its round (holders 100K+). <b>2.</b> Optionally mint it on the mint page for about 0.00001 SOL (network fee, paid from your own wallet). It keeps its rarity number (e.g. #7 Legendary) and is tradable like any NFT.</p>
+    <div class="under" style="justify-content:flex-start;margin:10px 0 4px"><a class="btn sm play" href="https://boss-runner-fto6.onrender.com/nft" target="_blank" rel="noopener">👑 Mint page</a><a class="btn sm" href="https://solscan.io/token/6eAN8Pi9GiWRGNLDNk62DyRJBqYE4MZWvEc3J67vZ5rb" target="_blank" rel="noopener">Collection on Solscan ↗</a></div>
+
+    <details class="more" id="skins"><summary>Crown skins (burn to unlock, test only)</summary>
+      <p class="mini">Crown skins change how your crown and trail look in ranked mode. To unlock one, you burn $BOSS from your own wallet (Phantom shows the exact amount before you sign). Burned tokens are gone forever. Crown skins are currently <b id="skin-net">devnet (test only)</b>.</p>
+      <ul class="ticks" id="skin-list"><li>Gold Rush Crown, Toxic Green Crown, Buckeye Red Crown, Void Crown</li></ul>
+    </details>
+    <p class="mini" style="margin-bottom:0">Skins and NFTs are cosmetic only: no cash value promised, no effect on prizes, and not a purchase of a chance to win. Holder perks also include a 👑 leaderboard badge and early access to new practice maps.</p>
   </div>
 </div></section>
 
-<section id="transparency"><div class="wrap">
-  <h2>🔎 Transparency</h2>
+<section id="roadmap"><div class="wrap">
+  <div class="sh"><span class="eyebrow">Game roadmap</span>
+    <h2>🛠️ Shipped <span class="k">&amp; next</span></h2>
+    <p>Game features only. Dates are as announced in the rules and can change. Nothing here is a promise about the coin.</p></div>
+  <div class="road">
+    <div class="card">
+      <h3>✅ Live now</h3>
+      <ul class="tl">
+        <li><b>Free practice runner</b><span>Plays in any browser, no wallet. 6 maps with boss fights.</span></li>
+        <li><b>Ranked mode</b><span>Phantom sign-in, 3 tries per 3-day round, every run signed and replayed by the server.</span></li>
+        <li><b>Prize rounds</b><span>From Round 2, the top 5 split 20% of the creator fees received each round.</span></li>
+        <li><b>Community map vote</b><span>Site vote plus the X poll picks the next ranked map.</span></li>
+        <li><b>Holder skins as Solana NFTs</b><span>Verified compressed collection, optional mint page.</span></li>
+        <li><b>Troglodyte Fudder launch drop</b><span>Round 2 holder drop, plus milestone drops for ranked play.</span></li>
+        <li><b>Official rules v1.5.1</b><span>Public, versioned rules for every round.</span></li>
+      </ul>
+    </div>
+    <div class="card gold">
+      <h3>⏭️ Announced</h3>
+      <ul class="tl next">
+        <li><b>Round 3: vote-picked ranked map</b><span>Starts Wed Oct 7, 9 PM ET. The ranked map switches to the map vote winner.</span></li>
+        <li><b>First map skin drop</b><span>Round 3: the skin of the winning map, then one drop per map as maps rotate.</span></li>
+        <li><b>Map rotation every 3 days</b><span>New maps added to the vote every round.</span></li>
+        <li><b>1v1 duels</b><span>Round 4 (Sat Oct 10, 9 PM ET). Duel rules are released in Round 3.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="get" class="band"><div class="wrap">
+  <div class="sh"><span class="eyebrow">Optional</span>
+    <h2>🪙 How to get <span class="k">$BOSS</span></h2>
+    <p>You never need $BOSS to play or win. Holding 100,000+ only unlocks cosmetic holder perks.</p></div>
+  <div class="steps">
+    <div><b>Get Phantom</b>Install the free Phantom wallet from <a href="https://phantom.app" target="_blank" rel="noopener">phantom.app</a> or your phone's official app store. Never share your recovery phrase.</div>
+    <div><b>Add SOL</b>Buy SOL inside Phantom or send it from an exchange you already use. Keep a little extra for network fees.</div>
+    <div><b>Check the CA</b>Copy the official contract address from this page and compare the full address before you trade.</div>
+    <div><b>Swap on pump.fun</b>Open $BOSS on pump.fun from our link, connect Phantom, and review the amount and fees before you confirm.</div>
+  </div>
+  <div class="ca" style="margin-top:18px"><span class="lbl">CA</span><code>4AcmBHJaSqJCDT99W769ecEXupsj7mkr2Wdfien2pump</code><a class="btn sm buy needs-ca" href="#" target="_blank" rel="noopener" hidden>pump.fun ↗</a></div>
+  <div class="note"><b>⚠ Meme coin, high risk.</b> $BOSS is a joke coin with no intrinsic value and no promise of profit. The price can go to zero. Only spend what you're fine losing completely. Not financial advice.</div>
+</div></section>
+
+<section id="community"><div class="wrap">
+  <div class="sh"><span class="eyebrow">Community</span>
+    <h2>💬 Join the <span class="k">community</span></h2>
+    <p>New skins, map votes, round results and game updates are posted on these channels first. Follow one to get notified.</p></div>
+  <div class="comm">
+    <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener"><span class="ci">𝕏</span><b>X / Twitter</b><span>@TheBossCoin_SOL · official CA, polls, round results</span></a>
+    <a href="https://discord.gg/ftTwgfZja" target="_blank" rel="noopener"><span class="ci">🎧</span><b>Discord</b><span>Chat, map ideas and skin drop alerts</span></a>
+    <a href="https://t.me/TheBossCoinohio" target="_blank" rel="noopener"><span class="ci">✈️</span><b>Telegram</b><span>@TheBossCoinohio</span></a>
+    <a href="https://www.tiktok.com/@bosscoinrunner" target="_blank" rel="noopener"><span class="ci">🎵</span><b>TikTok</b><span>@bosscoinrunner · gameplay clips</span></a>
+  </div>
+  <!-- Email signup ("Get notified about new skins and maps") goes here once a /subscribe endpoint is live on the game server. Not added yet: see report. -->
+
+  <div class="sh" style="margin-top:44px"><span class="eyebrow">Play safe</span><h2 style="font-size:clamp(20px,4.6vw,26px)">🛡️ What you can check yourself</h2></div>
+  <div class="trust">
+    <div><span class="ti">🔐</span><b>Official contract address</b>The CA on this page matches <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>. Ignore any address sent in DMs.</div>
+    <div><span class="ti">📊</span><b>Open leaderboard</b>Every ranked score is public on the <a href="https://boss-runner-fto6.onrender.com/leaderboard" target="_blank" rel="noopener">live leaderboard</a> and is checked by the server's replay.</div>
+    <div><span class="ti">✍️</span><b>Sign, don't send</b>Votes and skin claims are signed messages, not transactions. Nothing leaves your wallet. Minting an NFT is optional and only costs the network fee.</div>
+    <div><span class="ti">📜</span><b>Public rules</b>Prize rules are versioned and posted: <a href="rules.html">official rules v1.5.1</a>.</div>
+    <div><span class="ti">🔎</span><b>On-chain transparency</b><a href="#transparency">Whale watch, burn history</a> and the <a href="https://solscan.io/token/6eAN8Pi9GiWRGNLDNk62DyRJBqYE4MZWvEc3J67vZ5rb" target="_blank" rel="noopener">verified NFT collection</a>.</div>
+    <div><span class="ti">🔒</span><b>HTTPS + open source site</b>Served over HTTPS by GitHub Pages. The website code is public on <a href="https://github.com/26bvzzmwdb-pixel/boss-site" target="_blank" rel="noopener">GitHub</a>. See our <a href="privacy.html">privacy policy</a>.</div>
+  </div>
+  <!-- Testimonials: hidden until real, attributable player quotes exist (with their permission). Do not add made-up quotes.
+  <div class="sh" style="margin-top:44px"><span class="eyebrow">Players</span><h2>What players say</h2></div>
+  <div class="trust">
+    <div><b>@handle</b>"Real quote here"</div>
+  </div>
+  -->
+</div></section>
+
+<section id="transparency" class="band"><div class="wrap">
+  <div class="sh"><span class="eyebrow">Transparency</span><h2>🔎 Transparency</h2><p>Read-only data you can verify on-chain.</p></div>
   <div class="grid two">
     <div class="card">
       <h3>Self-imposed sell limit</h3>
-      <p>The dev and prize-pot wallets will sell at most <b id="sell-pct">1%</b> of their $BOSS holdings per day. This is a public promise about our own behaviour. The token itself can't enforce it, so check the wallets below.</p>
-      <p class="mini" id="sell-wallets">Wallet addresses get published here at launch.</p>
+      <p>The dev and prize-pot wallets will sell at most <b id="sell-pct">1%</b> of their $BOSS holdings per day. This is a public promise about our own behaviour. The token itself can't enforce it.</p>
+      <p class="mini" id="sell-wallets">The dev and prize-pot wallet addresses haven't been published yet. They will be listed here and on X when they are.</p>
     </div>
     <div class="card">
       <h3>Whale watch</h3>
@@ -392,10 +618,24 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
   </div>
 </div></section>
 
+<section id="faq"><div class="wrap">
+  <div class="sh"><span class="eyebrow">FAQ</span><h2>❓ Questions</h2></div>
+  <div class="faq">
+    <details><summary>Is the game really free?</summary><p>Yes. Practice mode runs in any browser with no wallet. Ranked mode only needs the free Phantom wallet: signing in is free and is not a transaction. There's nothing to buy.</p></details>
+    <details><summary>Do I need to hold $BOSS to play or win?</summary><p>No. Holding, buying or burning $BOSS never affects whether you can play, your tries, your score or whether you win. Holders of 100,000+ $BOSS only get cosmetic perks (skins, a 👑 badge, early access to new practice maps).</p></details>
+    <details><summary>How are prizes paid?</summary><p>Each round's pot is 20% of the pump.fun creator fees actually received during that round. The top 5 split it 40 / 25 / 15 / 12 / 8%. If the pot is under 0.05 SOL it rolls over to the next round. Nothing is pre-funded or guaranteed. Full details are in the <a href="rules.html">official rules</a>.</p></details>
+    <details><summary>How do you stop cheating?</summary><p>Each ranked run is signed by your wallet, and the server replays the exact run from its seed and your inputs before the score counts. Each wallet gets 3 tries per round, and linked wallets count as one person for prizes.</p></details>
+    <details><summary>Can I play on my iPhone?</summary><p>Practice works in Safari or any phone browser: tap “Open fullscreen”. Ranked needs the Phantom app: open this site inside Phantom's built-in browser (the site shows an “Open in Phantom” button on phones).</p></details>
+    <details><summary>When does the Troglodyte Fudder claim close?</summary><p>At the end of Round 2: Wed Oct 7, 9 PM ET. Wallets holding 100,000+ $BOSS can claim it free from the Skins menu in the ranked game until then. After that it can't be claimed.</p></details>
+    <details><summary>Where's the official contract address?</summary><p>Only on this site and on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>. Always compare the full address. Never share your wallet's recovery phrase with anyone.</p></details>
+    <details><summary>Is $BOSS an investment?</summary><p>No. $BOSS is a joke meme coin with no intrinsic value, no utility and no expectation of profit. Meme coins are extremely risky. Nothing on this site is financial advice.</p></details>
+  </div>
+</div></section>
+
 <section id="disclaimer"><div class="wrap">
   <div class="disc">
     <h2>⚠ Joke coin. Not financial advice.</h2>
-    <p><b>$BOSS is a joke meme coin made for fun.</b> It has no intrinsic value, no utility, no team promises, no roadmap and no expectation of profit. <b>No promises of value</b>: the price can go to zero, and it probably will.</p>
+    <p><b>$BOSS is a joke meme coin made for fun.</b> It has no intrinsic value, no utility, no team promises and no expectation of profit. The game roadmap above covers game features only. <b>No promises of value</b>: the price can go to zero, and it probably will.</p>
     <p>Nothing on this site is financial, investment, legal or tax advice. Meme coins are extremely risky and volatile. Only spend what you're fine losing completely. Do your own research.</p>
     <p>The game is free and separate from buying the coin. Holding, buying or burning $BOSS never affects whether you can play or win; skins are cosmetic only. Leaderboard rewards (if any) follow the official rules posted on X and are void where prohibited. Not affiliated with pump.fun, X, Phantom or the State of Ohio.</p>
   </div>
@@ -403,18 +643,19 @@ footer .row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;mar
 </main>
 
 <footer><div class="wrap">
-  <div class="row">
-    <a class="needs-ca" href="#" target="_blank" rel="noopener" hidden>pump.fun</a>
-    <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">X @TheBossCoin_SOL</a>
-    <a href="https://t.me/TheBossCoinohio" target="_blank" rel="noopener">Telegram</a>
-    <a href="https://www.tiktok.com/@bosscoinrunner" target="_blank" rel="noopener">TikTok @bosscoinrunner</a>
-    <a href="https://discord.gg/ftTwgfZja" target="_blank" rel="noopener">Discord</a>
-    <a href="game/" target="_blank" rel="noopener">Game</a>
-    <a href="rules.html">Official rules</a>
+  <div class="fcols">
+    <div class="fbrand"><img src="assets/logo.webp" alt="" width="44" height="44"><div style="font:800 16px var(--hd);color:#fff">$BOSS</div><div>Ohio Final Boss · a free neon endless runner and a joke meme coin on Solana.</div></div>
+    <div><h4>PLAY</h4><a href="#play">Play the game</a><a href="game/" target="_blank" rel="noopener">Practice mode</a><a href="https://boss-runner-fto6.onrender.com/leaderboard" target="_blank" rel="noopener">Leaderboard</a><a href="#vote">Map vote</a></div>
+    <div><h4>COLLECT</h4><a href="#drops">Skins &amp; drops</a><a href="https://boss-runner-fto6.onrender.com/nft" target="_blank" rel="noopener">Mint page</a><a href="https://solscan.io/token/6eAN8Pi9GiWRGNLDNk62DyRJBqYE4MZWvEc3J67vZ5rb" target="_blank" rel="noopener">NFT collection</a><a class="needs-ca" href="#" target="_blank" rel="noopener" hidden>pump.fun</a></div>
+    <div><h4>COMMUNITY</h4><a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">X @TheBossCoin_SOL</a><a href="https://discord.gg/ftTwgfZja" target="_blank" rel="noopener">Discord</a><a href="https://t.me/TheBossCoinohio" target="_blank" rel="noopener">Telegram</a><a href="https://www.tiktok.com/@bosscoinrunner" target="_blank" rel="noopener">TikTok @bosscoinrunner</a></div>
+    <div><h4>INFO</h4><a href="rules.html">Official rules</a><a href="#roadmap">Roadmap</a><a href="#faq">FAQ</a><a href="#transparency">Transparency</a><a href="privacy.html">Privacy policy</a></div>
   </div>
-  <div style="overflow-wrap:anywhere" id="foot-ca">CA: 4AcmBHJaSqJCDT99W769ecEXupsj7mkr2Wdfien2pump</div>
-  <div style="margin-top:8px">$BOSS · Ohio Final Boss · joke coin, not financial advice, no promises of value.</div>
+  <div class="fdisc">
+    <div style="overflow-wrap:anywhere" id="foot-ca">CA: 4AcmBHJaSqJCDT99W769ecEXupsj7mkr2Wdfien2pump</div>
+    <div style="margin-top:8px"><b>Meme coin, high risk, not financial advice.</b> $BOSS is a joke coin with no promises of value. The game is free; you never need $BOSS to play or win. © 2026 $BOSS · Ohio Final Boss.</div>
+  </div>
 </div></footer>
+
 <script src="config.js"></script>
 <div class="toast" id="toast" role="status" aria-live="polite">CA copied ✓</div>
 <script>
@@ -460,7 +701,7 @@ fetch("burns.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(!
     return "<tr><td>"+esc(b.block_time?new Date(b.block_time*1000).toLocaleDateString():"")+"</td><td>"+Number(b.amount).toLocaleString("en-US")+" $BOSS"+(b.network!=="mainnet"?" (devnet)":"")+"<br><span class=\"mini\">"+esc(b.kind==="skin"?"skin: "+b.skin:"dev burn")+"</span></td><td><a href=\"https://solscan.io/tx/"+esc(b.sig)+net+"\" target=\"_blank\" rel=\"noopener\">"+esc(short(b.sig))+"</a></td></tr>";}).join("")+"</tbody></table>";}).catch(()=>{});
 const RU=(typeof C.ranked_url==="string"&&/^https:\/\/[^\s"'<>]+$/.test(C.ranked_url))?C.ranked_url:null;
 if(RU){   // ranked is the MAIN game; practice is only a secondary link
-  $("hero-play").href=RU;$("hero-play-txt").textContent="Play ranked";
+  $("hero-play").href=RU;$("hero-play-txt").textContent="Play now, free";
   $("ranked").href=RU;$("ranked").hidden=false;$("rankedstart").href=RU;$("rankedstart").hidden=false;$("loadgame").hidden=true;
   $("practice-main").hidden=true;$("fullscreen").hidden=true;$("practice-link").hidden=false;
   $("play-sub").textContent="Free to play. Connect Phantom (no purchase, no tokens, no transaction), 3 tries per 3-day round, top 5 can win.";
@@ -550,6 +791,35 @@ v.forEach(function(e){e.muted=true;if(rm){e.removeAttribute('autoplay');e.autopl
 if(rm||!('IntersectionObserver' in window))return;
 var io=new IntersectionObserver(function(es){es.forEach(function(x){var e=x.target;if(x.isIntersecting){if(e.preload==='none')e.preload='auto';var p=e.play();if(p&&p.catch)p.catch(function(){e.controls=true;});}else e.pause();});},{threshold:.25});
 v.forEach(function(e){e.autoplay=false;e.removeAttribute('autoplay');e.pause();io.observe(e);});})();
+</script>
+
+<script>
+// polish pass 2026-10-06: mobile menu, headline offer with deadline fallback, Fudder countdown, podium from config
+(function(){
+var C=window.BOSS_CONFIG||{},$=function(id){return document.getElementById(id)};
+var nav=$("nav"),bg=$("burger");
+if(bg){bg.addEventListener("click",function(){var o=nav.classList.toggle("open");bg.setAttribute("aria-expanded",o?"true":"false");});
+  [].forEach.call(document.querySelectorAll("#mnav a"),function(a){a.addEventListener("click",function(){nav.classList.remove("open");bg.setAttribute("aria-expanded","false");});});}
+var FUD_END=Date.UTC(2026,9,8,1,0,0); // Wed Oct 7, 9:00 PM ET (end of Round 2)
+function left(ms){var s=Math.max(0,Math.floor(ms/1000)),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),x=s%60,p=function(v){return String(v).padStart(2,"0")};return (d?d+"d ":"")+p(h)+":"+p(m)+":"+p(x);}
+function tick(){var now=Date.now(),open=now<FUD_END;
+  if(open){$("offer-cd").hidden=false;$("offer-cd").textContent="⏳ Claim closes in "+left(FUD_END-now);
+    $("fud-cd").textContent="Claim closes in "+left(FUD_END-now);}
+  else{var o=$("offer");if(!o.classList.contains("generic")){o.classList.add("generic");
+      $("offer-t").textContent="Play the $BOSS runner free. Dodge the rugs, beat the boss, top the board.";
+      $("offer-s").textContent="6 maps, 3-day ranked rounds, top 5 paid in SOL from creator fees. New maps and skins every round.";
+      $("offer-cd").hidden=true;$("hero-sec").textContent="🗳️ Vote the next map";$("hero-sec").href="#vote";
+      $("fud-tag").textContent="LAUNCH DROP · CLAIM CLOSED";$("fud-tag").className="tagline tag-closed";
+      $("fud-cd").textContent="Claim window closed Wed Oct 7, 9 PM ET";}
+    clearInterval(iv);}
+}
+var iv=setInterval(tick,1000);tick();
+if(C.prize&&Array.isArray(C.prize.split)){var pd=document.querySelector(".podium");if(pd){var mx=Math.max.apply(null,C.prize.split);
+  pd.style.gridTemplateColumns="repeat("+C.prize.split.length+",1fr)";
+  pd.innerHTML=C.prize.split.map(function(v,i){return '<div style="height:'+Math.round(46+50*v/mx)+'px">#'+(i+1)+'<small>'+Number(v)+'%</small></div>';}).join("");}}
+// whale watch: if the snapshot can't load or doesn't match the CA, say so instead of "Loading…" forever
+setTimeout(function(){var w=$("whales");if(w&&/Loading whale watch/.test(w.textContent))w.innerHTML='<div class="empty">Snapshot not available right now.</div>';},8000);
+})();
 </script>
 </body>
 </html>

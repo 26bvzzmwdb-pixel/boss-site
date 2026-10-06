@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#05060f">
+<title>$BOSS · Privacy Policy</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<style>
+body{margin:0;background:#05060f;color:#d6dcff;font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:780px;margin:0 auto;padding:18px 18px 60px}
+h1{font-size:clamp(22px,6vw,30px);color:#bff4ff;text-shadow:0 0 16px #28dcff;margin:.4em 0 .2em}
+h2{font-size:18px;color:#ffe27a;margin:1.6em 0 .4em}
+a{color:#28dcff}
+ul{padding-left:20px}li{margin:4px 0}
+.back{display:inline-block;margin:6px 0 2px;font-weight:700;text-decoration:none}
+small{color:#8f97c8}
+.box{border:1.5px solid rgba(40,220,255,.4);border-radius:12px;padding:12px 14px;background:rgba(12,12,38,.7)}
+</style>
+</head>
+<body><div class="w">
+<a class="back" href="./">← $BOSS home</a>
+<h1>Privacy Policy</h1>
+<p><small>Effective date: October 6, 2026 · Applies to this website (26bvzzmwdb-pixel.github.io/boss-site), the free practice game, and the ranked game server (boss-runner-fto6.onrender.com).</small></p>
+
+<div class="box"><b>Short version:</b> no accounts, no sign-ups, no tracking cookies, no ads, no analytics. To run ranked play, the game server stores your public wallet address, your scores and run data, and a few salted (one-way) hashes used to stop cheating. We don't sell or share any of it.</div>
+
+<h2>1. This website</h2>
+<ul>
+<li>The website is a static site hosted on GitHub Pages. It sets no cookies and runs no analytics or ad trackers.</li>
+<li>GitHub, as the host, may log technical data such as IP addresses for security. See <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub's privacy statement</a>.</li>
+<li>The site loads its own files only, plus read-only requests to our game server for the map vote and holder skin vote.</li>
+</ul>
+
+<h2>2. Free practice game</h2>
+<ul>
+<li>Practice runs entirely in your browser. Your settings, practice high score and practice coins are saved in your browser's local storage on your device. We don't receive them.</li>
+<li>If you tap “👑 Holders” in practice, your public wallet address is sent to the server to check your cosmetic holder status.</li>
+</ul>
+
+<h2>3. Ranked game, votes and skin claims (game server)</h2>
+<p>When you connect a Phantom wallet to play ranked, vote, or claim a skin, the server stores:</p>
+<ul>
+<li><b>Your public wallet address.</b> A shortened version (e.g. H73o…iSRK) is shown on the public leaderboard.</li>
+<li><b>Scores and run data:</b> score, the run's seed and input log, timestamps, tries used per round, and the signature that proves the run came from your wallet. This is how every ranked score is replayed and checked.</li>
+<li><b>Votes and claims:</b> your map vote or skin vote, skin claims (claim number, rarity, round), and the signed message you approved in Phantom.</li>
+<li><b>Anti-cheat hashes:</b> a random per-browser ID and a device/network check are stored only as salted one-way hashes, so we can link wallets used on the same device (linked wallets count as one person for prizes). The raw values are not stored.</li>
+<li><b>IP address:</b> used briefly in memory for rate limiting, and stored only as a salted hash for per-round try limits.</li>
+<li><b>Holder checks:</b> to see whether a wallet holds 100,000+ $BOSS, the server reads the public token balance from the Solana network.</li>
+</ul>
+<p>The server is hosted on Render, behind Cloudflare. Those providers may process technical data such as IP addresses to deliver and protect the service.</p>
+
+<h2>4. Public blockchain data</h2>
+<p>Anything on the Solana blockchain is public and permanent, including token purchases, burns and any skin NFT you choose to mint. We can't change or delete on-chain data.</p>
+
+<h2>5. What we don't collect</h2>
+<ul>
+<li>No names, emails, phone numbers, or physical addresses through this site or the game (the only exception is section 7, if you win a prize).</li>
+<li>No private keys or recovery phrases, ever. Signing in only signs a short text message, which is not a transaction. Never share your recovery phrase with anyone.</li>
+<li>No sale or sharing of data with advertisers or data brokers.</li>
+</ul>
+<p>If we ever add an email signup (for example, skin and map alerts), this policy will be updated first, and the signup form will say how the email is used.</p>
+
+<h2>6. How long we keep it</h2>
+<p>Ranked records (scores, run data, votes, claims) are kept as long as needed to run rounds, verify results and keep a record of prize payouts. Skin claims are kept for as long as the skin exists in your collection.</p>
+
+<h2>7. Payouts</h2>
+<p>If you win a prize round, the prize is sent in SOL to the wallet that earned the score. As the <a href="rules.html">official rules</a> explain, before sending a payout we may ask a winner for information needed for legal, sanctions or tax compliance. Anything you provide is used only for that and is not sold or shared, except where the law requires it.</p>
+
+<h2>8. Kids</h2>
+<p>Ranked play and prizes are for adults 18+ (or the age of majority where you live). The game isn't directed at children.</p>
+
+<h2>9. Questions or removal requests</h2>
+<p>Contact us on X <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a> or <a href="https://t.me/TheBossCoinohio" target="_blank" rel="noopener">Telegram</a>. We can remove off-chain records tied to your wallet unless we need them to verify a round that's still open or a payout that's already been made.</p>
+
+<h2>10. Changes</h2>
+<p>We'll update the effective date above when this policy changes.</p>
+
+<p><small>$BOSS is a joke meme coin. Not financial advice. <a href="./">Back to the $BOSS home page</a> · <a href="rules.html">Official rules</a></small></p>
+</div></body>
+</html>
