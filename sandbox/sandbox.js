@@ -1135,7 +1135,7 @@ function thumbTick() { if (!thumbQ.length) return; let made = 0;
       TRC = new THREE.PerspectiveCamera(30, 1, .1, 30); TRC.position.set(0, 1.3, 4.1); TRC.lookAt(0, 1.0, 0); }
     if (!dressFor(id, false)) continue; const par = rig.parent, vis = rig.visible, pos = rig.position.clone(), rot = rig.rotation.y, scl = rig.scale.clone(), op = OUTG.color.getHex(), gv = R3.glow.visible;
     TRS.add(rig); rig.position.set(0, 0, 0); rig.rotation.set(0, .42, 0); rig.scale.set(1, 1, 1); rig.visible = true; R3.glow.visible = false; R3.hips.position.y = .84; R3.chest.rotation.set(0, 0, 0); R3.headG.rotation.set(0, 0, 0); R3.torso.scale.y = 1;
-    R3.armL.rotation.set(0, 0, .14); R3.armR.rotation.set(id === "h_fudder" ? -.5 : 0, 0, -.14); R3.legL.rotation.set(.12, 0, 0); R3.legR.rotation.set(-.12, 0, 0);
+    R3.armL.rotation.set(0, 0, -.12); R3.armR.rotation.set(id === "h_fudder" ? -.5 : 0, 0, .12); R3.legL.rotation.set(.12, 0, 0); R3.legR.rotation.set(-.12, 0, 0);
     TR.render(TRS, TRC); const url = TR.domElement.toDataURL("image/png"); charThumb[id] = url;
     if (par) par.add(rig); rig.visible = vis; rig.position.copy(pos); rig.rotation.y = rot; rig.scale.copy(scl); R3.glow.visible = gv; OUTG.color.setHex(op); rigFor = "";
     const im = document.querySelector(`#chars .ch[data-id="${id}"] img`); if (im) { im.src = url; im.parentNode.classList.add("r3"); }
@@ -1148,11 +1148,11 @@ function updRig(time, mv, air, by0) { dressRig(); const dt = applyView.dt || .01
   rig.rotation.y = rigYaw + (charJoy > 0 ? (1 - charJoy) * Math.PI * 4 : 0); const ph = bob * 1.6, sw = Math.sin(ph) * mv;
   const breath = Math.sin(time * 2.2) * (1 - mv); R3.hips.position.y = .84 + Math.abs(Math.cos(ph)) * .06 * mv + breath * .012; R3.chest.rotation.y = sw * .14; R3.chest.rotation.x = .08 * mv + (mining ? .12 : 0); R3.torso.scale.y = 1 + breath * .025;
   R3.headG.rotation.z = Math.sin(time * .7) * .06 * (1 - mv); R3.headG.rotation.x = -R3.chest.rotation.x * .6 + Math.sin(time * 1.4) * .03 * (1 - mv);
-  let aL = -sw * .75, aR = sw * .75, zL = .08, zR = -.08, lL = sw * .8, lR = -sw * .8;
-  if (!P.ground) { aL = aR = -2.4; zL = .5; zR = -.5; lL = .7; lR = -.2; } else if (moving < .3) { aL = Math.sin(time * 1.1) * .05; aR = -aL; }
+  let aL = -sw * .75, aR = sw * .75, zL = -.1, zR = .1, lL = sw * .8, lR = -sw * .8;
+  if (!P.ground) { aL = aR = -2.4; zL = -.5; zR = .5; lL = .7; lR = -.2; } else if (moving < .3) { aL = Math.sin(time * 1.1) * .05; aR = -aL; }
   if (mining) { aR = -1.3 - Math.abs(Math.sin(mineT3 * 14)) * 1.1; zR = -.15; }
-  if (charJoy > 0) { aL = aR = -2.8; zL = .3; zR = -.3; }
-  if (photo) { const po = POSES[poseI]; if (po === "WAVE") { aR = -2.9; zR = -.5 + Math.sin(time * 8) * .35; } else if (po === "CHEER") { aL = aR = -2.9; zL = .45; zR = -.45; } else if (po === "FLEX") { aL = aR = -1.6; zL = 1.2; zR = -1.2; } else if (po === "JUMP") { aL = aR = -2.4; zL = .5; zR = -.5; lL = .7; lR = -.2; } }
+  if (charJoy > 0) { aL = aR = -2.8; zL = -.45; zR = .45; }
+  if (photo) { const po = POSES[poseI]; if (po === "WAVE") { aR = -.2; zR = 2.5 + Math.sin(time * 8) * .35; } else if (po === "CHEER") { aL = aR = -2.7; zL = -.65; zR = .65; } else if (po === "FLEX") { aL = aR = -.25; zL = -1.95; zR = 1.95; } else if (po === "JUMP") { aL = aR = -2.4; zL = -.5; zR = .5; lL = .7; lR = -.2; } }
   const k = Math.min(1, dt * 14); R3.armL.rotation.x += (aL - R3.armL.rotation.x) * k; R3.armR.rotation.x += (aR - R3.armR.rotation.x) * (mining ? 1 : k); R3.armL.rotation.z += (zL - R3.armL.rotation.z) * k; R3.armR.rotation.z += (zR - R3.armR.rotation.z) * k;
   R3.legL.rotation.x += (lL - R3.legL.rotation.x) * k; R3.legR.rotation.x += (lR - R3.legR.rotation.x) * k;
   const sq = chSq, sc = 1.0; rig.scale.set(sc * (1 - air * .5 + sq * .4), sc * (1 + air - sq * .5), sc * (1 - air * .5 + sq * .4)); rig.position.set(P.x, P.y + Math.sin(charJoy * Math.PI) * .7 + (photo && POSES[poseI] === "JUMP" ? .45 : 0), P.z);
