@@ -5,15 +5,23 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#05060f">
 <title>$BOSS · Ohio Final Boss · a joke meme coin</title>
-<meta name="description" content="$BOSS (Ohio Final Boss) is a joke meme coin on pump.fun with a free endless-runner game. Not financial advice. No promises of value.">
-<meta property="og:title" content="$BOSS · Ohio Final Boss">
-<meta property="og:description" content="Joke meme coin + free endless runner. Dodge the rugs. Not financial advice.">
-<meta property="og:image" content="https://26bvzzmwdb-pixel.github.io/boss-site/assets/og.jpg">
+<meta name="description" content="$BOSS (Ohio Final Boss): a free neon endless runner, a first-person sandbox beta, holder skins and public leaderboards. Built in public, shipped every day. Joke meme coin, not financial advice.">
+<link rel="canonical" href="https://26bvzzmwdb-pixel.github.io/boss-site/">
+<meta property="og:type" content="website"><meta property="og:site_name" content="$BOSS · Ohio Final Boss">
+<meta name="twitter:title" content="$BOSS · Ohio Final Boss: play free"><meta name="twitter:description" content="Free neon runner, sandbox beta, holder skins and ranked leaderboards. Built in public, shipped daily.">
+<meta property="og:image:alt" content="$BOSS Ohio Final Boss neon runner">
+<link rel="preload" href="assets/orbitron.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preconnect" href="https://boss-runner-fto6.onrender.com" crossorigin>
+<meta property="og:title" content="$BOSS · Ohio Final Boss: play free">
+<meta property="og:description" content="Free neon runner, first-person sandbox beta, holder skins and ranked leaderboards. Built in public, shipped daily. Not financial advice.">
+<meta property="og:image" content="https://26bvzzmwdb-pixel.github.io/boss-site/assets/og2.jpg">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:url" content="https://26bvzzmwdb-pixel.github.io/boss-site/">
-<meta name="twitter:image" content="https://26bvzzmwdb-pixel.github.io/boss-site/assets/og.jpg">
+<meta name="twitter:image" content="https://26bvzzmwdb-pixel.github.io/boss-site/assets/og2.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@TheBossCoin_SOL">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -285,7 +293,7 @@ details.more summary{cursor:pointer;font:700 13px var(--hd);color:var(--cyan);pa
 footer{text-align:left}
 .fcols{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-bottom:22px}
 @media(min-width:820px){.fcols{grid-template-columns:1.4fr repeat(4,1fr)}}
-.fcols h4{font:800 12px var(--hd);letter-spacing:1.5px;color:#fff;margin:0 0 8px}
+.fcols h3{font:800 12px var(--hd);letter-spacing:1.5px;color:#fff;margin:0 0 8px}
 .fcols a{display:block;color:var(--mut);text-decoration:none;padding:3px 0}
 .fcols a:hover{color:var(--cyan)}
 .fbrand{grid-column:1/-1}
@@ -293,28 +301,116 @@ footer{text-align:left}
 .fbrand img{width:44px;height:44px;border-radius:50%;margin-bottom:8px}
 @media(max-width:600px){.logo{width:min(34vw,140px);margin:8px auto 4px}.hero h1{font-size:clamp(40px,12vw,64px)}.hero .tag{font-size:13px;margin-bottom:10px}.offer{padding:12px 13px}.offer .os{font-size:13px}}
 .fdisc{border-top:1px solid rgba(170,90,255,.2);padding-top:14px;font-size:12.5px;line-height:1.5}
+/* ===== premium pass 2026-10-07 ===== */
+.skip{position:absolute;left:12px;top:-60px;z-index:50;background:var(--gold);color:#120c00;font:800 14px var(--hd);padding:10px 14px;border-radius:10px;text-decoration:none}
+.skip:focus{top:10px}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:8px}
+.prog{position:fixed;left:0;top:0;height:3px;width:100%;transform-origin:0 50%;transform:scaleX(0);z-index:30;background:linear-gradient(90deg,var(--cyan),var(--purp),var(--pink),var(--gold))}
+nav{transition:background .25s,box-shadow .25s}nav.scrolled{background:rgba(5,6,15,.94);box-shadow:0 8px 30px rgba(0,0,0,.45)}
+body:after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.35;
+  background-image:linear-gradient(rgba(40,220,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(40,220,255,.07) 1px,transparent 1px);background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(80% 60% at 50% 0%,#000,transparent 75%);mask-image:radial-gradient(80% 60% at 50% 0%,#000,transparent 75%)}
+.herogrid{display:grid;gap:26px;align-items:center}
+@media(min-width:900px){.herogrid{grid-template-columns:1.15fr .85fr;text-align:left}.herogrid .logo{display:none}.herogrid .offer,.herogrid .herobtns,.herogrid .fine{margin-left:0}.herogrid .herobtns{justify-content:flex-start}.hero h1{font-size:clamp(64px,8vw,104px)}.hk{margin-left:0!important}}
+.live-chip{display:inline-flex;align-items:center;gap:8px;font:800 11px var(--hd);letter-spacing:1.2px;text-transform:uppercase;color:#bfffe0;background:rgba(40,255,140,.1);border:1px solid rgba(40,255,140,.45);border-radius:99px;padding:6px 12px;margin:6px 0 2px}
+.live-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(40,255,140,.7);animation:pulse 1.8s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 10px rgba(40,255,140,0)}100%{box-shadow:0 0 0 0 rgba(40,255,140,0)}}
+.hk{font-size:clamp(16px,4.3vw,20px);color:#fff;max-width:620px;margin:8px auto 4px;line-height:1.4}.hk b{color:var(--gold)}
+.glitch{position:relative;display:inline-block;background:linear-gradient(92deg,#bff4ff 10%,#fff 40%,#e3c4ff 60%,#bff4ff 90%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;background-position:0 0}
+@keyframes shine{to{background-position:-200% 0}}
+.heroart{position:relative;height:440px;display:none}
+@media(min-width:900px){.heroart{display:block}}
+.phone{position:absolute;width:210px;aspect-ratio:540/1169;border-radius:30px;padding:7px;background:linear-gradient(160deg,#2a2a5a,#0b0b20);border:1.5px solid rgba(40,220,255,.55);box-shadow:0 30px 60px rgba(0,0,0,.6),0 0 40px rgba(40,220,255,.35);left:22%;top:0;transform:rotate(-6deg);animation:float 6s ease-in-out infinite}
+.phone img{width:100%;height:100%;object-fit:cover;border-radius:23px}
+.phone.p2{left:auto;right:4%;top:56px;width:180px;transform:rotate(7deg);border-color:rgba(255,79,216,.6);box-shadow:0 30px 60px rgba(0,0,0,.6),0 0 40px rgba(255,79,216,.35);animation-delay:-3s;z-index:-1;opacity:.92}
+.ph-badge{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);white-space:nowrap;font:900 12px var(--hd);color:#140e00;background:var(--gold);padding:7px 12px;border-radius:99px;box-shadow:0 0 18px rgba(255,210,74,.8)}
+@keyframes float{50%{translate:0 -12px}}
+.spark{position:absolute;font-size:30px;filter:drop-shadow(0 0 12px var(--gold));animation:float 4s ease-in-out infinite}.s1{left:6%;top:60px}.s2{right:8%;top:6px;animation-delay:-1.3s}.s3{left:14%;bottom:30px;animation-delay:-2.4s}
+.proof{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:760px;margin:22px auto 18px}
+.proof a{display:block;text-decoration:none;text-align:center;background:linear-gradient(180deg,rgba(40,220,255,.10),rgba(12,12,38,.85));border:1.5px solid rgba(40,220,255,.35);border-radius:14px;padding:10px 4px;transition:transform .15s,border-color .2s}
+.proof a:hover{transform:translateY(-2px);border-color:var(--gold)}
+.proof b{display:block;font:900 clamp(17px,5vw,26px) var(--hd);color:#fff;text-shadow:0 0 14px rgba(40,220,255,.6)}
+.proof span{display:block;font-size:11px;color:var(--mut);line-height:1.2;margin-top:2px}
+.btn.xl{position:relative;overflow:hidden}
+.btn.xl:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-120%);animation:sweep 3.6s ease-in-out infinite}
+@keyframes sweep{60%,100%{transform:translateX(120%)}}
+/* reveal */
+.rv{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.8,.2,1)}
+.rv.in{opacity:1;transform:none}
+/* sandbox */
+.sbx{display:grid;gap:18px;align-items:center}
+@media(min-width:860px){.sbx{grid-template-columns:1.3fr 1fr}}
+.sbx-shot{position:relative;display:block;border-radius:18px;overflow:hidden;border:2px solid var(--green);box-shadow:0 0 34px rgba(40,255,140,.28)}
+.sbx-shot img{width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;transition:transform .5s}
+.sbx-shot:hover img{transform:scale(1.04)}
+.sbx-shot .beta{position:absolute;left:12px;top:12px;font:900 11px var(--hd);letter-spacing:1px;background:var(--green);color:#03140a;border-radius:99px;padding:5px 10px}
+.sbx-shot .pl{position:absolute;inset:auto 12px 12px auto;font:800 13px var(--hd);color:#fff;background:rgba(5,6,15,.8);border:1.5px solid var(--green);border-radius:12px;padding:8px 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.chips span{font-size:12.5px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);border-radius:99px;padding:5px 10px}
+/* live leaderboard */
+.lb table{width:100%;border-collapse:collapse;font-size:14px}
+.lb td,.lb th{padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
+.lb th{font:700 11px var(--hd);color:var(--mut);letter-spacing:.6px}
+.lb td.r{font:900 14px var(--hd);color:var(--gold);width:38px}
+.lb td.s{font:800 14px var(--hd);color:#fff;text-align:right}
+.lb tr:first-child td.r{color:#ffe27a;text-shadow:0 0 10px rgba(255,210,74,.7)}
+.vf{font-size:11px;color:var(--green);margin-left:4px}
+/* plan */
+.plan{display:grid;gap:14px}
+@media(min-width:820px){.plan{grid-template-columns:repeat(3,1fr)}}
+.ph{position:relative;background:var(--panel);border:1.5px solid rgba(170,90,255,.38);border-radius:18px;padding:18px 16px 14px}
+.ph.now{border-color:rgba(40,255,140,.55);box-shadow:0 0 26px rgba(40,255,140,.14)}
+.ph.next{border-color:rgba(255,210,74,.6)}
+.ph .st{display:inline-block;font:900 11px var(--hd);letter-spacing:1.2px;border-radius:99px;padding:4px 10px;margin-bottom:8px}
+.ph.now .st{background:var(--green);color:#03140a}.ph.next .st{background:var(--gold);color:#1a1204}.ph.later .st{background:var(--purp);color:#fff}
+.ph h3{font-size:17px}
+.games{display:grid;gap:10px;margin:16px 0 0}
+@media(min-width:700px){.games{grid-template-columns:repeat(3,1fr)}}
+.gm{border-radius:16px;padding:14px;border:1.5px dashed rgba(255,255,255,.2);background:rgba(255,255,255,.03);font-size:14px}
+.gm.on{border-style:solid;border-color:rgba(40,220,255,.5);background:linear-gradient(180deg,rgba(40,220,255,.10),rgba(12,12,38,.8))}
+.gm b{display:block;font:800 15px var(--hd);color:#fff;margin:4px 0}
+.gm .lbp{display:inline-block;margin-top:6px;font:700 11px var(--hd);color:var(--gold)}
+/* build log */
+.blog{list-style:none;margin:0;padding:0;display:grid;gap:8px;max-height:520px;overflow:auto;padding-right:4px}
+.blog li{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;background:var(--panel);border:1px solid rgba(170,90,255,.25);border-radius:12px;padding:10px 12px;font-size:14px}
+.blog time{font:700 11px var(--hd);color:var(--cyan);white-space:nowrap;padding-top:2px}
+.blog a.h{font:600 11px ui-monospace,Menlo,monospace;color:var(--mut)}
+.blog .m{overflow-wrap:anywhere}
+.blhead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.pledge{display:grid;gap:12px;margin-bottom:22px}
+@media(min-width:820px){.pledge{grid-template-columns:repeat(3,1fr)}}
+.pledge div{background:linear-gradient(180deg,rgba(255,210,74,.10),rgba(12,12,38,.85));border:1.5px solid rgba(255,210,74,.4);border-radius:16px;padding:16px;font-size:14px}
+.pledge b{display:block;font:800 15px var(--hd);color:#fff;margin:4px 0}
+@media(max-width:600px){section{padding:48px 0}.proof{grid-template-columns:repeat(2,1fr)}.hero .sub{margin-top:4px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.rv{opacity:1;transform:none}}
 </style>
 </head>
 <body>
-<nav id="nav"><div class="wrap">
+<a class="skip" href="#main">Skip to content</a>
+<div class="prog" id="prog" aria-hidden="true"></div>
+<nav id="nav" aria-label="Main"><div class="wrap">
   <a class="brand" href="#top"><img src="assets/logo.webp" alt="" width="34" height="34">$BOSS</a>
   <div class="links">
-    <a class="t" href="#play">Game</a><a class="t" href="#maps">Maps</a><a class="t" href="#drops">Skins</a><a class="t" href="#rewards">Leaderboard</a><a class="t" href="#roadmap">Roadmap</a><a class="t" href="#get">Get $BOSS</a><a class="t" href="#faq">FAQ</a>
+    <a class="t" href="#play">Runner</a><a class="t" href="#sandbox">Sandbox</a><a class="t" href="#drops">Skins</a><a class="t" href="#rewards">Leaderboard</a><a class="t" href="#roadmap">The plan</a><a class="t" href="#buildlog">Build log</a><a class="t" href="#faq">FAQ</a>
     <a class="btn sm play-n" href="#play">▶ Play</a>
     <button class="burger" id="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mnav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </div>
 </div>
 <div class="mnav" id="mnav">
-  <a href="#play">🎮 Game</a><a href="#maps">🗺️ Maps</a><a href="#vote">🗳️ Map vote</a><a href="#drops">👑 Skins</a><a href="#rewards">🏆 Leaderboard</a><a href="#roadmap">🛠️ Roadmap</a><a href="#get">🪙 Get $BOSS</a><a href="#community">💬 Community</a><a href="#transparency">🔎 Transparency</a><a href="#faq">❓ FAQ</a>
+  <a href="#play">🎮 Runner</a><a href="#sandbox">⛏️ Sandbox</a><a href="#maps">🗺️ Maps</a><a href="#vote">🗳️ Map vote</a><a href="#drops">👑 Skins</a><a href="#rewards">🏆 Leaderboard</a><a href="#roadmap">🛠️ The plan</a><a href="#buildlog">📜 Build log</a><a href="#get">🪙 Get $BOSS</a><a href="#community">💬 Community</a><a href="#transparency">🔎 Transparency</a><a href="#faq">❓ FAQ</a>
 </div></nav>
 
 <header class="hero" id="top">
   <div class="bnr" aria-hidden="true"></div>
   <div class="wrap">
-    <div class="logo"><img src="assets/logo.webp" alt="$BOSS crown logo" width="512" height="512"></div>
-    <h1>$BOSS</h1>
+    <div class="herogrid">
+    <div class="herotxt">
+    <p class="live-chip" id="live-chip"><span class="dot"></span><span id="live-chip-t">Built in public · updated daily</span></p>
+    <div class="logo"><img src="assets/logo.webp" alt="$BOSS crown logo" width="512" height="512" fetchpriority="high"></div>
+    <h1><span class="glitch" data-t="$BOSS">$BOSS</span></h1>
     <p class="sub">OHIO FINAL BOSS</p>
-    <p class="tag">A free neon endless runner + joke meme coin · on pump.fun (Solana)</p>
+    <p class="hk">A game studio disguised as a meme coin. <b>Built for the long haul, not a pump and dump.</b></p>
+    <p class="tag">Free neon runner · first-person sandbox beta · holder skins · public leaderboards · on Solana</p>
     <!-- headline offer: JS swaps to the generic version after the Troglodyte Fudder claim closes (Wed Oct 7, 9 PM ET) -->
     <div class="offer" id="offer">
       <p class="ot" id="offer-t">Play the $BOSS runner free. Troglodyte Fudder skin claim closes Wed Oct 7, 9 PM ET.</p>
@@ -323,6 +419,19 @@ footer{text-align:left}
     </div>
     <div class="herobtns"><a class="btn play xl" id="hero-play" href="#play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span id="hero-play-txt">Play now, free</span></a><a class="btn" id="hero-sec" href="#drops">👑 See the skins</a></div>
     <p class="fine">No purchase or tokens needed to play or win · prizes only from creator fees received · <a href="rules.html">official rules</a> · meme coin, not financial advice</p>
+    </div>
+    <div class="heroart" aria-hidden="true">
+      <div class="phone"><img src="assets/shots/ohio_run.webp" width="540" height="1169" alt="" loading="lazy"><span class="ph-badge">▶ PLAY FREE</span></div>
+      <div class="phone p2"><img src="assets/shots/ohio_boss.webp" width="540" height="1169" alt="" loading="lazy"></div>
+      <span class="spark s1">🪙</span><span class="spark s2">👑</span><span class="spark s3">⚡</span>
+    </div>
+    </div>
+    <div class="proof" id="proof" aria-label="Build in public proof">
+      <a href="#buildlog"><b id="pf-commits">49</b><span>public updates</span></a>
+      <a href="#buildlog"><b id="pf-days">7</b><span>days shipping</span></a>
+      <a href="#buildlog"><b id="pf-last">today</b><span>last update</span></a>
+      <a href="#roadmap"><b>2</b><span>games live</span></a>
+    </div>
     <div class="ca soon" id="ca">
       <span class="lbl">CA</span>
       <code id="ca-text">4AcmBHJaSqJCDT99W769ecEXupsj7mkr2Wdfien2pump</code>
@@ -346,7 +455,7 @@ footer{text-align:left}
   </div>
 </header>
 
-<main>
+<main id="main">
 <section id="play" class="band"><div class="wrap">
   <div class="sh"><span class="eyebrow">The game</span>
     <h2>🎮 $BOSS <span class="k">RUNNER</span></h2>
@@ -390,21 +499,35 @@ footer{text-align:left}
   </div>
 </div></section>
 
+<section id="sandbox"><div class="wrap">
+  <div class="sh"><span class="eyebrow">Game #2 · beta</span>
+    <h2>⛏️ The $BOSS <span class="k">Sandbox</span></h2>
+    <p>Our second game: an original first-person world to explore, build in and mine. Plays in your phone or desktop browser.</p></div>
+  <div class="sbx rv">
+    <a class="sbx-shot" href="sandbox/"><img src="assets/sandbox_preview.webp" width="1024" height="576" loading="lazy" alt="First-person view in the $BOSS Sandbox: a neon Crystal Grove biome with a glowing SOL shard vein and a quest panel"><span class="beta">BETA</span><span class="pl">▶ Enter the sandbox</span></a>
+    <div>
+      <div class="chips"><span>🌌 Neon biomes &amp; caves</span><span>🧱 Build &amp; break blocks</span><span>💎 Mine SOL shards</span><span>🧪 BOSS Lab upgrades</span><span>📜 Quests</span><span>🎩 Rug Puller boss</span></div>
+      <p class="mini">Single-player practice for now. <b>SOL shards are in-game items with no cash value.</b> Multiplayer and a sandbox leaderboard are next on <a href="#roadmap">the plan</a>.</p>
+      <div class="under" style="justify-content:flex-start"><a class="btn play" href="sandbox/">⛏️ Play the sandbox (beta)</a></div>
+    </div>
+  </div>
+</div></section>
+
 <section id="maps"><div class="wrap">
   <div class="sh"><span class="eyebrow">Maps</span>
     <h2>📼 Gameplay: <span class="k">6 maps</span></h2>
     <p>Real practice-mode runs, boss fights included. Every map is free to play in <a href="game/">practice</a>.</p></div>
   <div class="maps">
     <figure style="--mc:#ff4fd8"><img src="assets/runner_poster.jpg" width="540" height="1169" loading="lazy" alt="Ohio map gameplay"><figcaption>🌽 Ohio</figcaption></figure>
-    <figure style="--mc:#ff8a1f"><video class="mapclip" src="assets/maps/grave.mp4" poster="assets/maps/grave.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Haunted Graveyard practice gameplay"></video><figcaption>🎃 Haunted Graveyard</figcaption></figure>
-    <figure style="--mc:#ffc83a"><video class="mapclip" src="assets/maps/factory.mp4" poster="assets/maps/factory.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Rug Pull Factory practice gameplay"></video><figcaption>🏭 Rug Pull Factory</figcaption></figure>
-    <figure style="--mc:#9ec8ff"><video class="mapclip" src="assets/maps/moon.mp4" poster="assets/maps/moon.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Moon Mission practice gameplay"></video><figcaption>🚀 Moon Mission</figcaption></figure>
-    <figure style="--mc:#3ad0ff"><video class="mapclip" src="assets/maps/surf.mp4" poster="assets/maps/surf.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Shark Bay Surf practice gameplay"></video><figcaption>🏄 Shark Bay Surf</figcaption></figure>
-    <figure style="--mc:#ffb03a"><video class="mapclip" src="assets/maps/climb.mp4" poster="assets/maps/climb.jpg" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Prehistoric Climb practice gameplay"></video><figcaption>🦖 Prehistoric Climb</figcaption></figure>
+    <figure style="--mc:#ff8a1f"><video class="mapclip" src="assets/maps/grave.mp4" poster="assets/maps/grave.webp" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Haunted Graveyard practice gameplay"></video><figcaption>🎃 Haunted Graveyard</figcaption></figure>
+    <figure style="--mc:#ffc83a"><video class="mapclip" src="assets/maps/factory.mp4" poster="assets/maps/factory.webp" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Rug Pull Factory practice gameplay"></video><figcaption>🏭 Rug Pull Factory</figcaption></figure>
+    <figure style="--mc:#9ec8ff"><video class="mapclip" src="assets/maps/moon.mp4" poster="assets/maps/moon.webp" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Moon Mission practice gameplay"></video><figcaption>🚀 Moon Mission</figcaption></figure>
+    <figure style="--mc:#3ad0ff"><video class="mapclip" src="assets/maps/surf.mp4" poster="assets/maps/surf.webp" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Shark Bay Surf practice gameplay"></video><figcaption>🏄 Shark Bay Surf</figcaption></figure>
+    <figure style="--mc:#ffb03a"><video class="mapclip" src="assets/maps/climb.mp4" poster="assets/maps/climb.webp" muted loop playsinline autoplay preload="none" width="360" height="760" aria-label="Prehistoric Climb practice gameplay"></video><figcaption>🦖 Prehistoric Climb</figcaption></figure>
   </div>
   <p class="mini swipe">swipe for more maps →</p>
   <details class="allmaps"><summary>Watch the 5 themed maps side by side</summary>
-    <div class="vid"><video src="assets/maps/all_maps.mp4" poster="assets/maps/all_maps.jpg" controls playsinline muted preload="none" width="1280" height="720"></video></div>
+    <div class="vid"><video src="assets/maps/all_maps.mp4" poster="assets/maps/all_maps.webp" controls playsinline muted preload="none" width="1280" height="720"></video></div>
   </details>
 </div></section>
 
@@ -441,6 +564,9 @@ footer{text-align:left}
         <div>#1<small>40%</small></div><div>#2<small>25%</small></div><div>#3<small>15%</small></div><div>#4<small>12%</small></div><div>#5<small>8%</small></div>
       </div>
       <p class="mini"><b id="pot-txt">Prize pot = 20% of the creator fees actually received that round</b> (the dev keeps the other 80%). If a round's pot is under <b id="min-pot">0.05 SOL</b>, nothing is paid that round and the pot <b>rolls over</b>. Shares for places nobody filled roll over too. Nothing is pre-funded or guaranteed.</p>
+      <h3 style="margin-top:16px">Current round: top scores</h3>
+      <div id="lb" class="lb" aria-live="polite"><div class="empty">Loading the board…</div></div>
+      <p class="mini" id="lb-src"></p>
       <div class="lbcta">
         <a class="btn sm play" href="https://boss-runner-fto6.onrender.com/leaderboard" target="_blank" rel="noopener">📊 Open the live leaderboard ↗</a>
         <a class="btn sm" href="rules.html">Official rules (v1.5.1)</a>
@@ -496,7 +622,7 @@ footer{text-align:left}
       <figure><img src="assets/skins/vote/h_sharkfin.webp" width="240" height="288" loading="lazy" alt="Shark Surfer skin"><figcaption><b>Shark Surfer</b>🏄 Shark Bay Surf</figcaption></figure>
       <figure><img src="assets/skins/vote/h_fossil.webp" width="240" height="288" loading="lazy" alt="Cave Chief skin"><figcaption><b>Cave Chief</b>🦖 Prehistoric Climb</figcaption></figure>
     </div>
-    <div class="dropvid"><video class="mapclip" src="assets/skins/skins_preview.mp4?v=outfit2" poster="assets/skins/skins_poster.jpg?v=outfit2" muted loop playsinline autoplay preload="none" width="960" height="540" aria-label="Animated preview of the 5 holder full-outfit skins: Pumpkin King (jack-o'-lantern), Gold Foreman (glowing wrench), Moon Walker ($BOSS flag), Shark Surfer (surfboard), Cave Chief (bone club)"></video></div>
+    <div class="dropvid"><video class="mapclip" src="assets/skins/skins_preview.mp4?v=outfit2" poster="assets/skins/skins_poster.webp?v=outfit2" muted loop playsinline autoplay preload="none" width="960" height="540" aria-label="Animated preview of the 5 holder full-outfit skins: Pumpkin King (jack-o'-lantern), Gold Foreman (glowing wrench), Moon Walker ($BOSS flag), Shark Surfer (surfboard), Cave Chief (bone club)"></video></div>
 
     <div id="skinvote" hidden>
       <h3 style="margin-top:18px">🗳️ Holder skin vote</h3>
@@ -527,31 +653,38 @@ footer{text-align:left}
 </div></section>
 
 <section id="roadmap"><div class="wrap">
-  <div class="sh"><span class="eyebrow">Game roadmap</span>
-    <h2>🛠️ Shipped <span class="k">&amp; next</span></h2>
-    <p>Game features only. Dates are as announced in the rules and can change. Nothing here is a promise about the coin.</p></div>
-  <div class="road">
-    <div class="card">
-      <h3>✅ Live now</h3>
+  <div class="sh"><span class="eyebrow">The plan</span>
+    <h2>🛠️ Many games. <span class="k">Many leaderboards.</span></h2>
+    <p>$BOSS is becoming a small arcade: several games running at once, each with its own ranked leaderboard, all free to play. This is the game plan, not a promise about the coin. Dates can change.</p></div>
+  <div class="games rv">
+    <div class="gm on"><span class="tagline tag-live">LIVE</span><b>🏃 $BOSS Runner</b>6 maps, boss fights, ranked 3-day rounds.<br><span class="lbp">🏆 Ranked leaderboard: live</span></div>
+    <div class="gm on"><span class="tagline tag-soon">BETA</span><b>⛏️ $BOSS Sandbox</b>First-person build &amp; mine world, single-player.<br><span class="lbp">🏆 Leaderboard: after multiplayer</span></div>
+    <div class="gm"><span class="tagline tag-ms">NEXT</span><b>⚔️ Runner 1v1 Duels</b>Head-to-head runs, announced for Round 4.<br><span class="lbp">🏆 Duel ladder: planned</span></div>
+  </div>
+  <div class="plan rv" style="margin-top:16px">
+    <div class="ph now"><span class="st">SHIPPED</span><h3>Live now</h3>
       <ul class="tl">
-        <li><b>Free practice runner</b><span>Plays in any browser, no wallet. 6 maps with boss fights.</span></li>
-        <li><b>Ranked mode</b><span>Phantom sign-in, 3 tries per 3-day round, every run signed and replayed by the server.</span></li>
-        <li><b>Prize rounds</b><span>From Round 2, the top 5 split 20% of the creator fees received each round.</span></li>
-        <li><b>Community map vote</b><span>Site vote plus the X poll picks the next ranked map.</span></li>
-        <li><b>Holder skins as Solana NFTs</b><span>Verified compressed collection, optional mint page.</span></li>
-        <li><b>Troglodyte Fudder launch drop</b><span>Round 2 holder drop, plus milestone drops for ranked play.</span></li>
-        <li><b>Official rules v1.5.1</b><span>Public, versioned rules for every round.</span></li>
-      </ul>
-    </div>
-    <div class="card gold">
-      <h3>⏭️ Announced</h3>
+        <li><b>Free runner, 6 maps</b><span>Plays in any browser. Every map has a boss.</span></li>
+        <li><b>Ranked rounds</b><span>Phantom sign-in, 3 tries per 3-day round, every run replayed by the server.</span></li>
+        <li><b>Community map vote</b><span>Site vote + X poll picks the next ranked map.</span></li>
+        <li><b>Holder skins as Solana NFTs</b><span>Verified collection, Troglodyte Fudder launch drop, milestone drops.</span></li>
+        <li><b>Sandbox beta</b><span>Game #2: biomes, caves, quests, a boss.</span></li>
+        <li><b>Public rules v1.5.1</b><span>Versioned rules for every round.</span></li>
+      </ul></div>
+    <div class="ph next"><span class="st">ANNOUNCED</span><h3>Next up</h3>
       <ul class="tl next">
-        <li><b>Round 3: vote-picked ranked map</b><span>Starts Wed Oct 7, 9 PM ET. The ranked map switches to the map vote winner.</span></li>
-        <li><b>First map skin drop</b><span>Round 3: the skin of the winning map, then one drop per map as maps rotate.</span></li>
-        <li><b>Map rotation every 3 days</b><span>New maps added to the vote every round.</span></li>
-        <li><b>1v1 duels</b><span>Round 4 (Sat Oct 10, 9 PM ET). Duel rules are released in Round 3.</span></li>
-      </ul>
-    </div>
+        <li><b>Round 3: vote-picked map</b><span>Wed Oct 7, 9 PM ET.</span></li>
+        <li><b>First map skin drop</b><span>The winning map's outfit, then one drop per map as maps rotate.</span></li>
+        <li><b>1v1 duels</b><span>Round 4 (Sat Oct 10, 9 PM ET). Rules come out in Round 3.</span></li>
+        <li><b>Community map contest</b><span>The winner gets credited in the game.</span></li>
+      </ul></div>
+    <div class="ph later"><span class="st">THE PLAN</span><h3>Building toward</h3>
+      <ul class="tl next">
+        <li><b>Sandbox multiplayer</b><span>Shared worlds with friends, then a sandbox leaderboard.</span></li>
+        <li><b>One hub, many boards</b><span>Every game gets its own ranked leaderboard, all running at the same time.</span></li>
+        <li><b>More games</b><span>New mini-games join the hub, each skill-based and free to play.</span></li>
+        <li><b>Skins across games</b><span>Wear your holder skins in more than one game.</span></li>
+      </ul></div>
   </div>
 </div></section>
 
@@ -567,6 +700,20 @@ footer{text-align:left}
   </div>
   <div class="ca" style="margin-top:18px"><span class="lbl">CA</span><code>4AcmBHJaSqJCDT99W769ecEXupsj7mkr2Wdfien2pump</code><a class="btn sm buy needs-ca" href="#" target="_blank" rel="noopener" hidden>pump.fun ↗</a></div>
   <div class="note"><b>⚠ Meme coin, high risk.</b> $BOSS is a joke coin with no intrinsic value and no promise of profit. The price can go to zero. Only spend what you're fine losing completely. Not financial advice.</div>
+</div></section>
+
+<section id="buildlog" class="band"><div class="wrap">
+  <div class="sh"><span class="eyebrow">Built in public</span>
+    <h2>📜 Not a pump and dump. <span class="k">Here's the proof.</span></h2>
+    <p>Anyone can say "long haul." Here's what we can actually show you.</p></div>
+  <div class="pledge rv">
+    <div><span class="ti">🧾</span><b>Every change is public</b>The whole site and both games are shipped from a public repo. Every update below links to its commit on GitHub.</div>
+    <div><span class="ti">🎮</span><b>Real games, not a promise</b>Two games are playable today, and new maps, skins and rules versions come out every round. Try them before you believe us.</div>
+    <div><span class="ti">🔒</span><b>Public limits on the dev</b>The dev and prize-pot wallets have a public <a href="#transparency">1%-per-day sell limit</a>, and the prize rules are <a href="rules.html">versioned</a>.</div>
+  </div>
+  <div class="blhead"><h3 style="font-size:16px;color:#fff">Daily build log <span class="mini" id="bl-meta"></span></h3>
+    <a class="btn sm" href="https://github.com/26bvzzmwdb-pixel/boss-site/commits/main" target="_blank" rel="noopener">Full history on GitHub ↗</a></div>
+  <ol class="blog" id="blog"><li><time>…</time><span class="m">Loading the build log…</span></li></ol>
 </div></section>
 
 <section id="community"><div class="wrap">
@@ -622,6 +769,8 @@ footer{text-align:left}
 <section id="faq"><div class="wrap">
   <div class="sh"><span class="eyebrow">FAQ</span><h2>❓ Questions</h2></div>
   <div class="faq">
+    <details><summary>Is this a pump and dump?</summary><p>No. $BOSS is being built as a long-running game project: two games already playable, new maps and skins every round, and every change published in the public <a href="#buildlog">build log</a>. The dev wallet follows a public <a href="#transparency">1%-per-day sell limit</a>. None of that is a promise about price: it's a meme coin and can go to zero.</p></details>
+    <details><summary>What's the sandbox?</summary><p>An original first-person build-and-mine world (beta). It's single-player practice right now. The SOL shards you mine are in-game items with no cash value. Multiplayer and its own leaderboard are on <a href="#roadmap">the plan</a>.</p></details>
     <details><summary>Is the game really free?</summary><p>Yes. Practice mode runs in any browser with no wallet. Ranked mode only needs the free Phantom wallet: signing in is free and is not a transaction. There's nothing to buy.</p></details>
     <details><summary>Do I need to hold $BOSS to play or win?</summary><p>No. Holding, buying or burning $BOSS never affects whether you can play, your tries, your score or whether you win. Holders of 100,000+ $BOSS only get cosmetic perks (skins, a 👑 badge, early access to new practice maps).</p></details>
     <details><summary>How are prizes paid?</summary><p>Each round's pot is 20% of the pump.fun creator fees actually received during that round. The top 5 split it 40 / 25 / 15 / 12 / 8%. If the pot is under 0.05 SOL it rolls over to the next round. Nothing is pre-funded or guaranteed. Full details are in the <a href="rules.html">official rules</a>.</p></details>
@@ -629,7 +778,7 @@ footer{text-align:left}
     <details><summary>Can I play on my iPhone?</summary><p>Practice works in Safari or any phone browser: tap “Open fullscreen”. Ranked needs the Phantom app: open this site inside Phantom's built-in browser (the site shows an “Open in Phantom” button on phones).</p></details>
     <details><summary>When does the Troglodyte Fudder claim close?</summary><p>At the end of Round 2: Wed Oct 7, 9 PM ET. Wallets holding 100,000+ $BOSS can claim it free from the Skins menu in the ranked game until then. After that it can't be claimed.</p></details>
     <details><summary>Where's the official contract address?</summary><p>Only on this site and on <a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">@TheBossCoin_SOL</a>. Always compare the full address. Never share your wallet's recovery phrase with anyone.</p></details>
-    <details><summary>Is $BOSS an investment?</summary><p>No. $BOSS is a joke meme coin with no intrinsic value, no utility and no expectation of profit. Meme coins are extremely risky. Nothing on this site is financial advice.</p></details>
+    <details><summary>Will $BOSS make me money?</summary><p>No promises, ever. $BOSS is a joke meme coin with no intrinsic value, no utility and no expectation of profit. Meme coins are extremely risky. Nothing on this site is financial advice.</p></details>
   </div>
 </div></section>
 
@@ -637,7 +786,7 @@ footer{text-align:left}
   <div class="disc">
     <h2>⚠ Joke coin. Not financial advice.</h2>
     <p><b>$BOSS is a joke meme coin made for fun.</b> It has no intrinsic value, no utility, no team promises and no expectation of profit. The game roadmap above covers game features only. <b>No promises of value</b>: the price can go to zero, and it probably will.</p>
-    <p>Nothing on this site is financial, investment, legal or tax advice. Meme coins are extremely risky and volatile. Only spend what you're fine losing completely. Do your own research.</p>
+    <p>Nothing on this site is financial, legal or tax advice. Meme coins are extremely risky and volatile. Only spend what you're fine losing completely. Do your own research.</p>
     <p>The game is free and separate from buying the coin. Holding, buying or burning $BOSS never affects whether you can play or win; skins are cosmetic only. Leaderboard rewards (if any) follow the official rules posted on X and are void where prohibited. Not affiliated with pump.fun, X, Phantom or the State of Ohio.</p>
   </div>
 </div></section>
@@ -646,10 +795,10 @@ footer{text-align:left}
 <footer><div class="wrap">
   <div class="fcols">
     <div class="fbrand"><img src="assets/logo.webp" alt="" width="44" height="44"><div style="font:800 16px var(--hd);color:#fff">$BOSS</div><div>Ohio Final Boss · a free neon endless runner and a joke meme coin on Solana.</div></div>
-    <div><h4>PLAY</h4><a href="#play">Play the game</a><a href="game/" target="_blank" rel="noopener">Practice mode</a><a href="https://boss-runner-fto6.onrender.com/leaderboard" target="_blank" rel="noopener">Leaderboard</a><a href="#vote">Map vote</a></div>
-    <div><h4>COLLECT</h4><a href="#drops">Skins &amp; drops</a><a href="https://boss-runner-fto6.onrender.com/nft" target="_blank" rel="noopener">Mint page</a><a href="https://solscan.io/token/6eAN8Pi9GiWRGNLDNk62DyRJBqYE4MZWvEc3J67vZ5rb" target="_blank" rel="noopener">NFT collection</a><a class="needs-ca" href="#" target="_blank" rel="noopener" hidden>pump.fun</a></div>
-    <div><h4>COMMUNITY</h4><a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">X @TheBossCoin_SOL</a><a href="https://discord.gg/ftTwgfZja" target="_blank" rel="noopener">Discord</a><a href="https://t.me/TheBossCoinohio" target="_blank" rel="noopener">Telegram</a><a href="https://www.tiktok.com/@bosscoinrunner" target="_blank" rel="noopener">TikTok @bosscoinrunner</a></div>
-    <div><h4>INFO</h4><a href="rules.html">Official rules</a><a href="#roadmap">Roadmap</a><a href="#faq">FAQ</a><a href="#transparency">Transparency</a><a href="privacy.html">Privacy policy</a></div>
+    <div><h3 class="fh">PLAY</h3><a href="#play">Play the runner</a><a href="sandbox/">Sandbox (beta)</a><a href="game/" target="_blank" rel="noopener">Practice mode</a><a href="https://boss-runner-fto6.onrender.com/leaderboard" target="_blank" rel="noopener">Leaderboard</a><a href="#vote">Map vote</a></div>
+    <div><h3 class="fh">COLLECT</h3><a href="#drops">Skins &amp; drops</a><a href="https://boss-runner-fto6.onrender.com/nft" target="_blank" rel="noopener">Mint page</a><a href="https://solscan.io/token/6eAN8Pi9GiWRGNLDNk62DyRJBqYE4MZWvEc3J67vZ5rb" target="_blank" rel="noopener">NFT collection</a><a class="needs-ca" href="#" target="_blank" rel="noopener" hidden>pump.fun</a></div>
+    <div><h3 class="fh">COMMUNITY</h3><a href="https://x.com/TheBossCoin_SOL" target="_blank" rel="noopener">X @TheBossCoin_SOL</a><a href="https://discord.gg/ftTwgfZja" target="_blank" rel="noopener">Discord</a><a href="https://t.me/TheBossCoinohio" target="_blank" rel="noopener">Telegram</a><a href="https://www.tiktok.com/@bosscoinrunner" target="_blank" rel="noopener">TikTok @bosscoinrunner</a></div>
+    <div><h3 class="fh">INFO</h3><a href="rules.html">Official rules</a><a href="#roadmap">The plan</a><a href="#buildlog">Build log</a><a href="#faq">FAQ</a><a href="#transparency">Transparency</a><a href="privacy.html">Privacy policy</a></div>
   </div>
   <div class="fdisc">
     <div style="overflow-wrap:anywhere" id="foot-ca">CA: 4AcmBHJaSqJCDT99W769ecEXupsj7mkr2Wdfien2pump</div>
@@ -822,5 +971,6 @@ if(C.prize&&Array.isArray(C.prize.split)){var pd=document.querySelector(".podium
 setTimeout(function(){var w=$("whales");if(w&&/Loading whale watch/.test(w.textContent))w.innerHTML='<div class="empty">Snapshot not available right now.</div>';},8000);
 })();
 </script>
+<script src="assets/site.js" defer></script>
 </body>
 </html>

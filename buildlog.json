@@ -1,0 +1,314 @@
+{
+"generated": "2026-10-07T13:15:17+00:00",
+"total": 51,
+"first": "2026-10-01T19:35:21-04:00",
+"active_days": 7,
+"commits": [
+{
+"h": "1743f79",
+"full": "1743f79140d44058863515afeb8548a5c34d93cc",
+"t": "2026-10-07T09:11:32-04:00",
+"s": "Sandbox v0.3.2: boss tuning, touch aim assist, crash fix"
+},
+{
+"h": "e23d8f5",
+"full": "e23d8f5004987be71e4e92723f74537364e80cce",
+"t": "2026-10-07T09:08:09-04:00",
+"s": "Sandbox v0.3.1: ore scanner, landscape HUD fix"
+},
+{
+"h": "5e1fe2d",
+"full": "5e1fe2d74ea123796e32622e97a62503a649ce82",
+"t": "2026-10-07T09:04:17-04:00",
+"s": "Sandbox v0.3: biomes, caves, BOSS Lab upgrades, quests, Rug Puller boss, juice + synth audio, phone aim-on-MINE"
+},
+{
+"h": "c9a2368",
+"full": "c9a2368759556e9125a7d8fe80028689b195debe",
+"t": "2026-10-06T15:05:26-04:00",
+"s": "Sandbox mobile controls: bigger buttons, slower look, joystick dead zone, tip overlay, softer mining"
+},
+{
+"h": "b11c2ec",
+"full": "b11c2ec001d127b8be0313091b24ba5aef0fbac5",
+"t": "2026-10-06T12:37:58-04:00",
+"s": "Add small 'Try First-Person Sandbox (beta)' link under the game"
+},
+{
+"h": "4d8fb8f",
+"full": "4d8fb8fe0604e0ffb9e6971004c9f4cda0893a39",
+"t": "2026-10-06T12:36:45-04:00",
+"s": "Add $BOSS Sandbox first-person beta (separate page /sandbox/, single-player practice only; SOL shards are in-game items with no cash value)"
+},
+{
+"h": "d73ded8",
+"full": "d73ded8098d7487a10ea521b1530da160f6fd3c7",
+"t": "2026-10-06T12:23:34-04:00",
+"s": "Polish pass: sticky nav + mobile menu, headline offer with Fudder deadline fallback, facts strip, game screenshots, 6-map gallery, skins gallery, leaderboard podium, roadmap, how to get $BOSS, community, trust signals, FAQ, footer, privacy policy"
+},
+{
+"h": "1270ba3",
+"full": "1270ba3cab134f0496ece43cad70c55cf2fbff02",
+"t": "2026-10-05T08:39:37-04:00",
+"s": "Fix iOS Safari white vertical seam lines: draw CRT scanlines in device pixels (no scaled pattern)"
+},
+{
+"h": "c0ce264",
+"full": "c0ce2649bc9a150a672119e293029c34c6987dac",
+"t": "2026-10-04T22:27:38-04:00",
+"s": "Add Discord button (hero + footer)"
+},
+{
+"h": "b8d459a",
+"full": "b8d459a748da76775d717e0acfc37f0f2510bfcd",
+"t": "2026-10-04T21:00:48-04:00",
+"s": "Troglodyte Fudder launch drop (Round 2): skins section, practice try-on skin, rules v1.5.1"
+},
+{
+"h": "e53b20b",
+"full": "e53b20b613820d9529bb83ba4c2c0887ce076c71",
+"t": "2026-10-04T17:55:42-04:00",
+"s": "Add TikTok @bosscoinrunner to hero and footer socials"
+},
+{
+"h": "d73447c",
+"full": "d73447c787c7e78e1910e740c438eb05c145718c",
+"t": "2026-10-04T11:14:57-04:00",
+"s": "Rules v1.5 effective Oct 4, 2026; site rules link v1.5"
+},
+{
+"h": "b065cab",
+"full": "b065cabe3e62c00aaa7dd78a887fdd0fee5ea71b",
+"t": "2026-10-04T11:07:06-04:00",
+"s": "Rename holder skins to outfit names in practice game + site copy; re-rendered skins video/poster"
+},
+{
+"h": "5996155",
+"full": "599615554f10cef45051af37512a6b055d94ce29",
+"t": "2026-10-04T10:57:53-04:00",
+"s": "Full-outfit holder skins in practice game (all maps incl. surf/climb/Ohio); new previews, vote thumbs, skins video + poster; outfit copy"
+},
+{
+"h": "933a7b9",
+"full": "933a7b9238adebb2e153271a344ed1f8c353401a",
+"t": "2026-10-04T10:28:02-04:00",
+"s": "Holder skin vote block + milestone drops blurb + vote art + new skin art in practice game; rules v1.5 DRAFT"
+},
+{
+"h": "071f086",
+"full": "071f086fa66cfec0bf2e7864446e5f25ee382eeb",
+"t": "2026-10-04T09:34:40-04:00",
+"s": "Skins video + poster: 'NFT upgrade coming' -> real Solana NFTs (claim free, mint ~0.00001 SOL)"
+},
+{
+"h": "00bf795",
+"full": "00bf79537cabdf20e7c22820a590d5394ec378f9",
+"t": "2026-10-04T09:30:45-04:00",
+"s": "NFT skins live: rules v1.4 (Oct 4, 2026); hero/entry/skins/drops copy: holder skins are real Solana NFTs (compressed, verified collection), claim free then mint on /nft (~0.00001 SOL) with rarity number; mint page + Solscan collection links; practice skins menu text"
+},
+{
+"h": "e3fde41",
+"full": "e3fde415f5406724924755d0e8197020c17a7ca7",
+"t": "2026-10-04T00:10:26-04:00",
+"s": "Hero + entry: new maps added to the vote every round"
+},
+{
+"h": "05977b0",
+"full": "05977b0b1512f8fa0f5e8702370e20ece07c8ee5",
+"t": "2026-10-04T00:10:08-04:00",
+"s": "Hero: sell the current game (free runner, 6 maps, map vote from Round 3, top 5 win SOL, holder skin drops + NFT upgrade before Round 3, duels Round 4), Play free + Vote buttons, short honest disclaimer; drop 'no roadmap/that's it'"
+},
+{
+"h": "c11d4b2",
+"full": "c11d4b2f4514bd0821abb6624fe5ea19015329d2",
+"t": "2026-10-04T00:09:06-04:00",
+"s": "Rewards: How to enter (free, 18+, worldwide where legal, 3 tries), map rotation by vote from Round 3 with candidate maps + Vote/Practice links, Round 2+ prizes (20%, top 5, 0.05 SOL min), holder perks, duels Round 4; live leaderboard link; drop outdated 'opens with round 1' text"
+},
+{
+"h": "2737f7d",
+"full": "2737f7de4aa2558f70efc9dd749f539ea7df1a11",
+"t": "2026-10-04T00:05:46-04:00",
+"s": "Rules v1.3 footer effective date Oct 4, 2026"
+},
+{
+"h": "4225ec4",
+"full": "4225ec48a5d48262378fba5f5d0404d71c0b2f65",
+"t": "2026-10-04T00:05:26-04:00",
+"s": "Skins & Drops: animated skins preview video (muted, looping, inline) replaces static previews"
+},
+{
+"h": "72ff4c4",
+"full": "72ff4c4e086818a4d4e2eebb92a18700b0653e17",
+"t": "2026-10-04T00:04:06-04:00",
+"s": "Rules v1.3 dated Oct 4, 2026"
+},
+{
+"h": "b0fb440",
+"full": "b0fb44006b1fa1ef6feef54edff68cea62133461",
+"t": "2026-10-03T23:44:21-04:00",
+"s": "Wording: NFT upgrade coming before Round 3"
+},
+{
+"h": "fb61faa",
+"full": "fb61faa3e1f92c6fe0ccf0f8fe84cefd313e4621",
+"t": "2026-10-03T23:43:30-04:00",
+"s": "Flashier skins (aura, rim, shine, particles, Legendary rainbow halo+trail); replace old gameplay video with 5-map practice clip gallery"
+},
+{
+"h": "7550916",
+"full": "7550916666d2c0ab6835d199a87f131d5170468d",
+"t": "2026-10-03T23:22:14-04:00",
+"s": "Skins & Drops (NOT DEPLOYED): 5 detailed map skins in practice game (wear any owned skin on any map, persists, try-on menu, rarity flair), site Skins & Drops section + previews, rules v1.3 6a (map drops from Round 3)"
+},
+{
+"h": "3889a5b",
+"full": "3889a5b7e417d4d6f12fcb77b83d6693419a37ca",
+"t": "2026-10-03T23:21:57-04:00",
+"s": "Practice game: 5 collectible map skins (WIP)"
+},
+{
+"h": "a522506",
+"full": "a522506e28d4deacb862877fd9df1d947155325c",
+"t": "2026-10-03T23:21:33-04:00",
+"s": "Rules v1.2 (approved by Noah): from Round 2, prize pot = 20% of creator fees received that round (Sponsor 80%), top 5 paid 40/25/15/12/8, no payout under 0.05 SOL (rolls over). Round 1 unchanged. Site rewards section + config + practice notice updated."
+},
+{
+"h": "0ffc612",
+"full": "0ffc6121e53f0125059b9ca89b51ccde292c5244",
+"t": "2026-10-03T23:02:11-04:00",
+"s": "Holder perks (cosmetic only): rules v1.1 section 6a, site skins note, practice 'Holders' Phantom connect unlocking holder map previews only"
+},
+{
+"h": "4714626",
+"full": "4714626b23cd222145321493deb5e0b19d811234",
+"t": "2026-10-03T22:33:44-04:00",
+"s": "Config: no lifetime prize cap (matches rules v1.0)"
+},
+{
+"h": "dad751a",
+"full": "dad751a61cd5a5023d278d6417f697a8a67393ef",
+"t": "2026-10-03T22:32:53-04:00",
+"s": "Official Rules v1.0: state that top-10 prizes are unequal, descending by place"
+},
+{
+"h": "4d4e7d3",
+"full": "4d4e7d330211a2e96006ea7d0b49eb4f6b804b3d",
+"t": "2026-10-03T22:32:18-04:00",
+"s": "Official Rules v1.0 (effective Oct 3, 2026): worldwide eligibility, sponsor named, no lifetime cap, prizes scale with market cap; site links to official rules"
+},
+{
+"h": "3b05802",
+"full": "3b05802b1933e7bc7a8c5ed6007026f698a5f47f",
+"t": "2026-10-03T22:28:51-04:00",
+"s": "Rules draft 0.4: map rotation, vote, leaderboard reset"
+},
+{
+"h": "b375c7f",
+"full": "b375c7f3dba4ecfa39b015f6c4f2e1a8dabfc5e9",
+"t": "2026-10-03T21:54:21-04:00",
+"s": "Practice game: add Prehistoric Climb map (id climb): vertical lane climbing, telegraphed hazards, T-Rex spear-throwing boss"
+},
+{
+"h": "28118e5",
+"full": "28118e5947f99335c8fae85c7f724bdc70f4aecb",
+"t": "2026-10-03T21:28:48-04:00",
+"s": "Practice game: unique animated character per map (pumpkin man, factory worker, astronaut, surfer); Ohio keeps crown"
+},
+{
+"h": "278ecda",
+"full": "278ecdafdbdb8680cbc2b00b4357e40944d05b10",
+"t": "2026-10-03T21:24:39-04:00",
+"s": "Site vote: Round 2 stays Ohio, vote picks Round 3's ranked map (closes Wed Oct 7 9 PM ET)"
+},
+{
+"h": "b42738f",
+"full": "b42738f202fc418ceffd9fca9e956599d7f35701",
+"t": "2026-10-03T21:20:17-04:00",
+"s": "Practice game: add Shark Bay Surf map (id surf): ramps+tricks, sharks, fishing stop extra life, Megalodon Bear boss"
+},
+{
+"h": "c1e0fcc",
+"full": "c1e0fcc7c50659ea607f0550fd7c676e40e6cbcb",
+"t": "2026-10-03T21:16:31-04:00",
+"s": "Site: vote for next round's ranked map (Phantom-signed, one vote per wallet per round)"
+},
+{
+"h": "0e8ef4e",
+"full": "0e8ef4e208c27bb4c66e2dd95240ebfd78681b13",
+"t": "2026-10-03T20:51:55-04:00",
+"s": "Practice game: map select + 3 new maps (Haunted Graveyard, Rug Pull Factory, Moon Mission)"
+},
+{
+"h": "d8f92d4",
+"full": "d8f92d4b85e8d7d792f52e8505d685874e4c3f81",
+"t": "2026-10-03T18:48:18-04:00",
+"s": "Practice mode: unlimited tries"
+},
+{
+"h": "9f78f02",
+"full": "9f78f02595e9dd74c133bf763b05b7708d5a78f5",
+"t": "2026-10-02T07:09:09-04:00",
+"s": "Hardcode live CA in HTML (no 'coming soon' fallback)"
+},
+{
+"h": "ecba159",
+"full": "ecba1595489a38ccf16bb656eff28963481c072d",
+"t": "2026-10-01T23:31:30-04:00",
+"s": "Add Telegram link"
+},
+{
+"h": "ae9e0ff",
+"full": "ae9e0ff7927492156d5bacfa75176f32b8849018",
+"t": "2026-10-01T21:56:53-04:00",
+"s": "Phones without Phantom: Open-in-Phantom deep link + practice link under the ranked Play buttons"
+},
+{
+"h": "15895d1",
+"full": "15895d1d8cee7cea133b089ba9f0e74143f98e13",
+"t": "2026-10-01T20:55:31-04:00",
+"s": "BOSS website"
+},
+{
+"h": "b0121c6",
+"full": "b0121c66333a9e50f82920f3ba0dac3257464ac6",
+"t": "2026-10-01T20:52:29-04:00",
+"s": "BOSS website"
+},
+{
+"h": "8a95e3c",
+"full": "8a95e3cc5e0299fb17a786776163e1743f322540",
+"t": "2026-10-01T20:51:15-04:00",
+"s": "BOSS website"
+},
+{
+"h": "8f193ee",
+"full": "8f193ee1ffc64c6b9b24235f1f3e557277d98295",
+"t": "2026-10-01T20:45:45-04:00",
+"s": "Rewards pending the official rules post on X, not guaranteed"
+},
+{
+"h": "269baf3",
+"full": "269baf3f8094b1fa1f4c13bd4f9290714a134c6d",
+"t": "2026-10-01T20:42:22-04:00",
+"s": "Round 1 starts Thu Oct 1 2026 9:00 PM ET; rules draft 0.3"
+},
+{
+"h": "a254904",
+"full": "a254904b443eda4c077eb6da6cfa8bf93abc8386",
+"t": "2026-10-01T20:35:40-04:00",
+"s": "Ranked mode is the main game: https://boss-runner-fto6.onrender.com/"
+},
+{
+"h": "e3dcc55",
+"full": "e3dcc55158195444111d2b7564411cbf220a3cee",
+"t": "2026-10-01T19:37:55-04:00",
+"s": "BOSS website"
+},
+{
+"h": "297745b",
+"full": "297745bd97dffaa7526d6be5cc731ddd206ee903",
+"t": "2026-10-01T19:35:21-04:00",
+"s": "BOSS website"
+}
+]
+}
