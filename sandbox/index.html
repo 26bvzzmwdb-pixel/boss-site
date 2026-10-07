@@ -152,6 +152,7 @@ body.photo .hud,body.photo .tbtn,body.photo #labBtn,body.photo #shotBtn,body.pho
 body.photo #photoPad{display:block;position:fixed;inset:0;z-index:6;touch-action:none;cursor:grab}
 body.photo #photoBar{display:block;touch-action:manipulation;position:fixed;z-index:7;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));width:min(420px,94vw);padding:8px;border-radius:18px;background:rgba(8,6,24,.78);border:1px solid rgba(255,210,74,.5);box-shadow:0 0 18px rgba(255,79,216,.3);text-align:center}
 .phh{font:900 9px Orbitron,sans-serif;letter-spacing:2px;color:#ffd24a;margin-bottom:6px}.phr{display:flex;gap:6px;margin-top:6px}.phr button{flex:1;padding:10px 4px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.07);color:#fff;font:900 10px Orbitron,sans-serif;letter-spacing:.5px;touch-action:manipulation}.phr .snap{flex:1.6;background:linear-gradient(180deg,#ff4fd8,#9945ff);border-color:#ffb0f0}
+.dl.bl{color:#14f195!important}
 /* menu */
 #menu{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(60,20,110,.75),rgba(5,6,15,.94));padding:16px;overflow:auto}
 #menu.hide{display:none}
@@ -195,7 +196,7 @@ body.photo #photoBar{display:block;touch-action:manipulation;position:fixed;z-in
 <div class="hud" id="reel"><div class="track"><div id="reelZone"></div><div id="reelFish"></div></div><div class="pb"><div id="reelProg"></div></div></div>
 <div id="flash"></div>
 <div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
-<div id="labList"></div><div id="dailyL" class="dl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="petL"></div><div id="achL"></div><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
+<div id="labList"></div><div id="dailyL" class="dl"></div><div id="buildL" class="dl bl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="petL"></div><div id="achL"></div><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
 <div class="hud" id="badge"><b>$BOSS SANDBOX</b> <span class="bt">BETA</span><br><span>first-person · practice only</span></div>
 <div class="hud" id="clock">--</div>
 <div class="hud" id="shards"><div class="n" id="shardN">0</div><div class="l">◆ SOL SHARDS</div><div class="nv">in-game items · no cash value</div></div>
@@ -229,10 +230,10 @@ body.photo #photoBar{display:block;touch-action:manipulation;position:fixed;z-in
  <div class="card">
   <div class="heroRow"><img src="../assets/logo.webp" alt="$BOSS" class="logo"><div class="heroWrap"><img id="charHero" alt="Your character" src="../assets/chars/h_fudder.webp"></div></div>
   <h1 class="title">$BOSS<br><span>SANDBOX</span></h1>
-  <div class="tag">FREE · FIRST-PERSON · DIG · BUILD · BUST THE RUG · FISH · v0.7</div>
+  <div class="tag">FREE · FIRST-PERSON · DIG · BUILD · BUST THE RUG · FISH · v0.8</div>
   <div class="charbox"><div class="cl">CHOOSE YOUR CHARACTER</div><div id="chars"></div><div id="charName"></div></div>
   <div id="mStats" class="mstats"></div>
-  <div id="dailyM" class="dl"></div>
+  <div id="dailyM" class="dl"></div><div id="buildM" class="dl bl"></div>
   <button class="btn big" id="playBtn">PLAY</button>
   <div class="row"><button class="btn sm" id="sndBtn" type="button">SFX: ON</button><button class="btn sm" id="musBtn" type="button">MUSIC: ON</button>
    <span class="lk">LOOK <button class="btn sm" id="lookDn" type="button">−</button><b id="lookV">100%</b><button class="btn sm" id="lookUp" type="button">+</button></span></div>
