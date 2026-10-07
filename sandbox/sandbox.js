@@ -319,7 +319,7 @@ function aim() {
   camera.getWorldPosition(tmpV); camera.getWorldDirection(tmpD);
   hit = raycast(tmpV, tmpD, REACH[upg.drill]);
   fudHit = null; bossHit = false; let best = hit ? hit.t : 9;
-  if (boss.on) { const o = boss.g.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z; if (t > 0 && t < 30) { const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < 1.9 * 1.9 && (!hit || t < hit.t + 1)) { bossHit = true; hit = null; best = t; } } }
+  if (boss.on) { const o = boss.g.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z; if (t > 0 && t < 30) { const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < (IS_TOUCH ? 2.7 : 2) ** 2 && (!hit || t < hit.t + 1)) { bossHit = true; hit = null; best = t; } } }
   for (const f of fuds) { const o = f.s.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z;
     if (t < 0 || t > best) continue; const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < .8 * .8) { best = t; fudHit = f; } }
 }
@@ -766,7 +766,7 @@ function makeBoss() { const g = new THREE.Group();
   const ring = new THREE.Mesh(new THREE.TorusGeometry(.8, .07, 8, 32), new THREE.MeshBasicMaterial({ color: 0xffd24a })); ring.position.z = .3; g.add(ring);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: shotTex, color: 0xff4fd8, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.set(6, 6, 1); halo.position.z = -.2; g.add(halo);
   boss.g = g; boss.eye = eye; boss.rug = rug; boss.ring = ring; }
-function summonBoss() { if (boss.on || upg.drill < 2) return false; if (!boss.g) makeBoss(); boss.on = true; boss.phase = 1; boss.t = 0; boss.shotT = 3.5; boss.max = Math.round(260 * (1 + .6 * stats.kills)); boss.hp = boss.max;
+function summonBoss() { if (boss.on || upg.drill < 2) return false; if (!boss.g) makeBoss(); boss.on = true; boss.phase = 1; boss.t = 0; boss.shotT = 3.5; boss.max = Math.round(200 * (1 + .6 * stats.kills)); boss.hp = boss.max;
   boss.g.position.set(P.x + Math.sin(-P.yaw) * 14, P.y + 14, P.z - Math.cos(P.yaw) * 14); scene.add(boss.g); $("bossbar").classList.add("show"); updBossBar();
   banner("THE RUG PULLER", "Blast its eye with your drill!"); sfx.roar(); trauma = .8; buzz(120); return true; }
 function updBossBar() { $("bossFill").style.width = (100 * Math.max(0, boss.hp) / boss.max).toFixed(1) + "%"; $("bossLv").textContent = `THE RUG PULLER · LV ${stats.kills + 1}`; }
@@ -785,12 +785,12 @@ function updBoss(dt, time) { if (!boss.on) return; const g = boss.g; boss.t += d
   g.lookAt(P.x, P.y + P.eye, P.z); boss.ring.rotation.z += dt * (boss.phase === 2 ? 5 : 2);
   const pa = boss.rug.geometry.attributes.position, b = boss.rug.userData.base; for (let i = 0; i < pa.count; i++) { const x = b[i * 3], y = b[i * 3 + 1]; pa.array[i * 3 + 2] = Math.sin(x * 1.5 + boss.t * 4) * .28 + Math.sin(y * 2 + boss.t * 3) * .12 - Math.abs(x) * .1; } pa.needsUpdate = true;
   boss.flash -= dt; boss.eye.material.color.setHex(boss.flash > 0 ? 0xffffff : boss.phase === 2 ? 0xff8a00 : 0xff3250); boss.eye.scale.setScalar(1 + Math.sin(time * 6) * .06 + (boss.flash > 0 ? .15 : 0));
-  boss.shotT -= dt; if (boss.shotT <= 0) { boss.shotT = boss.phase === 2 ? 1.5 : 2.3; const n = boss.phase === 2 ? 3 : 1, o = boss.eye.getWorldPosition(new THREE.Vector3());
+  boss.shotT -= dt; if (boss.shotT <= 0) { boss.shotT = boss.phase === 2 ? 1.9 : 2.8; const n = boss.phase === 2 ? 3 : 1, o = boss.eye.getWorldPosition(new THREE.Vector3());
     for (let i = 0; i < n; i++) { const d = new THREE.Vector3(P.x - o.x, P.y + 1.2 - o.y, P.z - o.z).normalize(); d.applyAxisAngle(new THREE.Vector3(0, 1, 0), (i - (n - 1) / 2) * .28);
-      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: shotTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); s.scale.set(.9, .9, 1); s.position.copy(o); scene.add(s); boss.shots.push({ s, v: d.multiplyScalar(boss.phase === 2 ? 8 : 6.5), l: 5 }); } sfx.bshot(); }
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: shotTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); s.scale.set(.9, .9, 1); s.position.copy(o); scene.add(s); boss.shots.push({ s, v: d.multiplyScalar(boss.phase === 2 ? 7 : 5.5), l: 5 }); } sfx.bshot(); }
   for (let i = boss.shots.length - 1; i >= 0; i--) { const q = boss.shots[i], s = q.s; q.l -= dt; s.position.addScaledVector(q.v, dt);
     const dx = P.x - s.position.x, dy = P.y + 1 - s.position.y, dz = P.z - s.position.z;
-    if (dx * dx + dy * dy + dz * dz < .55) { scene.remove(s); boss.shots.splice(i, 1); P.vx -= q.v.x * .8; P.vz -= q.v.z * .8; P.vy = 4; pop("RUGGED! −2", "#ff6a8a"); hurt(2); continue; }
+    if (dx * dx + dy * dy + dz * dz < .55) { scene.remove(s); boss.shots.splice(i, 1); P.vx -= q.v.x * .8; P.vz -= q.v.z * .8; P.vy = 4; const dm = boss.phase === 2 ? 2 : 1; pop(`RUGGED! −${dm}`, "#ff6a8a"); hurt(dm); if (!boss.on) return; continue; }
     if (q.l <= 0 || get(Math.floor(s.position.x), Math.floor(s.position.y), Math.floor(s.position.z))) { burst(s.position.x, s.position.y, s.position.z, [0xff3250, 0xff6a8a], 8, 3); scene.remove(s); boss.shots.splice(i, 1); } }
   if (Math.hypot(g.position.x - P.x, g.position.z - P.z) > 45) bossEnd(false); }
 
@@ -822,7 +822,7 @@ function frame(now) {
   const night = updSky(running ? dt : 0);
   if (running) { updPlayer(dt); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); }
   updMP(dt); updParts(dt); updDebris(dt); audioTick(); adaptRes(dt);
-  let n = 0; for (const ci of dirty) { buildChunk(ci); dirty.delete(ci); if (++n >= 3) break; }
+  let n = 0; for (const ci of dirty) { buildChunk(ci); dirty.delete(ci); if (++n >= (IS_TOUCH ? 2 : 3)) break; }
   trauma = Math.max(0, trauma - dt * 1.8); const sh = trauma * trauma;
   camera.position.set(P.x + (Math.random() - .5) * sh * .25, P.y + P.eye + (Math.random() - .5) * sh * .25, P.z + (Math.random() - .5) * sh * .25); camera.rotation.set(P.pitch + (Math.random() - .5) * sh * .04, P.yaw + (Math.random() - .5) * sh * .04, (Math.random() - .5) * sh * .06);
   const spd = Math.hypot(P.vx, P.vz), fovT = baseFov + (spd > 5.5 ? 6 : 0); if (Math.abs(camera.fov - fovT) > .05) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
