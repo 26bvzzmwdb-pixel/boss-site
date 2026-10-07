@@ -354,7 +354,7 @@ function breakBlock(x, y, z, id, chained) {
   debris(x + .5, y + .5, z + .5, c.col, c.drop ? 8 : 5);
   stats.mined++; comboHit();
   if (c.drop) { stats.veins++; if (id === 9) stats.prisms++; if (id === 10) stats.cores++; if (id === 18) stats.golds++;
-    const dv = c.drop * (ev.k === "pump" ? 2 : 1); spawnOrbs(x + .5, y + .5, z + .5, dv, c.col); pop(`◆ +${dv} ${c.name.replace(" VEIN", "")}${ev.k === "pump" ? " ×2" : ""}`, c.drop >= 10 ? "#fff2b0" : c.drop >= 5 ? "#ffd24a" : c.drop >= 3 ? "#14f195" : "#c69bff");
+    const dv = c.drop * (ev.k === "pump" ? 2 : 1) + (upg.pet === "sprite" && Math.random() < .25 ? 1 : 0); spawnOrbs(x + .5, y + .5, z + .5, dv, c.col); pop(`◆ +${dv} ${c.name.replace(" VEIN", "")}${ev.k === "pump" ? " ×2" : ""}`, c.drop >= 10 ? "#fff2b0" : c.drop >= 5 ? "#ffd24a" : c.drop >= 3 ? "#14f195" : "#c69bff");
     sfx.vein(c.drop); trauma = Math.max(trauma, c.drop >= 10 ? .55 : .3); buzz(c.drop >= 5 ? 30 : 15);
     if (upg.drill >= 4 && !chained) { const seen = new Set([x + "," + y + "," + z]), q = [[x, y, z]], out = [];
       while (q.length && out.length < 10) { const [a, b2, d] = q.shift(); for (const [u, v, w] of [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]) { const X = a + u, Y = b2 + v, Z = d + w, k = X + "," + Y + "," + Z; if (seen.has(k)) continue; seen.add(k); if (get(X, Y, Z) === id) { out.push([X, Y, Z]); q.push([X, Y, Z]); } } }
@@ -462,6 +462,7 @@ const sfx = {
   event: () => { if (!AC) return; const t = AC.currentTime; [60, 67, 72, 79].forEach((m, i) => note(mtof(m), .6, "sawtooth", .03, 0, t + i * .12, null, 2200)); },
   key: m => { note(mtof(m), .45, "triangle", .07); note(mtof(m + 12), .3, "sine", .03); },
   step: id => noise(.045, (BRK_F[id] || 1200) * .7, .03, 1.5),
+  bark: () => { note(520, .08, "square", .05, 260, 0, null, 2000); setTimeout(() => note(600, .1, "square", .05, 300, 0, null, 2000), 130); },
   shimmer: v => { note(mtof(96 + Math.floor(Math.random() * 5) * 2), .5, "sine", v); },
 };
 function initAudio() { if (AC) { if (AC.state === "suspended") AC.resume(); return; }
@@ -700,7 +701,7 @@ function updMP(dt) { if (!mp.on) return; mp.sendT -= dt;
 
 // ---------------- progression: drill tiers, upgrades, stats ----------------
 const SPEED = [0, 1, 1.6, 2.4, 3.5], REACH = [0, 5, 6, 7, 8], DMG = [0, 9, 15, 24, 38], LASER = [0, 0x14f195, 0x28dcff, 0xffd24a, 0xff4fd8];
-const upg = { drill: 1, boots: 0, shield: 0, hp: 0, rod: 1 };
+const upg = { drill: 1, boots: 0, shield: 0, hp: 0, rod: 1, pets: {}, pet: "" };
 const stats = { mined: 0, veins: 0, placed: 0, prisms: 0, golds: 0, cores: 0, fud: 0, kills: 0, combos: 0, dj: 0 };
 const maxHp = () => 10 + upg.hp * 4;
 let trauma = 0;
@@ -725,7 +726,9 @@ function renderLab() { const L = $("labList"); L.innerHTML = "";
   $("labShards").textContent = shards; $("achL").innerHTML = achHTML(); $("labStats").innerHTML = `Secret caches ${Math.min(5, cachesFound())}/5 <small>(listen for a shimmer in deep caves)</small><br>Tiles mined ${stats.mined} · Veins ${stats.veins} · Bosses busted ${stats.kills} · Fish ${stats.fish || 0}<br><b>FISHDEX</b> ` + FISH.map(f => fish.dex[f.n] ? `<span style="color:${f.c}">${f.n} ×${fish.dex[f.n]}</span>` : `<span style="opacity:.4">???</span>`).join(" · "); }
 function buyUpg(id) { const u = UPG.find(q => q.id === id); if (!u || u.have() || !u.can()) return false; const c = costOf(u);
   if (shards < c) { pop(`NEED ◆${c}`, "#ff6a8a"); sfx.hurt(); return false; } shards -= c; u.buy(); updShards(); sfx.buy(); buzz(20); banner(u.name, "UNLOCKED"); renderLab(); save(); qTick(); return true; }
-function openLab() { labOpen = true; input.mine = false; input.f = input.s = 0; renderLab(); $("lab").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
+function renderPets() { const el = $("petL"); if (!el) return; el.innerHTML = `<b>🐾 COMPANIONS</b>` + PETS.map(([id, nm, d, c]) => { const own = upg.pets && upg.pets[id], on = upg.pet === id;
+  return `<div class="pet"><img src="${petTex[id].image.toDataURL()}" alt=""><div><b>${nm}</b><small>${d}</small></div><button type="button" data-pet="${id}" class="${on ? "on" : ""}">${on ? "WITH YOU" : own ? "BRING" : "◆" + c}</button></div>`; }).join(""); }
+function openLab() { labOpen = true; input.mine = false; input.f = input.s = 0; renderLab(); renderPets(); $("lab").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
 function closeLab(quiet) { if (!labOpen) return; labOpen = false; $("lab").classList.remove("show"); if (!quiet && !IS_TOUCH && running && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
 $("labList").addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if (b) buyUpg(b.dataset.id); });
 $("labClose").addEventListener("click", () => closeLab());
@@ -1104,7 +1107,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; const time = now / 1000;
   const night = updSky(running ? dt : 0); curNight = night; updWater(dt, time, night);
-  if (running) { updPlayer(dt); landCheck(); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); updMeteor(dt, time); updCritters(dt, night); toyTick(dt); updEvents(dt, night); updRain(dt); }
+  if (running) { updPlayer(dt); landCheck(); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); updMeteor(dt, time); updCritters(dt, night); toyTick(dt); updEvents(dt, night); updRain(dt); updPet(dt, time); }
   else menuCam(dt);
   updMotes(dt, time, night); skyU.uTime.value = time; skyU.uAur.value += ((ev.k === "aurora" ? 1 : night > .6 ? .3 : 0) - skyU.uAur.value) * Math.min(1, dt * .8); updMP(dt); updParts(dt); updDebris(dt); audioTick(); adaptRes(dt);
   let n = 0; for (const ci of dirty) { buildChunk(ci); dirty.delete(ci); if (++n >= (IS_TOUCH ? 2 : 3)) break; }
@@ -1174,10 +1177,48 @@ const ACH = [
   ["fw", "🎆", "SHOWTIME", "Pop 3 Firework Crates", () => (stats.fireworks | 0) >= 3], ["keys", "🎹", "KEYBOARD HERO", "Play 16 notes on Synth Keys", () => (stats.notes | 0) >= 16],
   ["moon", "🌙", "MOONWALKER", "Visit the Moon Basin", () => !!stats.moon], ["core", "✨", "CORE MEMORY", "Mine a SOL Core vein", () => stats.cores >= 1],
   ["drill", "🔩", "BOSS DRILL", "Build the BOSS DRILL MK IV", () => upg.drill >= 4], ["event", "🌌", "WEATHER WATCHER", "Live through a world event", () => (stats.events | 0) >= 1],
-  ["streak", "🔥", "ON A STREAK", "3-day daily streak", () => (daily.streak | 0) >= 3] ];
+  ["streak", "🔥", "ON A STREAK", "3-day daily streak", () => (daily.streak | 0) >= 3], ["pet", "🐾", "BEST FRIEND", "Adopt a companion", () => (stats.petsGot | 0) >= 1], ["zfish", "🗺", "ZONE ANGLER", "Catch 3 zone-only fish", () => FISH.filter(f => f.z && fish.dex[f.n]).length >= 3] ];
 let ach = {}, achT = 0;
 function achTick() { if (mp.on || !running) return; for (const a of ACH) if (!ach[a[0]] && a[4]()) { ach[a[0]] = Date.now(); shards += 5; updShards(); const el = $("ach"); $("achN").textContent = `${a[1]} ${a[2]}`; $("achD").textContent = `${a[3]} · ◆+5 (in-game)`; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); clearTimeout(achT); achT = setTimeout(() => el.classList.remove("show"), 3600); sfx.ach(); charJoy = 1; buzz(40); save(); break; } }
 function achHTML() { return `<b>🏆 ACHIEVEMENTS ${Object.keys(ach).length}/${ACH.length}</b><div class="achg">` + ACH.map(a => `<span class="${ach[a[0]] ? "on" : ""}" title="${a[2]}: ${a[3]}">${a[1]}<i>${ach[a[0]] ? a[2] : "???"}</i></span>`).join("") + "</div>"; }
+
+// ---------------- v0.8: companions (original pets, local only) ----------------
+const PETS = [["pup", "PUMP PUP", "Hops after you and barks when a secret cache is near", 40], ["sprite", "SHARD SPRITE", "Floats at your shoulder · 25% chance of +1 shard per vein", 60], ["crab", "HODL CRAB", "Scuttles beside you · grabs falling rain shards + pinches Paper Hands", 50]];
+const petTex = {}; (() => { const mk = (id, fn) => { const c = document.createElement("canvas"); c.width = c.height = 128; fn(c.getContext("2d")); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; petTex[id] = t; };
+  mk("pup", g => { g.lineWidth = 4; g.strokeStyle = "#0a0618"; g.fillStyle = "#ff4fd8"; g.beginPath(); g.ellipse(64, 80, 34, 24, 0, 0, 7); g.fill(); g.stroke(); g.beginPath(); g.arc(64, 48, 26, 0, 7); g.fill(); g.stroke();
+    g.fillStyle = "#28dcff"; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(64 + s * 14, 30); g.lineTo(64 + s * 30, 10); g.lineTo(64 + s * 28, 40); g.closePath(); g.fill(); g.stroke(); }
+    g.fillStyle = "#fff"; for (const s of [-1, 1]) { g.beginPath(); g.arc(64 + s * 10, 46, 7, 0, 7); g.fill(); } g.fillStyle = "#0a0618"; for (const s of [-1, 1]) { g.beginPath(); g.arc(64 + s * 10, 47, 3.5, 0, 7); g.fill(); }
+    g.fillStyle = "#0a0618"; g.beginPath(); g.ellipse(64, 58, 6, 4, 0, 0, 7); g.fill(); g.strokeStyle = "#ffd24a"; g.lineWidth = 5; g.beginPath(); g.arc(64, 72, 22, .2, Math.PI - .2); g.stroke(); g.fillStyle = "#ffd24a"; g.font = "900 14px Orbitron,Verdana"; g.textAlign = "center"; g.fillText("$", 64, 94);
+    g.strokeStyle = "#ff4fd8"; g.lineWidth = 7; g.beginPath(); g.moveTo(96, 80); g.quadraticCurveTo(116, 70, 112, 52); g.stroke(); });
+  mk("sprite", g => { g.shadowColor = "#14f195"; g.shadowBlur = 20; const gr = g.createLinearGradient(40, 20, 88, 108); gr.addColorStop(0, "#9945ff"); gr.addColorStop(1, "#14f195"); g.fillStyle = gr; g.beginPath(); g.moveTo(64, 14); g.lineTo(92, 56); g.lineTo(64, 114); g.lineTo(36, 56); g.closePath(); g.fill(); g.shadowBlur = 0;
+    g.strokeStyle = "rgba(255,255,255,.8)"; g.lineWidth = 2; g.beginPath(); g.moveTo(36, 56); g.lineTo(92, 56); g.moveTo(64, 14); g.lineTo(64, 114); g.stroke(); g.fillStyle = "rgba(200,255,240,.5)"; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(64 + s * 40, 50, 18, 9, s * .5, 0, 7); g.fill(); }
+    g.fillStyle = "#0a0618"; for (const s of [-1, 1]) { g.beginPath(); g.arc(64 + s * 9, 62, 4.5, 0, 7); g.fill(); } g.strokeStyle = "#0a0618"; g.lineWidth = 3; g.beginPath(); g.arc(64, 72, 7, .3, Math.PI - .3); g.stroke(); });
+  mk("crab", g => { g.lineWidth = 4; g.strokeStyle = "#0a0618"; g.fillStyle = "#ff7a3a"; for (const s of [-1, 1]) { g.beginPath(); g.arc(64 + s * 44, 50, 14, 0, 7); g.fill(); g.stroke(); g.fillStyle = "#0a0618"; g.beginPath(); g.moveTo(64 + s * 44, 50); g.lineTo(64 + s * 58, 42); g.lineTo(64 + s * 58, 58); g.fill(); g.fillStyle = "#ff7a3a"; }
+    for (const s of [-1, 1]) for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(64 + s * 20, 86 + k * 6); g.lineTo(64 + s * (36 + k * 4), 106 + k * 4); g.stroke(); }
+    g.beginPath(); g.ellipse(64, 80, 34, 22, 0, 0, 7); g.fill(); g.stroke(); g.fillStyle = "#ffd24a"; g.font = "900 13px Orbitron,Verdana"; g.textAlign = "center"; g.fillText("HODL", 64, 88);
+    for (const s of [-1, 1]) { g.strokeStyle = "#0a0618"; g.beginPath(); g.moveTo(64 + s * 10, 60); g.lineTo(64 + s * 12, 44); g.stroke(); g.fillStyle = "#fff"; g.beginPath(); g.arc(64 + s * 12, 40, 7, 0, 7); g.fill(); g.stroke(); g.fillStyle = "#0a0618"; g.beginPath(); g.arc(64 + s * 12, 41, 3, 0, 7); g.fill(); } }); })();
+const petMat = new THREE.SpriteMaterial({ transparent: true, alphaTest: .05 }); const petSpr = new THREE.Sprite(petMat); petSpr.visible = false; scene.add(petSpr);
+const petShadow = new THREE.Mesh(new THREE.PlaneGeometry(.8, .8), new THREE.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false })); petShadow.rotation.x = -Math.PI / 2; petShadow.visible = false; scene.add(petShadow);
+const pet = { x: 0, y: 0, z: 0, vy: 0, t: 0, barkT: 0, barked: {}, face: 1 };
+function setPet(id) { upg.pet = id; petSpr.visible = petShadow.visible = !!id && !mp.on; if (id) { petMat.map = petTex[id]; petMat.needsUpdate = true; pet.x = P.x + 1; pet.y = P.y; pet.z = P.z + 1; } }
+function petClick(id) { if (!upg.pets) upg.pets = {}; const pd = PETS.find(p => p[0] === id); if (!pd) return false;
+  if (!upg.pets[id]) { if (shards < pd[3]) { pop(`NEED ◆${pd[3]} SOL SHARDS`, "#ff6a8a"); return false; } shards -= pd[3]; updShards(); upg.pets[id] = 1; sfx.buy(); banner(`${pd[1]} JOINED YOU!`, pd[2]); stats.petsGot = (stats.petsGot | 0) + 1; }
+  setPet(upg.pet === id ? "" : id); renderPets(); save(); return true; }
+function updPet(dt, time) { if (!upg.pet || mp.on) return; pet.t += dt; const id = upg.pet, fly = id === "sprite";
+  const sy = Math.sin(P.yaw), cy = Math.cos(P.yaw), side = id === "crab" ? -1 : 1; const tx = P.x + cy * 1.3 * side + sy * 1.1, tz = P.z - sy * 1.3 * side + cy * 1.1;
+  const dx = tx - pet.x, dz = tz - pet.z, d = Math.hypot(dx, dz); if (d > 14) { pet.x = tx; pet.z = tz; pet.y = P.y; }
+  const sp = Math.min(1, dt * (d > 3 ? 5 : 2.5)); pet.x += dx * sp; pet.z += dz * sp; if (Math.abs(dx) > .05) pet.face = dx * cy - dz * sy > 0 ? 1 : -1;
+  let gy = P.y; for (let y = Math.floor(P.y) + 2; y > Math.floor(P.y) - 6; y--) if (get(Math.floor(pet.x), y - 1, Math.floor(pet.z)) && !get(Math.floor(pet.x), y, Math.floor(pet.z))) { gy = y; break; }
+  if (fly) pet.y += (P.y + 1.6 + Math.sin(time * 2.5) * .18 - pet.y) * Math.min(1, dt * 4);
+  else { pet.vy -= 20 * dt; pet.y += pet.vy * dt; if (pet.y < gy) { pet.y = gy; pet.vy = (d > .6 || charJoy > 0) && id === "pup" ? 4.2 : 0; } }
+  const s = id === "crab" ? .8 : id === "pup" ? .9 : .7, sq = fly ? 1 : 1 + Math.min(.15, Math.max(-.12, pet.vy * .03));
+  petSpr.scale.set(s * pet.face * (id === "crab" ? 1 + Math.sin(pet.t * 14) * .05 * Math.min(1, d) : 1), s * sq, 1); petSpr.position.set(pet.x, pet.y + s * sq / 2 + (id === "crab" ? Math.abs(Math.sin(pet.t * 14)) * .04 * Math.min(1, d) : 0), pet.z);
+  petMat.rotation = id === "crab" ? Math.sin(pet.t * 7) * .06 : fly ? Math.sin(time * 1.5) * .12 : 0; petShadow.position.set(pet.x, gy + .03, pet.z); petShadow.scale.setScalar(fly ? .6 : 1);
+  if (fly && Math.random() < dt * 6) burst(pet.x, pet.y + .2, pet.z, [0x14f195, 0x9945ff], 1, .6);
+  if (id === "pup") { pet.barkT -= dt; if (pet.barkT <= 0) { pet.barkT = 2.5; for (const c of caches) { if (get(c[0], c[1], c[2]) !== 23) continue; const cd = Math.hypot(c[0] - P.x, c[1] - P.y, c[2] - P.z); if (cd < 12) { sfx.bark(); pet.vy = 6; const k = c.join(); if (!pet.barked[k]) { pet.barked[k] = 1; pop("🐶 WOOF! SOMETHING SHINY IS NEAR", "#ffd24a"); } break; } } } }
+  if (id === "crab") { for (const c of critters) if (c.s.position.distanceTo(petSpr.position) < 1.3) { pop("🦀 PINCH!", "#ff7a3a"); zapCritter(c); break; }
+    for (let i = rain.length - 1; i >= 0; i--) { const r = rain[i].s.position; if (Math.hypot(r.x - pet.x, r.z - pet.z) < 1.6 && r.y < pet.y + 2) { scene.remove(rain[i].s); rain.splice(i, 1); shards++; updShards(); stats.rain = (stats.rain | 0) + 1; burst(r.x, r.y, r.z, [0x9df7ff], 4, 1.5); sfx.pick(3); } } } }
+$("petL").addEventListener("click", e => { const b = e.target.closest("button[data-pet]"); if (b) petClick(b.dataset.pet); });
 
 // ---------------- boot ----------------
 const saved = load();
@@ -1188,7 +1229,7 @@ if (saved && !saved.migr) { seed = saved.seed; edits = saved.edits || {}; shards
 else { seed = parseInt(Q.get("seed")) || 1337; if (saved && saved.migr) { shards = saved.shards; migrated = true; } qStart(); }
 generate(seed); applyEdits(); const tris = buildAll();
 respawn(); if (saved && saved.p) { [P.x, P.y, P.z, P.yaw, P.pitch] = saved.p; if (collides(P.x, P.y, P.z)) respawn(); }
-buildPools(); buildCharPicker(); setChar(Q.get("char") || charId, true); buildPalette(); updShards(); resize(); updQuest(); dailyEnsure(); updDaily(); menuStats(); updHP(); updSetBtns(); syncLookBtn(); if (migrated) setTimeout(() => banner("BIGGER WORLD!", "Your SOL shards carried over to the new map"), 600);
+buildPools(); buildCharPicker(); if (upg.pet) setPet(upg.pet); setChar(Q.get("char") || charId, true); buildPalette(); updShards(); resize(); updQuest(); dailyEnsure(); updDaily(); menuStats(); updHP(); updSetBtns(); syncLookBtn(); if (migrated) setTimeout(() => banner("BIGGER WORLD!", "Your SOL shards carried over to the new map"), 600);
 // Phase-2 hook is for LOCAL testing only: only localhost servers are accepted.
 if (Q.get("mp")) { try { const u = new URL(Q.get("mp")); if (/^wss?:$/.test(u.protocol) && ["localhost", "127.0.0.1"].includes(u.hostname)) mpConnect(u.href); } catch (e) {} }
 $("load").remove();
@@ -1196,6 +1237,6 @@ setInterval(save, 5000);
 requestAnimationFrame(frame);
 
 // test / debug hooks (harmless; used by automated checks)
-window.__SB = { FISH: () => FISH.map(f => f.n), roll: (n, z) => rollFish(n, z).n, brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
+window.__SB = { petClick, pet: () => ({ ...pet, id: upg.pet, vis: petSpr.visible, px: petSpr.position.x }), FISH: () => FISH.map(f => f.n), roll: (n, z) => rollFish(n, z).n, brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
   state: () => ({ x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, ground: P.ground, shards, sel, running, tris, fps: Math.round(fps), fuds: fuds.length, tod, mp: mp.on ? { id: mp.id, rejects: mp.rejects || 0, lastEmote: mp.lastEmote || null, others: [...mp.others.values()].map(o => ({ name: o.p.name, x: o.p.x, y: o.p.y, z: o.p.z })) } : null, info: renderer.info.render }),
   select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, upg, stats, quest: () => ({ i: Qi, ...qDef(Qi), v: qVal(qDef(Qi)) }), boss: () => ({ on: boss.on, hp: boss.hp, max: boss.max, phase: boss.phase }), summon: k => summonBoss(k), daily: () => ({ ...daily, line: dailyLine() }), meteor: () => { met.t = 0; }, met: () => ({ on: met.on, crater: met.crater }), critters: () => critters.map(c => ({ x: c.s.position.x, y: c.s.position.y, z: c.s.position.z })), spawnCritter: () => spawnCritter(true), lookAtCrit: () => { const c = critters.slice().sort((a, b) => a.s.position.distanceTo(camera.position) - b.s.position.distanceTo(camera.position))[0]; if (!c) return false; const o = c.s.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return true; }, shot: () => { wantShot = true; }, lastShot: () => lastShotInfo, touchLook: (dx, dy) => touchLook(dx, dy), setLookMul: v => { lookMul = v; }, mem: () => ({ geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures, heap: performance.memory ? performance.memory.usedJSHeapSize : 0, scene: scene.children.length, orbs: orbs.length, fuds: fuds.length, shots: boss.shots.length, crit: critters.length }), fishSt: () => ({ st: fish.st, prog: fish.prog, sp: fish.sp && fish.sp.n, dex: fish.dex, n: stats.fish || 0 }), pools: () => pools, setView: v => { view = v; }, setChar: id => setChar(id, true), charId: () => charId, chars: () => CHARS.map(c => c[0]), aimState: () => ({ pool: !!poolHit, boss: bossHit, crit: !!critHit, fud: !!fudHit }), lookAtBoss: () => { if (!boss.on) return; const o = boss.g.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); }, bossDamage: n => bossDamage(n), openLab, closeLab, buy: id => buyUpg(id), hp: () => P.hp, biome: () => biomeName(P.x, P.z), give: n => { shards += n; updShards(); }, setTod: t => { tod = t; }, dpr: () => renderer.getPixelRatio(), combo: () => comboN, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };
