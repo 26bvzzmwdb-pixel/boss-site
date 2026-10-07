@@ -25,11 +25,18 @@ const B = [
   { id: 16, name: "HEX FIELD", tex: [20, 21, 1], hard: .3, col: 0x78c8ff },
   { id: 17, name: "HOLO FROND", tex: [22, 22, 22], hard: .15, col: 0x3cffc8 },
   { id: 18, name: "BOSS GOLD VEIN", tex: [23, 23, 23], hard: 1.5, col: 0xffd24a, drop: 5 },
+  { id: 19, name: "BOUNCE PAD", tex: [24, 25, 25], hard: .3, col: 0x14f195, cost: 2, toy: "bounce" },
+  { id: 20, name: "BOOST STRIP", tex: [26, 25, 25], hard: .3, col: 0xffd24a, cost: 2, toy: "boost" },
+  { id: 21, name: "SYNTH KEY", tex: [27, 28, 28], hard: .25, col: 0xff4fd8, cost: 1, toy: "key" },
+  { id: 22, name: "FIREWORK CRATE", tex: [29, 29, 29], hard: .2, col: 0xff7a3a, cost: 3, toy: "fw" },
+  { id: 23, name: "SECRET CACHE", tex: [30, 30, 30], hard: 1.2, col: 0xffd24a, drop: 25, secret: 1 },
+  { id: 24, name: "MOON DUST", tex: [31, 32, 1], hard: .3, col: 0xc8c0e8 },
+  { id: 25, name: "MOON CRYSTAL", tex: [33, 33, 33], hard: .3, col: 0xe0d0ff },
 ];
-const PALETTE = [1, 13, 4, 5, 7, 2, 6, 12, 14, 17];
+const PALETTE = [1, 13, 4, 5, 7, 2, 6, 12, 14, 17, 19, 20, 21, 22];
 // Biomes: 0 NEON FLATS, 1 PUMP DUNES, 2 CRYSTAL GROVE, 3 FROST CHAIN
-const BIOMES = ["NEON FLATS", "PUMP DUNES", "SIGNAL GROVE", "FROST CHAIN"];
-const BIOME_TOP = [3, 14, 16, 15];
+const BIOMES = ["NEON FLATS", "PUMP DUNES", "SIGNAL GROVE", "FROST CHAIN", "MOON BASIN"];
+const BIOME_TOP = [3, 14, 16, 15, 24];
 
 // ---------------- seeded noise ----------------
 function hash3(x, y, z, s) { let h = Math.imul(x, 374761393) ^ Math.imul(y, 668265263) ^ Math.imul(z, 2147483647) ^ Math.imul(s, 1274126177); h = Math.imul(h ^ (h >>> 13), 1103515245); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
@@ -46,9 +53,9 @@ const inB = (x, y, z) => x >= 0 && y >= 0 && z >= 0 && x < SX && y < SY && z < S
 const get = (x, y, z) => inB(x, y, z) ? world[idx(x, y, z)] : (y < 0 ? 11 : 0);
 
 function biomeAt(x, z, sd) { const a = fbm(x / 44, z / 44, sd + 501), b = fbm(x / 38, z / 38, sd + 733);
-  if (a > .58) return 3; if (a < .43) return b > .5 ? 2 : 1; return b > .64 ? 2 : b < .36 ? 1 : 0; }
+  if (a > .58) return 3; if (a > .44 && a < .57 && fbm(x / 30, z / 30, sd + 911) > .6) return 4; if (a < .43) return b > .5 ? 2 : 1; return b > .64 ? 2 : b < .36 ? 1 : 0; }
 const biome = new Uint8Array(SX * SZ);
-export const pools = [];
+export const pools = [], caches = [];
 export function generate(sd) {
   world.fill(0);
   const R = rng(sd), H = new Int16Array(SX * SZ);
@@ -116,6 +123,7 @@ export function generate(sd) {
       if (inB(x, top + 1, z)) world[idx(x, top + 1, z)] = 13; if (inB(x, top + 2, z)) world[idx(x, top + 2, z)] = 12;
     } else if (bm === 1 && roll < .1) { const t = R() < .55 ? 4 : 5, L = 2 + Math.floor(R() * 7); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = t; }
     else if (bm === 3 && roll < .08) { const L = 3 + Math.floor(R() * 5); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = y > h + L - 2 ? 7 : 15; }
+    else if (bm === 4 && roll < .13) { const L = 1 + Math.floor(R() * 3); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = 25; }
     else if (bm === 0 && roll < .035) { const t = R() < .55 ? 4 : 5, L = 2 + Math.floor(R() * 5); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = t; }
   }
   // plaza: neon floor, chrome rim, lamps
@@ -125,6 +133,11 @@ export function generate(sd) {
   }
   for (const [dx, dz] of [[-5, -5], [5, -5], [-5, 5], [5, 5]]) { world[idx(cx + dx, ph + 1, cz + dz)] = 13; world[idx(cx + dx, ph + 2, cz + dz)] = 12; }
   for (let y = ph + 1; y <= ph + 3; y++) world[idx(cx, y, cz - 4)] = 13;    // monument base
+  // secret caches: 5 hidden gold boxes on cave floors (own RNG so the rest of the world is unchanged)
+  caches.length = 0; const R2 = rng(sd ^ 0x5ec2e7);
+  for (let t = 0; t < 6000 && caches.length < 5; t++) { const x = 2 + Math.floor(R2() * (SX - 4)), z = 2 + Math.floor(R2() * (SZ - 4)), y = 3 + Math.floor(R2() * 12);
+    if (!far(x, z, 18) || H[x + z * SX] < y + 3 || world[idx(x, y, z)] || world[idx(x, y + 1, z)] || world[idx(x, y - 1, z)] !== 2) continue;
+    if (caches.some(c => Math.abs(c[0] - x) + Math.abs(c[2] - z) < 18)) continue; world[idx(x, y - 1, z)] = 23; caches.push([x, y - 1, z]); }
   return { x: cx + .5, y: ph + 1, z: cz + 1.5 };
 }
 export function biomeName(x, z) { x = Math.floor(x); z = Math.floor(z); return inB(x, 1, z) ? BIOMES[biome[x + z * SX]] : ""; }

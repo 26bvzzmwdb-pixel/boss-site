@@ -141,6 +141,10 @@ body.inmenu #viewBtn{visibility:hidden}
 .heroRow{display:flex;align-items:center;justify-content:center;gap:14px}.heroWrap{position:relative;width:96px;height:104px}.heroWrap:after{content:"";position:absolute;left:12%;right:12%;bottom:0;height:12px;border-radius:50%;background:radial-gradient(rgba(40,220,255,.7),transparent 70%);filter:blur(2px);animation:pad 2.4s ease-in-out infinite}
 #charHero{position:relative;z-index:1;width:96px;height:96px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(40,220,255,.6)) drop-shadow(0 6px 4px rgba(0,0,0,.5));animation:hero 2.4s ease-in-out infinite}@keyframes hero{50%{transform:translateY(-7px) scale(1.03,.98)}}@keyframes pad{50%{transform:scaleX(.8);opacity:.6}}
 .card{background-image:linear-gradient(160deg,rgba(255,79,216,.08),transparent 40%,rgba(40,220,255,.08))}
+#evChip{left:50%;transform:translateX(-50%);top:calc(max(10px,env(safe-area-inset-top)) + 150px);padding:5px 12px;border-radius:14px;background:rgba(8,6,24,.75);border:1px solid #14f195;color:#fff;font:900 10px Orbitron,sans-serif;letter-spacing:1px;display:none;box-shadow:0 0 12px rgba(20,241,149,.4)}#evChip.show{display:block}
+#ach{left:50%;top:calc(max(10px,env(safe-area-inset-top)) + 6px);transform:translate(-50%,-140%);min-width:220px;padding:8px 14px;border-radius:14px;background:linear-gradient(135deg,rgba(60,40,6,.95),rgba(20,10,40,.95));border:2px solid #ffd24a;box-shadow:0 0 22px rgba(255,210,74,.55);text-align:center;transition:transform .45s cubic-bezier(.2,1.4,.4,1);z-index:12}#ach.show{transform:translate(-50%,0)}
+#ach b{display:block;font:900 9px Orbitron,sans-serif;letter-spacing:2px;color:#ffd24a}#ach span{display:block;font:900 14px Orbitron,sans-serif;color:#fff;margin:2px 0}#ach small{font-size:10px;color:#e8dcc0}
+#achL{margin:8px 0;font-size:10px}#achL b{color:#ffd24a;letter-spacing:1px}.achg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:5px}.achg span{position:relative;display:flex;flex-direction:column;align-items:center;padding:4px 1px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:16px;filter:grayscale(1);opacity:.45}.achg span.on{filter:none;opacity:1;border-color:#ffd24a;box-shadow:0 0 8px rgba(255,210,74,.35)}.achg i{font-style:normal;font-size:6.5px;letter-spacing:.3px;margin-top:2px;text-align:center;line-height:1.1;color:#ddd}
 /* menu */
 #menu{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(60,20,110,.75),rgba(5,6,15,.94));padding:16px;overflow:auto}
 #menu.hide{display:none}
@@ -171,6 +175,8 @@ body.inmenu #viewBtn{visibility:hidden}
 <div class="hud" id="combo"></div>
 <div class="hud" id="banner"><h2></h2><p></p></div>
 <div class="hud" id="biome"></div>
+<div class="hud" id="evChip"></div>
+<div class="hud" id="ach"><b>🏆 ACHIEVEMENT</b><span id="achN"></span><small id="achD"></small></div>
 <div class="hud" id="scan" style="display:none"><div id="scanAr">▲</div><div id="scanTx"></div></div>
 <button id="labBtn" aria-label="Upgrade lab">⚡<small>LAB</small></button>
 <button id="shotBtn" aria-label="Save screenshot">📸</button>
@@ -179,7 +185,7 @@ body.inmenu #viewBtn{visibility:hidden}
 <div class="hud" id="reel"><div class="track"><div id="reelZone"></div><div id="reelFish"></div></div><div class="pb"><div id="reelProg"></div></div></div>
 <div id="flash"></div>
 <div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
-<div id="labList"></div><div id="dailyL" class="dl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
+<div id="labList"></div><div id="dailyL" class="dl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="achL"></div><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
 <div class="hud" id="badge"><b>$BOSS SANDBOX</b> <span class="bt">BETA</span><br><span>first-person · practice only</span></div>
 <div class="hud" id="clock">--</div>
 <div class="hud" id="shards"><div class="n" id="shardN">0</div><div class="l">◆ SOL SHARDS</div><div class="nv">in-game items · no cash value</div></div>
@@ -213,7 +219,7 @@ body.inmenu #viewBtn{visibility:hidden}
  <div class="card">
   <div class="heroRow"><img src="../assets/logo.webp" alt="$BOSS" class="logo"><div class="heroWrap"><img id="charHero" alt="Your character" src="../assets/chars/h_fudder.webp"></div></div>
   <h1 class="title">$BOSS<br><span>SANDBOX</span></h1>
-  <div class="tag">FREE · FIRST-PERSON · DIG · BUILD · BUST THE RUG · FISH · v0.6</div>
+  <div class="tag">FREE · FIRST-PERSON · DIG · BUILD · BUST THE RUG · FISH · v0.7</div>
   <div class="charbox"><div class="cl">CHOOSE YOUR CHARACTER</div><div id="chars"></div><div id="charName"></div></div>
   <div id="mStats" class="mstats"></div>
   <div id="dailyM" class="dl"></div>
@@ -222,7 +228,7 @@ body.inmenu #viewBtn{visibility:hidden}
    <span class="lk">LOOK <button class="btn sm" id="lookDn" type="button">−</button><b id="lookV">100%</b><button class="btn sm" id="lookUp" type="button">+</button></span></div>
   <button class="btn sm" id="howBtn" type="button">HOW TO PLAY ▾</button>
   <div id="how">
-  <p>Explore four neon zones and dig into glowing caves for <b style="color:#c69bff">SOL shard</b>, Prism, Gold and Core veins with your <b style="color:#14f195">Rug-Buster</b> drill. Fish the glowing <b style="color:#28dcff">neon pools</b>, catch falling <b style="color:#fff2b0">SOL meteors</b>, zap <b style="color:#28dcff">Paper Hands</b>, survive <b style="color:#ff6a8a">FUD clouds</b> at night, upgrade in the <b style="color:#ffd24a">⚡ LAB</b>, then bust <b style="color:#ff4fd8">THE RUG PULLER</b> and <b style="color:#b46aff">THE FUD KING</b>.</p>
+  <p>Explore four neon zones and dig into glowing caves for <b style="color:#c69bff">SOL shard</b>, Prism, Gold and Core veins with your <b style="color:#14f195">Rug-Buster</b> drill. Build toys (<b style="color:#14f195">Bounce Pads</b>, Boost Strips, Synth Keys, Firework Crates), hunt 5 secret caches, Fish the glowing <b style="color:#28dcff">neon pools</b>, catch falling <b style="color:#fff2b0">SOL meteors</b>, zap <b style="color:#28dcff">Paper Hands</b>, survive <b style="color:#ff6a8a">FUD clouds</b> at night, upgrade in the <b style="color:#ffd24a">⚡ LAB</b>, then bust <b style="color:#ff4fd8">THE RUG PULLER</b> and <b style="color:#b46aff">THE FUD KING</b>.</p>
   <div class="ctl" id="ctlDesk">
    <div><b>WASD</b> move · <b>SHIFT</b> sprint</div><div><b>MOUSE</b> look · <b>SPACE</b> jump</div>
    <div><b>HOLD LEFT CLICK</b> mine / zap</div><div><b>RIGHT CLICK</b> build</div>

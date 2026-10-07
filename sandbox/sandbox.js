@@ -8,7 +8,7 @@ const $ = id => document.getElementById(id);
 const IS_TOUCH = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
 if (IS_TOUCH) document.body.classList.add("touch");
 
-import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools } from "./world.js";
+import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools, caches } from "./world.js";
 const SAVE_KEY = "boss_sandbox_v2", OLD_KEY = "boss_sandbox_v1";
 const DAY_LEN = 480;                               // seconds per full day/night cycle
 let seed = 1337, edits = {}, shards = 0, plaza = { x: 40, y: 20, z: 40 };
@@ -25,7 +25,7 @@ function setBlock(x, y, z, id, fromNet) {
 // ---------------- save / load ----------------
 let saveT = 0;
 function scheduleSave() { saveT = 1.0; }
-function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qv: 2, qBase, hp: P.hp, daily, intro: introDone, dex: fish.dex, char: charId, set: { snd: sndOn, mus: musOn, slow: lookSlow, look: lookMul } })); } catch (e) {} }
+function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qv: 2, qBase, hp: P.hp, daily, intro: introDone, dex: fish.dex, ach, char: charId, set: { snd: sndOn, mus: musOn, slow: lookSlow, look: lookMul } })); } catch (e) {} }
 function load() { if (Q.has("reset")) try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {}
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); if (s && s.v === 2) return s;
     const o = JSON.parse(localStorage.getItem(OLD_KEY) || "null"); if (o && o.v === 1) return { migr: true, shards: o.shards | 0 }; } catch (e) {} return null; }
@@ -46,7 +46,7 @@ const sun = new THREE.DirectionalLight(0xffd0e0, 1.0); scene.add(sun); scene.add
 const lamp = new THREE.PointLight(0xd8f0ff, 0, 20, 1); camera.add(lamp); lamp.position.set(.2, .1, 0); let lampT = 0;
 
 // ---------------- procedural textures (original neon / beveled style) ----------------
-const TS = 64, ATL = 5;
+const TS = 64, ATL = 6;
 const atlasC = document.createElement("canvas"), glowC = document.createElement("canvas");
 atlasC.width = atlasC.height = glowC.width = glowC.height = TS * ATL;
 (function paintAtlas() {
@@ -112,6 +112,18 @@ atlasC.width = atlasC.height = glowC.width = glowC.height = TS * ATL;
   slot(22, (g, e) => { g.fillStyle = "#04261e"; g.fillRect(0, 0, TS, TS); for (const c of [g, e]) { for (let i = 0; i < 9; i++) { const x = R() * TS, y = R() * TS, l = 10 + R() * 14, a = -.8 + R() * 1.6; c.strokeStyle = i % 3 ? "#3cffc8" : "#9df7ff"; c.globalAlpha = c === e ? .55 : .9; c.lineWidth = 3; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.sin(a) * l, y - Math.cos(a) * l); c.stroke(); } c.globalAlpha = 1; } neonRect([g], "rgba(60,255,200,.35)", 2, 1.5, 4); });
   // 23 BOSS GOLD VEIN: rock with gold nuggets
   slot(23, (g, e) => { rockBase(g, e); for (let i = 0; i < 6; i++) { const x = 8 + R() * 48, y = 8 + R() * 48, r = 3 + R() * 4; for (const c of [g, e]) { const gr = c.createRadialGradient(x - 1, y - 1, 0, x, y, r); gr.addColorStop(0, "#fff6c8"); gr.addColorStop(.5, "#ffd24a"); gr.addColorStop(1, "rgba(200,140,20,.0)"); c.globalAlpha = c === e ? .8 : 1; c.fillStyle = gr; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.globalAlpha = 1; } } g.font = "900 13px Orbitron,Verdana"; g.fillStyle = "#fff2b8"; g.fillText("$", 26, 38); });
+  // ---- v0.7 building toys + secrets + moon ----
+  const toySide = (g, e, band) => { bevel(g, "#20203a", "#3a3a5c", "#0a0a16", 4); g.fillStyle = "#14142a"; g.fillRect(6, 6, 52, 52); for (const c of [g, e]) { c.fillStyle = band; for (let i = -TS; i < TS * 2; i += 14) { c.beginPath(); c.moveTo(i, 22); c.lineTo(i + 7, 22); c.lineTo(i + 1, 30); c.lineTo(i - 6, 30); c.fill(); } } };
+  slot(24, (g, e) => { bevel(g, "#06331c", "#169a58", "#021a0c", 5); for (const c of [g, e]) { c.strokeStyle = "#14f195"; c.lineWidth = 3; for (const r of [8, 16, 24]) { c.beginPath(); c.arc(32, 32, r, 0, 7); c.stroke(); } c.fillStyle = "#b8ffe0"; c.beginPath(); c.moveTo(32, 18); c.lineTo(42, 32); c.lineTo(22, 32); c.fill(); } });
+  slot(25, (g, e) => toySide(g, e, "#28dcff"));
+  slot(26, (g, e) => { bevel(g, "#3a2a06", "#6a5010", "#1a1204", 4); for (const c of [g, e]) { c.strokeStyle = "#ffd24a"; c.lineWidth = 5; c.lineJoin = "round"; for (const y of [14, 30, 46]) { c.beginPath(); c.moveTo(18, y + 8); c.lineTo(32, y - 4); c.lineTo(46, y + 8); c.stroke(); } } });
+  slot(27, (g, e) => { g.fillStyle = "#14081e"; g.fillRect(0, 0, TS, TS); for (let i = 0; i < 4; i++) { g.fillStyle = "#f4ecff"; g.fillRect(3 + i * 15, 4, 13, 56); } for (const c of [g, e]) { c.fillStyle = "#ff4fd8"; for (const i of [0, 1, 2]) c.fillRect(13 + i * 15, 4, 7, 32); } neonRect([e], "#ff4fd8", 2, 2, 3); });
+  slot(28, (g, e) => toySide(g, e, "#ff4fd8"));
+  slot(29, (g, e) => { bevel(g, "#5a2008", "#c85a1a", "#2a0c02", 6); g.strokeStyle = "rgba(0,0,0,.35)"; g.lineWidth = 3; g.strokeRect(10, 10, 44, 44); for (const c of [g, e]) { c.fillStyle = c === g ? "#ffd24a" : "#ff7a3a"; c.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 7 : 17, a = k * Math.PI / 5 - Math.PI / 2; c.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r); } c.closePath(); c.fill(); } });
+  slot(30, (g, e) => { bevel(g, "#7a5208", "#ffe27a", "#3a2604", 7); g.fillStyle = "#c8961e"; g.fillRect(9, 9, 46, 46); for (const c of [g, e]) { c.font = "900 34px Orbitron,Verdana"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = c === g ? "#fff6c8" : "#ffd24a"; c.fillText("?", 32, 34); } speck(e, "#fff2b0", 14, 1); });
+  slot(31, (g, e) => { bevel(g, "#6e6694", "#9088b8", "#3e3860", 3); speck(g, "#d8d0f0", 70, .8); for (const [x, y, r] of [[18, 20, 8], [44, 40, 11], [20, 50, 5]]) { g.fillStyle = "rgba(10,6,24,.45)"; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.strokeStyle = "rgba(220,210,255,.5)"; g.lineWidth = 1.5; g.beginPath(); g.arc(x, y, r, Math.PI * .9, Math.PI * 1.9); g.stroke(); e.strokeStyle = "rgba(198,155,255,.25)"; e.beginPath(); e.arc(x, y, r, 0, 7); e.stroke(); } });
+  slot(32, (g, e) => { rockBase(g, e); g.fillStyle = "#6e6694"; g.fillRect(0, 0, TS, 14); for (const c of [g, e]) { c.fillStyle = "#c69bff"; c.fillRect(0, 12, TS, 3); } });
+  slot(33, (g, e) => { g.fillStyle = "#120a26"; g.fillRect(0, 0, TS, TS); crystals(g, e, 5, ["#ffffff", "#e0d0ff", "#9945ff"], 10, .9); });
 })();
 const atlasTex = new THREE.CanvasTexture(atlasC), glowTex = new THREE.CanvasTexture(glowC);
 for (const t of [atlasTex, glowTex]) { t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.anisotropy = 4; }
@@ -169,10 +181,10 @@ function buildChunk(ci) {
 function buildAll() { calcAllTop(); let tris = 0; for (let i = 0; i < NCX * NCZ; i++) tris += buildChunk(i); dirty.clear(); return tris; }
 
 // ---------------- sky (synthwave sun, stars, day/night) + neon grid floor ----------------
-const skyU = { uTop: { value: new THREE.Color() }, uHor: { value: new THREE.Color() }, uSun: { value: new THREE.Vector3() }, uNight: { value: 0 } };
+const skyU = { uAur: { value: 0 }, uTime: { value: 0 }, uTop: { value: new THREE.Color() }, uHor: { value: new THREE.Color() }, uSun: { value: new THREE.Vector3() }, uNight: { value: 0 } };
 const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.ShaderMaterial({ uniforms: skyU, side: THREE.BackSide, depthWrite: false, fog: false,
   vertexShader: `varying vec3 vD; void main(){ vD = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `uniform vec3 uTop,uHor,uSun; uniform float uNight; varying vec3 vD;
+  fragmentShader: `uniform vec3 uTop,uHor,uSun; uniform float uNight,uAur,uTime; varying vec3 vD;
   float h3(vec3 p){ return fract(sin(dot(p,vec3(12.9898,78.233,37.719)))*43758.5453); }
   void main(){ vec3 d=normalize(vD); float h=d.y;
     vec3 c = mix(uHor, uTop, smoothstep(-0.02, 0.55, h)); c = mix(c, uHor*0.35, smoothstep(0.0,-0.35,h));
@@ -181,6 +193,7 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.Shad
     c += sc*0.45*pow(max(sd,0.0),18.0)*(1.0-uNight*0.6); c = mix(c, sc, disc*stripes*(1.0-uNight));
     float moon = smoothstep(0.9975,0.998,dot(d,-normalize(uSun))); c = mix(c, vec3(0.85,0.8,1.0), moon*uNight);
     vec3 q = floor(d*260.0); float st = step(0.9965, h3(q)) * smoothstep(0.02,0.25,h) * uNight; c += vec3(st)*(0.6+0.4*h3(q+1.0));
+    if (uAur > 0.01) { float ax = atan(d.z, d.x); float band = sin(ax*3.0 + uTime*0.12 + sin(ax*7.0 + uTime*0.27)*0.7); float r = exp(-pow((h - 0.3 - 0.07*band)*8.0, 2.0)); vec3 ac = mix(vec3(0.08,1.0,0.6), vec3(1.0,0.3,0.85), 0.5+0.5*sin(ax*2.0 + uTime*0.15)); c += ac * r * smoothstep(0.05,0.2,h) * uAur * (0.55 + 0.45*sin(ax*38.0 + uTime*1.3 + band*3.0)); }
     gl_FragColor = vec4(c,1.0);
     #include <colorspace_fragment>
   }` }));
@@ -227,7 +240,7 @@ function updPlayer(dt) {
   if (k.KeyW || k.ArrowUp) f += 1; if (k.KeyS || k.ArrowDown) f -= 1; if (k.KeyD || k.ArrowRight) s += 1; if (k.KeyA || k.ArrowLeft) s -= 1;
   const len = Math.hypot(f, s); if (len > 1) { f /= len; s /= len; }
   const wet = inPool(P.x, P.z) && P.y < (inPool(P.x, P.z) || {}).y; if (wet && !P.wet && P.vy < -3) { burst(P.x, P.y + .5, P.z, [0x28dcff, 0xffffff], 24, 4); noise(.3, 900, .15); } P.wet = wet;
-  const sp = (wet ? .6 : 1) * ((input.sprint || k.ShiftLeft || k.ShiftRight || len > .95 && IS_TOUCH && joy.active && joy.mag > .95) ? 6.4 : 4.4);
+  const sp = (boostT > 0 ? 2.1 : 1) * (wet ? .6 : 1) * ((input.sprint || k.ShiftLeft || k.ShiftRight || len > .95 && IS_TOUCH && joy.active && joy.mag > .95) ? 6.4 : 4.4);
   const sy = Math.sin(P.yaw), cy = Math.cos(P.yaw);
   const tx = (-sy * f + cy * s) * sp, tz = (-cy * f - sy * s) * sp;
   const acc = P.ground ? 14 : 5; P.vx += (tx - P.vx) * Math.min(1, acc * dt); P.vz += (tz - P.vz) * Math.min(1, acc * dt);
@@ -236,7 +249,7 @@ function updPlayer(dt) {
   if ((input.jump || k.Space) && P.ground) { P.vy = 8.3; P.ground = false; sfx.jump(); }
   else if (jumpEdge && !P.ground && upg.boots && P.dbl) { P.dbl = false; P.vy = 8; sfx.boost(); burst(P.x, P.y, P.z, [0x28dcff, 0xff4fd8, 0xffffff], 18, 3); trauma = Math.max(trauma, .15); stats.dj = (stats.dj || 0) + 1; }
   input.jump = false;
-  P.vy = Math.max(-40, P.vy - 24 * dt);
+  P.vy = Math.max(-40, P.vy - 24 * (biomeNow === "MOON BASIN" ? .42 : 1) * dt);
   P.ground = false;
   moveAxis(1, P.vy * dt); moveAxis(0, P.vx * dt); moveAxis(2, P.vz * dt);
   P.x = Math.max(P.r + .01, Math.min(SX - P.r - .01, P.x)); P.z = Math.max(P.r + .01, Math.min(SZ - P.r - .01, P.z));
@@ -333,12 +346,13 @@ function aim() {
 }
 let mineGrace = 0; // keeps mining briefly if the thumb wobbles off the button
 function breakBlock(x, y, z, id, chained) {
-  setBlock(x, y, z, 0); const c = B[id];
+  setBlock(x, y, z, 0); const c = B[id]; if (id === 22) fireworks(x + .5, y + .5, z + .5);
+  if (id === 23) { stats.caches = (stats.caches | 0) + 1; setTimeout(() => banner("SECRET CACHE FOUND!", `◆+25 SOL shards (in-game) · ${Math.min(5, cachesFound())}/5 in this world`), 50); sfx.cache(); charJoy = 1; }
   burst(x + .5, y + .5, z + .5, [c.col, 0xffffff, c.drop ? 0x14f195 : c.col], IS_TOUCH ? (c.drop ? 30 : 12) : (c.drop ? 60 : 28), c.drop ? 6 : 4);
   debris(x + .5, y + .5, z + .5, c.col, c.drop ? 8 : 5);
   stats.mined++; comboHit();
   if (c.drop) { stats.veins++; if (id === 9) stats.prisms++; if (id === 10) stats.cores++; if (id === 18) stats.golds++;
-    spawnOrbs(x + .5, y + .5, z + .5, c.drop, c.col); pop(`◆ +${c.drop} ${c.name.replace(" VEIN", "")}`, c.drop >= 10 ? "#fff2b0" : c.drop >= 5 ? "#ffd24a" : c.drop >= 3 ? "#14f195" : "#c69bff");
+    const dv = c.drop * (ev.k === "pump" ? 2 : 1); spawnOrbs(x + .5, y + .5, z + .5, dv, c.col); pop(`◆ +${dv} ${c.name.replace(" VEIN", "")}${ev.k === "pump" ? " ×2" : ""}`, c.drop >= 10 ? "#fff2b0" : c.drop >= 5 ? "#ffd24a" : c.drop >= 3 ? "#14f195" : "#c69bff");
     sfx.vein(c.drop); trauma = Math.max(trauma, c.drop >= 10 ? .55 : .3); buzz(c.drop >= 5 ? 30 : 15);
     if (upg.drill >= 4 && !chained) { const seen = new Set([x + "," + y + "," + z]), q = [[x, y, z]], out = [];
       while (q.length && out.length < 10) { const [a, b2, d] = q.shift(); for (const [u, v, w] of [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]) { const X = a + u, Y = b2 + v, Z = d + w, k = X + "," + Y + "," + Z; if (seen.has(k)) continue; seen.add(k); if (get(X, Y, Z) === id) { out.push([X, Y, Z]); q.push([X, Y, Z]); } } }
@@ -439,6 +453,14 @@ const sfx = {
   bhit: () => noise(.06, 3500, .05, 2),
   win: () => { if (!AC) return; const t = AC.currentTime; [60, 64, 67, 72, 67, 72, 76, 79, 84].forEach((m, i) => note(mtof(m), .35, "square", .05, 0, t + i * .09, null, 2600)); noise(1.5, 600, .25, .5); },
   combo: c => note(mtof(84 + Math.min(12, c / 5)), .15, "square", .04, 0, 0, null, 3500),
+  bounce: () => { note(170, .38, "sine", .1, 650); note(340, .28, "triangle", .04, 900); },
+  fw: () => { if (!AC) return; const t = AC.currentTime; note(700, .7, "sine", .03, 1500, t); noise(.7, 5000, .04, 3, t); for (let i = 0; i < 6; i++) noise(.08, 2000 + Math.random() * 4000, .12, 1, t + .75 + i * .06); note(60, .6, "sine", .15, -30, t + .72); },
+  cache: () => { if (!AC) return; const t = AC.currentTime; [84, 88, 91, 96, 100].forEach((m, i) => note(mtof(m), .4, "triangle", .06, 0, t + i * .07)); noise(1, 9000, .05, 1, t, null, "highpass"); },
+  ach: () => { if (!AC) return; const t = AC.currentTime; [72, 79, 84, 88, 91].forEach((m, i) => note(mtof(m), .32, "square", .04, 0, t + i * .08, null, 3000)); note(mtof(60), 1, "sawtooth", .03, 0, t, null, 1500); },
+  event: () => { if (!AC) return; const t = AC.currentTime; [60, 67, 72, 79].forEach((m, i) => note(mtof(m), .6, "sawtooth", .03, 0, t + i * .12, null, 2200)); },
+  key: m => { note(mtof(m), .45, "triangle", .07); note(mtof(m + 12), .3, "sine", .03); },
+  step: id => noise(.045, (BRK_F[id] || 1200) * .7, .03, 1.5),
+  shimmer: v => { note(mtof(96 + Math.floor(Math.random() * 5) * 2), .5, "sine", v); },
 };
 function initAudio() { if (AC) { if (AC.state === "suspended") AC.resume(); return; }
   try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
@@ -446,19 +468,26 @@ function initAudio() { if (AC) { if (AC.state === "suspended") AC.resume(); retu
   sfxG = AC.createGain(); sfxG.gain.value = sndOn ? 1 : 0; sfxG.connect(master); musG = AC.createGain(); musG.gain.value = musOn ? .55 : 0; musG.connect(master);
   noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   hum = AC.createOscillator(); hum.type = "sawtooth"; hum.frequency.value = 90; humF = AC.createBiquadFilter(); humF.type = "lowpass"; humF.frequency.value = 700; humG = AC.createGain(); humG.gain.value = 0;
-  hum.connect(humF).connect(humG).connect(sfxG); hum.start(); musNext = AC.currentTime + .1; }
+  hum.connect(humF).connect(humG).connect(sfxG); hum.start(); musNext = AC.currentTime + .1;
+  try { const rv = AC.createConvolver(), L = Math.floor(AC.sampleRate * 2.4), ib = AC.createBuffer(2, L, AC.sampleRate); for (let ch = 0; ch < 2; ch++) { const dd = ib.getChannelData(ch); for (let i = 0; i < L; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / L, 2.6); } rv.buffer = ib;
+    const rg = AC.createGain(); rg.gain.value = .42; musG.connect(rv); rv.connect(rg).connect(master); const ss = AC.createGain(); ss.gain.value = .14; sfxG.connect(ss).connect(rv); } catch (e) {} }
 // music: 4-chord synthwave loop, arps soften at night, drums kick in during the boss fight
-const PROG = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];
+const PROG = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], PROG_N = [[57, 60, 64], [53, 57, 60], [55, 58, 62], [52, 55, 59]];
+const LEAD = { "NEON FLATS": "square", "PUMP DUNES": "sawtooth", "SIGNAL GROVE": "triangle", "FROST CHAIN": "sine", "MOON BASIN": "sine", "UNDERGROUND": "triangle" };
+const MOTIF = [[0, -1, 2, -1, 4, -1, 2, 1], [4, -1, 3, 2, 0, -1, -1, -1], [2, 4, 5, 4, 2, -1, 0, -1], [0, -1, 0, 2, 4, -1, 7, -1]], SCALE = [0, 2, 3, 5, 7, 9, 10, 12];
 let musStep = 0, musNext = 0;
 function audioTick() { if (!AC) return; const t = AC.currentTime;
   humG.gain.setTargetAtTime(isFiring && running ? .028 : 0, t, .03); hum.frequency.setTargetAtTime(70 + minePitch * 170 + upg.drill * 14, t, .05); humF.frequency.setTargetAtTime(500 + minePitch * 1800, t, .05);
   if (!musOn || !running) { musNext = t + .1; return; } if (musNext < t - .5) musNext = t + .05;
-  while (musNext < t + .25) { const at = musNext, bar = Math.floor(musStep / 16) % 4, st = musStep % 16, ch = PROG[bar], fight = boss.on;
+  while (musNext < t + .25) { const at = musNext, bar = Math.floor(musStep / 16) % 4, st = musStep % 16, nt = curNight > .6, ch = (nt ? PROG_N : PROG)[bar], fight = boss.on, phrase = Math.floor(musStep / 64);
+    if (st === 0) for (const m of ch) note(mtof(m), 2.3, "sawtooth", .009, 0, at, musG, nt ? 700 : 1100);
+    if (st % 2 === 0 && phrase % 2 === 1 && !fight) { const mi = MOTIF[(bar + phrase) % 4][st / 2]; if (mi >= 0) note(mtof(ch[0] + 12 + SCALE[mi]), nt ? .5 : .28, LEAD[biomeNow] || "triangle", nt ? .016 : .014, 0, at, musG, 2600); }
+    if (!nt && !fight && st % 2 === 1) noise(.02, 8000, .01, 1, at, musG, "highpass");
     if (st % 4 === 0) note(mtof(ch[0] - 24), .32, "sawtooth", .05, 0, at, musG, 420);
     if (st % 2 === 0) note(mtof(ch[(st / 2) % 3] + (bar % 2 ? 12 : 0)), .14, "triangle", .022, 0, at, musG);
     if (st === 0) note(mtof(ch[2] + 12), 1.6, "sine", .02, 0, at, musG);
     if (fight) { if (st % 4 === 0) note(130, .14, "sine", .14, -90, at, musG); if (st % 8 === 4) noise(.12, 1800, .06, .8, at, musG); if (st % 2 === 1) noise(.03, 7000, .02, 1, at, musG, "highpass"); }
-    musNext += fight ? .11 : .15; musStep++; } }
+    musNext += fight ? .11 : curNight > .6 ? .17 : .15; musStep++; } }
 function updSetBtns() { const a = $("sndBtn"), b = $("musBtn"); if (a) a.textContent = "SFX: " + (sndOn ? "ON" : "OFF"); if (b) b.textContent = "MUSIC: " + (musOn ? "ON" : "OFF");
   if (sfxG) sfxG.gain.value = sndOn ? 1 : 0; if (musG) musG.gain.value = musOn ? .55 : 0; }
 function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
@@ -691,7 +720,7 @@ function renderLab() { const L = $("labList"); L.innerHTML = "";
   const sb = $("summonBtn"), sk = $("summonBtn2"), lv = stats.kills ? " · LV " + (stats.kills + 1) : ""; sb.disabled = boss.on || upg.drill < 2; sk.disabled = boss.on || stats.kills < 1; const sw = $("summonBtn3"); sw.disabled = boss.on || stats.kills < 2; sw.textContent = stats.kills < 2 ? "THE DUMP WHALE · bust 2 bosses first" : "SUMMON THE DUMP WHALE" + lv;
   sb.textContent = boss.on ? BOSSES[boss.kind].name + " IS HERE" : upg.drill < 2 ? "SUMMON BOSS · needs Drill MK II" : "SUMMON THE RUG PULLER" + lv; sk.textContent = stats.kills < 1 ? "THE FUD KING · bust the Rug Puller first" : "SUMMON THE FUD KING" + lv;
   $("dailyL").textContent = dailyLine();
-  $("labShards").textContent = shards; $("labStats").innerHTML = `Tiles mined ${stats.mined} · Veins ${stats.veins} · Bosses busted ${stats.kills} · Fish ${stats.fish || 0}<br><b>FISHDEX</b> ` + FISH.map(f => fish.dex[f.n] ? `<span style="color:${f.c}">${f.n} ×${fish.dex[f.n]}</span>` : `<span style="opacity:.4">???</span>`).join(" · "); }
+  $("labShards").textContent = shards; $("achL").innerHTML = achHTML(); $("labStats").innerHTML = `Secret caches ${Math.min(5, cachesFound())}/5 <small>(listen for a shimmer in deep caves)</small><br>Tiles mined ${stats.mined} · Veins ${stats.veins} · Bosses busted ${stats.kills} · Fish ${stats.fish || 0}<br><b>FISHDEX</b> ` + FISH.map(f => fish.dex[f.n] ? `<span style="color:${f.c}">${f.n} ×${fish.dex[f.n]}</span>` : `<span style="opacity:.4">???</span>`).join(" · "); }
 function buyUpg(id) { const u = UPG.find(q => q.id === id); if (!u || u.have() || !u.can()) return false; const c = costOf(u);
   if (shards < c) { pop(`NEED ◆${c}`, "#ff6a8a"); sfx.hurt(); return false; } shards -= c; u.buy(); updShards(); sfx.buy(); buzz(20); banner(u.name, "UNLOCKED"); renderLab(); save(); qTick(); return true; }
 function openLab() { labOpen = true; input.mine = false; input.f = input.s = 0; renderLab(); $("lab").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
@@ -782,7 +811,7 @@ const rugTex = (() => { const c = document.createElement("canvas"); c.width = 25
   g.font = "900 22px Orbitron,Verdana"; g.textAlign = "center"; g.fillStyle = "#ffd24a"; g.fillText("RUG", 50, 92); g.fillText("PULL", 206, 92);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const shotTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d"); const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, "#fff"); r.addColorStop(.25, "#ff6a8a"); r.addColorStop(.6, "rgba(255,50,80,.5)"); r.addColorStop(1, "rgba(255,50,80,0)"); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
-const BOSSES = { rug: { name: "THE RUG PULLER", hp: 200, tag: "Blast its eye with your drill!" }, king: { name: "THE FUD KING", hp: 220, tag: "Zap the crowned cloud! It splits into minions" }, whale: { name: "THE DUMP WHALE", hp: 260, tag: "It DIVES at you. Sidestep, then drill it!" } };
+const BOSSES = { rug: { name: "THE RUG PULLER", hp: 200, tag: "Blast its eye with your drill!" }, king: { name: "THE FUD KING", hp: 150, tag: "Zap the crowned cloud! It splits into minions" }, whale: { name: "THE DUMP WHALE", hp: 260, tag: "It DIVES at you. Sidestep, then drill it!" } };
 const BOSS_TXT = { rug: ["IT'S PULLING THE RUG!", "RUG BUSTED!"], king: ["THE KING IS SPLITTING!", "KING DETHRONED!"], whale: ["THE WHALE IS DUMPING!", "WHALE BEACHED!"] };
 const whaleTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d"); g.translate(128, 132);
   g.shadowColor = "#28dcff"; g.shadowBlur = 28; g.fillStyle = "#123a5e"; g.strokeStyle = "#28dcff"; g.lineWidth = 6; g.beginPath(); g.ellipse(-6, 6, 92, 58, 0, 0, 7); g.fill(); g.shadowBlur = 0; g.stroke();
@@ -817,7 +846,7 @@ function makeBoss(kind) { const g = new THREE.Group(); let eye, ring, rug = null
   bossGroups[kind] = { g, eye, ring, rug }; }
 function summonBoss(kind = "rug") { if (boss.on || upg.drill < 2 || mp.on) return false; if (kind === "king" && stats.kills < 1) return false; if (kind === "whale" && stats.kills < 2) return false; if (!bossGroups[kind]) makeBoss(kind);
   shotMat.map = shotTex; kingShotMat.map = shotTex; whaleShotMat.map = shotTex; boss.diveT = 6; boss.hitCd = 0; const bg = bossGroups[kind]; boss.kind = kind; boss.g = bg.g; boss.eye = bg.eye; boss.ring = bg.ring; boss.rug = bg.rug;
-  boss.on = true; boss.phase = 1; boss.t = 0; boss.shotT = 3.5; boss.max = Math.round(BOSSES[kind].hp * (1 + .6 * stats.kills)); boss.hp = boss.max;
+  boss.on = true; boss.phase = 1; boss.t = 0; boss.shotT = 3.5; boss.max = Math.round(BOSSES[kind].hp * (1 + .45 * stats.kills)); boss.hp = boss.max;
   boss.g.position.set(P.x + Math.sin(-P.yaw) * 14, P.y + 14, P.z - Math.cos(P.yaw) * 14); scene.add(boss.g); $("bossbar").classList.add("show"); updBossBar();
   banner(BOSSES[kind].name, BOSSES[kind].tag); sfx.roar(); trauma = .8; buzz(120); return true; }
 function updBossBar() { $("bossFill").style.width = (100 * Math.max(0, boss.hp) / boss.max).toFixed(1) + "%"; $("bossLv").textContent = `${BOSSES[boss.kind].name} · LV ${stats.kills + 1}`; }
@@ -826,7 +855,7 @@ function bossDamage(n) { if (!boss.on) return; boss.hp -= n; boss.flash = .08; u
   if (boss.hp <= 0) bossEnd(true); }
 function bossEnd(won, silent) { if (!boss.on) return; boss.on = false; const p = boss.g.position.clone(); scene.remove(boss.g); $("bossbar").classList.remove("show");
   for (const s of boss.shots) scene.remove(s.s); boss.shots.length = 0; stats.lastBoss = boss.kind;
-  if (won) { stats.kills++; const prize = 40 + 10 * stats.kills; for (let i = 0; i < 6; i++) setTimeout(() => { burst(p.x + (Math.random() - .5) * 3, p.y + (Math.random() - .5) * 2, p.z + (Math.random() - .5) * 3, [0xffd24a, 0xff4fd8, 0x14f195, 0xffffff], IS_TOUCH ? 30 : 60, 8); debris(p.x, p.y, p.z, [0xff4fd8, 0xffd24a, 0x6a1050][i % 3], 6); trauma = 1; }, i * 120);
+  if (won) { stats.kills++; stats["k_" + boss.kind] = (stats["k_" + boss.kind] | 0) + 1; charJoy = 1; const prize = 40 + 10 * stats.kills; for (let i = 0; i < 6; i++) setTimeout(() => { burst(p.x + (Math.random() - .5) * 3, p.y + (Math.random() - .5) * 2, p.z + (Math.random() - .5) * 3, [0xffd24a, 0xff4fd8, 0x14f195, 0xffffff], IS_TOUCH ? 30 : 60, 8); debris(p.x, p.y, p.z, [0xff4fd8, 0xffd24a, 0x6a1050][i % 3], 6); trauma = 1; }, i * 120);
     spawnOrbs(p.x, p.y, p.z, prize, 0xffd24a); banner(BOSS_TXT[boss.kind][1], `◆+${prize} SOL shards · next one is tougher`); sfx.win(); buzz(200); save(); }
   else if (!silent) banner("IT GOT AWAY…", "Summon it again from the ⚡ LAB"); }
 function updBoss(dt, time) { if (!boss.on) return; const g = boss.g; boss.t += dt; const a = boss.t * .35;
@@ -866,7 +895,7 @@ function updScan(dt) { scanT -= dt; const q = qDef(Qi), el = $("scan"); let ids 
 
 // ---------------- biome toast + adaptive resolution ----------------
 let biomeNow = "", bT = 0;
-function bTick(dt) { bT -= dt; if (bT > 0) return; bT = .5; const b = topH[Math.floor(P.x) + Math.floor(P.z) * SX] > P.y + 3 ? "UNDERGROUND" : biomeName(P.x, P.z); if (b && b !== biomeNow) { biomeNow = b; lampT = b === "UNDERGROUND" ? 1 : 0; const el = $("biome"); el.textContent = b; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); } updHP(); }
+function bTick(dt) { bT -= dt; if (bT > 0) return; bT = .5; if (biomeNow === "MOON BASIN") stats.moon = 1; achTick(); cacheShimmer(); const b = topH[Math.floor(P.x) + Math.floor(P.z) * SX] > P.y + 3 ? "UNDERGROUND" : biomeName(P.x, P.z); if (b && b !== biomeNow) { biomeNow = b; lampT = b === "UNDERGROUND" ? 1 : 0; const el = $("biome"); el.textContent = b; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); } updHP(); }
 let resT = 0, resN = 0, resLow = 0, resHigh = 0;
 function adaptRes(dt) { if (Q.has("dpr") || !running) return; resT += dt; resN++; if (resT < 2) return; const f = resN / resT; resT = 0; resN = 0; const pr = renderer.getPixelRatio(), cap = Math.min(window.devicePixelRatio || 1, DPR_CAP);
   if (f < 48) { resHigh = 0; if (++resLow >= 1 && pr > .75) { renderer.setPixelRatio(Math.max(.75, pr - .25)); resize(); } } else if (f > 58) { resLow = 0; if (++resHigh >= 4 && pr < cap) { renderer.setPixelRatio(Math.min(cap, pr + .25)); resize(); resHigh = 0; } } }
@@ -971,7 +1000,7 @@ $("shotBtn").addEventListener("click", e => { e.stopPropagation(); if (running) 
 let menuA = 0;
 function menuCam(dt) { menuA += dt * .06; }
 function menuStats() { const el = $("mStats"); if (!el) return; const any = stats.mined > 0 || shards > 0;
-  el.innerHTML = any ? `<div><b>◆ ${shards}</b>SOL shards</div><div><b>MK ${["", "I", "II", "III", "IV"][upg.drill]}</b>drill</div><div><b>${stats.kills}</b>bosses busted</div><div><b>${daily.streak || 0}🔥</b>daily streak</div>` : "";
+  el.innerHTML = any ? `<div><b>◆ ${shards}</b>SOL shards</div><div><b>MK ${["", "I", "II", "III", "IV"][upg.drill]}</b>drill</div><div><b>${stats.kills}</b>bosses busted</div><div><b>${daily.streak || 0}🔥</b>daily streak</div><div><b>🏆 ${Object.keys(ach).length}/${ACH.length}</b>achievements</div>` : "";
   $("playBtn").textContent = running || !any ? ($("playBtn").textContent === "RESUME" ? "RESUME" : "PLAY") : "CONTINUE"; $("dailyM").textContent = dailyLine(); $("lookV").textContent = Math.round(lookMul * 100) + "%"; }
 $("lookDn").addEventListener("click", () => { lookMul = Math.max(.4, +(lookMul - .1).toFixed(2)); menuStats(); save(); });
 $("lookUp").addEventListener("click", () => { lookMul = Math.min(2.2, +(lookMul + .1).toFixed(2)); menuStats(); save(); });
@@ -1013,7 +1042,7 @@ function updFishing(dt, night, time) { const down = input.mine, press = down && 
   const b = fish.bob.position; dTip.getWorldPosition(tmpV); const la = lineGeo.attributes.position; la.setXYZ(0, tmpV.x, tmpV.y, tmpV.z); la.setXYZ(1, b.x, b.y, b.z); la.needsUpdate = true;
   if (Math.hypot(b.x - P.x, b.z - P.z) > 16) { fishEnd("LINE SNAPPED (TOO FAR)", "#ff6a8a"); return false; }
   if (fish.st === "wait") { b.y = fish.pool.y + .05 + Math.sin(time * 3) * .03; fish.t -= dt; if (press) { fishEnd("REELED IN EARLY", "#cfefff"); return true; }
-    if (fish.t <= 0) { fish.st = "bite"; fish.t = .95 + (rod - 1) * .25; fish.sp = rollFish(night); pop("❗ BITE! TAP NOW", "#ffd24a"); note(1320, .08, "square", .06); note(1760, .1, "square", .05, 0, AC ? AC.currentTime + .09 : 0); buzz(40); burst(b.x, b.y, b.z, [0x28dcff, 0xffffff], 14, 3); trauma = Math.max(trauma, .15); } return true; }
+    if (fish.t <= 0) { fish.st = "bite"; fish.t = .95 + (rod - 1) * .25; fish.sp = rollFish(ev.k === "aurora" ? 1 : night); pop("❗ BITE! TAP NOW", "#ffd24a"); note(1320, .08, "square", .06); note(1760, .1, "square", .05, 0, AC ? AC.currentTime + .09 : 0); buzz(40); burst(b.x, b.y, b.z, [0x28dcff, 0xffffff], 14, 3); trauma = Math.max(trauma, .15); } return true; }
   if (fish.st === "bite") { b.y = fish.pool.y - .12 + Math.sin(time * 30) * .05; fish.t -= dt; if (press) { fish.st = "reel"; fish.f = .5; fish.fv = 0; fish.z = .4; fish.zv = 0; fish.prog = .3; $("reel").classList.add("show"); $("reelFish").style.background = fish.sp.c; return true; }
     if (fish.t <= 0) { fishEnd("TOO SLOW · IT SWAM OFF", "#ff6a8a"); } return true; }
   if (fish.st === "reel") { const sp = fish.sp, zw = .29 + (rod - 1) * .06, fE = (stats.fish | 0) < 1 ? .55 : (stats.fish | 0) < 4 ? .8 : 1;
@@ -1025,7 +1054,7 @@ function updFishing(dt, night, time) { const down = input.mine, press = down && 
     $("reelZone").style.left = (fish.z * 100).toFixed(1) + "%"; $("reelZone").style.width = (zw * 100).toFixed(0) + "%"; $("reelZone").classList.toggle("on", inZ); $("reelFish").style.left = (fish.f * 100).toFixed(1) + "%"; $("reelProg").style.width = (Math.max(0, Math.min(1, fish.prog)) * 100).toFixed(0) + "%";
     b.x += (Math.random() - .5) * dt * 2; b.z += (Math.random() - .5) * dt * 2; b.y = fish.pool.y - .05 + Math.sin(time * 18) * .04; if (Math.random() < dt * 8) burst(b.x, b.y, b.z, [0x28dcff], 1, 1.5);
     if (inZ && Math.random() < dt * 10) note(300 + fish.prog * 500, .04, "triangle", .02);
-    if (fish.prog >= 1) { stats.fish = (stats.fish || 0) + 1; fish.dex[sp.n] = (fish.dex[sp.n] || 0) + 1; spawnOrbs(b.x, b.y + .3, b.z, sp.v, parseInt(sp.c.slice(1), 16)); banner(`CAUGHT: ${sp.n}`, `${sp.r} · ◆+${sp.v} SOL shards${fish.dex[sp.n] === 1 ? " · NEW IN FISHDEX!" : ""}`);
+    if (fish.prog >= 1) { stats.fish = (stats.fish || 0) + 1; charJoy = 1; fish.dex[sp.n] = (fish.dex[sp.n] || 0) + 1; spawnOrbs(b.x, b.y + .3, b.z, sp.v, parseInt(sp.c.slice(1), 16)); banner(`CAUGHT: ${sp.n}`, `${sp.r} · ◆+${sp.v} SOL shards${fish.dex[sp.n] === 1 ? " · NEW IN FISHDEX!" : ""}`);
       burst(b.x, b.y + .3, b.z, [parseInt(sp.c.slice(1), 16), 0xffffff, 0x28dcff], IS_TOUCH ? 30 : 60, 6); sfx.vein(sp.v); trauma = Math.max(trauma, sp.v >= 12 ? .6 : .25); buzz(60); fishEnd(); save(); }
     else if (fish.prog <= 0) fishEnd(`${sp.n} GOT AWAY`, "#ff6a8a"); return true; }
   return false; }
@@ -1045,17 +1074,18 @@ const shadowM = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), new THREE.Mesh
 let chSq = 0, chWasG = true, chFace = 1;
 const texLoader = new THREE.TextureLoader(), charTex = {};
 function setChar(id, quiet) { if (!CHARS.find(c => c[0] === id)) id = "h_fudder"; charId = id; const t = charTex[id] || (charTex[id] = texLoader.load(`../assets/chars/${id}.webp`, tt => { tt.colorSpace = THREE.SRGBColorSpace; }));
-  charMat.map = t; charMat.needsUpdate = true; rimMat.map = t; rimMat.needsUpdate = true; const hero = $("charHero"); if (hero) hero.src = `../assets/chars/${id}.webp`; const se = document.querySelector(`#chars .ch[data-id="${id}"]`), ce = $("chars"); if (se && ce && quiet) ce.scrollLeft = Math.max(0, se.offsetLeft - ce.offsetLeft - ce.clientWidth / 2 + se.offsetWidth / 2); document.querySelectorAll("#chars .ch").forEach(e => e.classList.toggle("sel", e.dataset.id === id)); const c = CHARS.find(c => c[0] === id); $("charName").textContent = c[1] + (c[2] === 1 ? " · HOLDER SKIN" : c[2] === 2 ? " · MEDAL SKIN" : ""); if (!quiet) { sfx.click(); save(); } }
+  charMat.map = t; charMat.needsUpdate = true; rimMat.map = t; rimMat.needsUpdate = true; { const cc = CHARS.find(c => c[0] === id); rimMat.color.setHex(cc && cc[2] === 1 ? 0xffd24a : cc && cc[2] === 2 ? 0xc69bff : 0x28dcff); } const hero = $("charHero"); if (hero) hero.src = `../assets/chars/${id}.webp`; const se = document.querySelector(`#chars .ch[data-id="${id}"]`), ce = $("chars"); if (se && ce && quiet) ce.scrollLeft = Math.max(0, se.offsetLeft - ce.offsetLeft - ce.clientWidth / 2 + se.offsetWidth / 2); document.querySelectorAll("#chars .ch").forEach(e => e.classList.toggle("sel", e.dataset.id === id)); const c = CHARS.find(c => c[0] === id); $("charName").textContent = c[1] + (c[2] === 1 ? " · HOLDER SKIN" : c[2] === 2 ? " · MEDAL SKIN" : ""); if (!quiet) { sfx.click(); save(); } }
 function buildCharPicker() { const el = $("chars"); el.innerHTML = ""; for (const [id, nm, k] of CHARS) { const b = document.createElement("button"); b.type = "button"; b.className = "ch" + (k ? " h" + k : ""); b.dataset.id = id; b.title = nm; b.innerHTML = `<img src="../assets/chars/${id}.webp" alt="${nm}" loading="lazy">`; b.addEventListener("click", () => setChar(id)); el.appendChild(b); } }
 function cycleView() { view = (view + 1) % 3; pop("VIEW: " + VIEWS[view], "#28dcff"); sfx.click(); }
 const camOff = new THREE.Vector3();
 function applyView(time) { const third = view > 0; drill.visible = !third; charSpr.visible = rimSpr.visible = shadowM.visible = third;
   if (!third) return; const moving = Math.hypot(P.vx, P.vz), mv = Math.min(1, moving / 3);
-  if (P.ground && !chWasG) chSq = .22; chWasG = P.ground; chSq *= Math.pow(.004, 1 / 60); const air = P.ground ? 0 : Math.max(-.12, Math.min(.12, P.vy * .02));
+  if (P.ground && !chWasG) { chSq = .22; for (let i = 0; i < 10; i++) { const a = i * .628; burst(P.x + Math.cos(a) * .4, P.y + .05, P.z + Math.sin(a) * .4, [0xcfc8ff, 0x8a7ab0], 1, 1.2); } } chWasG = P.ground; chSq *= Math.pow(.004, 1 / 60); const air = P.ground ? 0 : Math.max(-.12, Math.min(.12, P.vy * .02));
   const shY = 2.1 * (1 + air - chSq * .6 + Math.sin(time * 2.2) * .012 * (1 - mv)), sx = 2.1 * (1 - air * .6 + chSq * .5);
   const side = P.vx * Math.cos(P.yaw) - P.vz * Math.sin(P.yaw); if (Math.abs(side) > .8) chFace = (view === 2 ? -1 : 1) * Math.sign(side);
-  charSpr.scale.set(sx * chFace, shY, 1); const by = P.y + .2 + shY / 2 + Math.abs(Math.sin(bob)) * .08 * mv; charSpr.position.set(P.x, by, P.z); charMat.rotation = Math.sin(bob) * .05 * mv - side * .02;
-  const tod2 = 1 - (curNight || 0) * .35; charMat.color.setScalar(tod2); rimSpr.scale.set(sx * chFace * 1.07, shY * 1.05, 1); rimMat.rotation = charMat.rotation; rimMat.opacity = .35 + (curNight || 0) * .35 + Math.sin(time * 3) * .05;
+  const jdt = Math.min(.05, time - (applyView.lt || time)); applyView.lt = time; if (charJoy > 0) charJoy = Math.max(0, charJoy - jdt * .9); const spin = charJoy > 0 ? Math.cos((1 - charJoy) * Math.PI * 4) : 1;
+  charSpr.scale.set(sx * chFace * spin, shY, 1); const by = P.y + .2 + shY / 2 + Math.abs(Math.sin(bob)) * .08 * mv + Math.sin(charJoy * Math.PI) * .7; charSpr.position.set(P.x, by, P.z); charMat.rotation = Math.sin(bob) * .05 * mv - side * .02;
+  const tod2 = 1 - (curNight || 0) * .35; charMat.color.setScalar(tod2); rimSpr.scale.set(sx * chFace * spin * 1.07, shY * 1.05, 1); rimMat.rotation = charMat.rotation; rimMat.opacity = .35 + (curNight || 0) * .35 + Math.sin(time * 3) * .05;
   const cdx = camera.position.x - P.x, cdz = camera.position.z - P.z, cl = Math.hypot(cdx, cdz) || 1; rimSpr.position.set(P.x - cdx / cl * .06, by, P.z - cdz / cl * .06);
   const gyS = topH[Math.floor(P.x) + Math.floor(P.z) * SX] + 1.02; shadowM.position.set(P.x, Math.min(P.y + .03, Math.max(gyS, P.y - 4)), P.z); const hgt = Math.max(0, P.y - gyS); shadowM.scale.setScalar(Math.max(.4, 1 - hgt * .12)); shadowM.material.opacity = Math.max(.2, 1 - hgt * .15);
   const dir = view === 1 ? 1 : -1, dist = view === 1 ? 3.6 : 2.6, sy = Math.sin(P.yaw), cy = Math.cos(P.yaw), up = view === 1 ? 1.1 : .2;
@@ -1069,9 +1099,9 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; const time = now / 1000;
   const night = updSky(running ? dt : 0); curNight = night; updWater(dt, time, night);
-  if (running) { updPlayer(dt); landCheck(); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); updMeteor(dt, time); updCritters(dt, night); }
+  if (running) { updPlayer(dt); landCheck(); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); updMeteor(dt, time); updCritters(dt, night); toyTick(dt); updEvents(dt, night); updRain(dt); }
   else menuCam(dt);
-  updMP(dt); updParts(dt); updDebris(dt); audioTick(); adaptRes(dt);
+  updMotes(dt, time, night); skyU.uTime.value = time; skyU.uAur.value += ((ev.k === "aurora" ? 1 : night > .6 ? .3 : 0) - skyU.uAur.value) * Math.min(1, dt * .8); updMP(dt); updParts(dt); updDebris(dt); audioTick(); adaptRes(dt);
   let n = 0; for (const ci of dirty) { buildChunk(ci); dirty.delete(ci); if (++n >= (IS_TOUCH ? 2 : 3)) break; }
   trauma = Math.max(0, trauma - dt * 1.8); const sh = trauma * trauma;
   camera.position.set(P.x + (Math.random() - .5) * sh * .25, P.y + P.eye + (Math.random() - .5) * sh * .25, P.z + (Math.random() - .5) * sh * .25); camera.rotation.set(P.pitch + (Math.random() - .5) * sh * .04, P.yaw + (Math.random() - .5) * sh * .04, (Math.random() - .5) * sh * .06);
@@ -1087,12 +1117,69 @@ function frame(now) {
   renderer.render(scene, camera); if (wantShot) takeShot();
 }
 
+// ---------------- v0.7: building toys, events, secrets, achievements, motes ----------------
+let boostT = 0, toyCd = 0, lastKey = "", stepAcc = 0, charJoy = 0;
+const PENTA = [0, 2, 4, 7, 9];
+function toyTick(dt) { toyCd -= dt; boostT = Math.max(0, boostT - dt); if (!P.ground) { lastKey = ""; return; }
+  const fx = Math.floor(P.x), fy = Math.floor(P.y - .05), fz = Math.floor(P.z), id = get(fx, fy, fz), sp = Math.hypot(P.vx, P.vz);
+  if (sp > 1) { stepAcc += sp * dt; if (stepAcc > 2.2) { stepAcc = 0; if (id) sfx.step(id); if (view > 0) burst(P.x, P.y + .05, P.z, [0xcfc8ff], 2, .8); } }
+  if (id === 19) { P.vy = 15.5; P.ground = false; sfx.bounce(); burst(P.x, P.y + .1, P.z, [0x14f195, 0xb8ffe0, 0xffffff], IS_TOUCH ? 16 : 30, 4); stats.bounces = (stats.bounces | 0) + 1; buzz(20); trauma = Math.max(trauma, .2); chSq = 0; return; }
+  if (id === 20) { if (boostT < .9) { if (toyCd <= 0) { sfx.boost(); stats.boosts = (stats.boosts | 0) + 1; toyCd = .5; } burst(P.x, P.y + .1, P.z, [0xffd24a, 0xffffff], 4, 2); } boostT = 1.2; }
+  const kk = fx + "," + fy + "," + fz; if (id === 21) { if (kk !== lastKey) { const m = 60 + PENTA[((fx + fz) % 5 + 5) % 5] + 12 * (((fy % 2) + 2) % 2); sfx.key(m); burst(fx + .5, fy + 1.05, fz + .5, [0xff4fd8, 0xffffff], 6, 1.5); stats.notes = (stats.notes | 0) + 1; } }
+  lastKey = id === 21 ? kk : ""; }
+function fireworks(x, y, z) { stats.fireworks = (stats.fireworks | 0) + 1; sfx.fw(); const cols = [[0xff4fd8, 0xffffff], [0x14f195, 0x28dcff], [0xffd24a, 0xff7a3a], [0x9945ff, 0xff4fd8]];
+  for (let i = 0; i < 12; i++) setTimeout(() => burst(x, y + i * .55, z, [0xffd24a, 0xffffff], 2, .5), i * 55);
+  for (let i = 0; i < 4; i++) setTimeout(() => { burst(x + (Math.random() - .5) * 4, y + 7 + Math.random() * 3, z + (Math.random() - .5) * 4, cols[i], IS_TOUCH ? 40 : 90, 8); trauma = Math.max(trauma, .15); }, 720 + i * 230); }
+function cachesFound() { let n = 0; for (const c of caches) if (get(c[0], c[1], c[2]) !== 23) n++; return n; }
+let shimT = 0;
+function cacheShimmer() { if ((shimT -= .5) > 0) return; let bd = 99; for (const c of caches) { if (get(c[0], c[1], c[2]) !== 23) continue; bd = Math.min(bd, Math.hypot(c[0] + .5 - P.x, c[1] + .5 - P.y, c[2] + .5 - P.z)); }
+  if (bd < 9) { sfx.shimmer(.05 * (1 - bd / 9) + .005); shimT = .5 + bd * .35; } }
+// world events (local only)
+const ev = { k: "", t: 0, next: 150 + Math.random() * 60, rainT: 0 };
+const EVENTS = { rain: ["☔ SHARD RAIN", "Shards are falling! Run under them"], pump: ["📈 PUMP HOUR", "Every vein drop ×2 for 60 seconds"], aurora: ["🌌 AURORA NIGHT", "Look up! Rare fish bite more"] };
+function startEvent(k) { if (!EVENTS[k]) return false; ev.k = k; ev.t = k === "rain" ? 30 : 60; banner(EVENTS[k][0], EVENTS[k][1]); sfx.event(); stats.events = (stats.events | 0) + 1; if (k === "aurora" && curNight < .6) tod = .02; return true; }
+function updEvents(dt, night) { if (mp.on) return; const chip = $("evChip");
+  if (!ev.k) { ev.next -= dt; if (ev.next <= 0 && !boss.on && !met.on) { ev.next = 200 + Math.random() * 120; startEvent(night > .6 ? (Math.random() < .6 ? "aurora" : "rain") : (Math.random() < .5 ? "rain" : "pump")); } chip.classList.remove("show"); return; }
+  ev.t -= dt; chip.textContent = `${EVENTS[ev.k][0]} · ${Math.max(0, Math.ceil(ev.t))}s`; chip.classList.add("show"); if (ev.t <= 0) { pop(EVENTS[ev.k][0] + " ENDED", "#cfefff"); ev.k = ""; }
+  if (ev.k === "rain") { ev.rainT -= dt; if (ev.rainT <= 0 && rain.length < 34) { ev.rainT = .28; const a = Math.random() * 6.28, d = 1 + Math.random() * 9; const s = new THREE.Sprite(rainMat); s.scale.set(.55, .55, 1); s.position.set(P.x + Math.cos(a) * d, P.y + 13 + Math.random() * 4, P.z + Math.sin(a) * d); scene.add(s); rain.push({ s, vy: -3 - Math.random() * 2, life: 7 }); } } }
+const rainMat = new THREE.SpriteMaterial({ map: null, color: 0x9df7ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }); const rain = [];
+function updRain(dt) { rainMat.map = shotTex; for (let i = rain.length - 1; i >= 0; i--) { const r = rain[i], p = r.s.position; const gy = topH[Math.max(0, Math.min(SX - 1, Math.floor(p.x))) + Math.max(0, Math.min(SZ - 1, Math.floor(p.z))) * SX] + 1.3;
+    if (p.y > gy) { p.y += r.vy * dt; if (p.y < gy) p.y = gy; } else r.life -= dt; { const hx = P.x - p.x, hz = P.z - p.z, hd = Math.hypot(hx, hz); if (hd < 4.5 && hd > .01) { const k = Math.min(1, dt * (p.y <= gy + .01 ? 5 : 1.6)); p.x += hx * k; p.z += hz * k; if (p.y <= gy + .01) p.y += (P.y + 1 - p.y) * k; } } r.s.material.rotation += dt * 3;
+    if (Math.hypot(p.x - P.x, p.z - P.z) < 1.4 && p.y > P.y - .6 && p.y < P.y + 2.6) { scene.remove(r.s); rain.splice(i, 1); shards++; updShards(); stats.rain = (stats.rain | 0) + 1; pickN++; sfx.pick(pickN % 15); burst(p.x, p.y, p.z, [0x9df7ff, 0xffffff], 6, 2); continue; }
+    if (r.life <= 0) { scene.remove(r.s); rain.splice(i, 1); } } }
+// floating neon motes around the player (world ambience)
+const MOTE_N = IS_TOUCH ? 70 : 150, moteGeo = new THREE.BufferGeometry(), moteP = new Float32Array(MOTE_N * 3), moteS = new Float32Array(MOTE_N);
+for (let i = 0; i < MOTE_N; i++) { moteP[i * 3] = (Math.random() - .5) * 28; moteP[i * 3 + 1] = Math.random() * 12; moteP[i * 3 + 2] = (Math.random() - .5) * 28; moteS[i] = Math.random() * 6.28; }
+moteGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(MOTE_N * 3), 3));
+const moteMat = new THREE.PointsMaterial({ size: .09, color: 0x9df7ff, transparent: true, opacity: .75, blending: THREE.AdditiveBlending, depthWrite: false }); const motes = new THREE.Points(moteGeo, moteMat); motes.frustumCulled = false; scene.add(motes);
+const MOTE_C = { "NEON FLATS": 0x9df7ff, "PUMP DUNES": 0xff9ad0, "SIGNAL GROVE": 0x7dffd8, "FROST CHAIN": 0xe8f8ff, "MOON BASIN": 0xd8c8ff, "UNDERGROUND": 0xc69bff };
+function updMotes(dt, time, night) { const a = moteGeo.attributes.position.array; for (let i = 0; i < MOTE_N; i++) { moteP[i * 3 + 1] += dt * .35; if (moteP[i * 3 + 1] > 12) moteP[i * 3 + 1] = 0;
+    const ph = moteS[i] + time * .4; let x = moteP[i * 3] + Math.sin(ph) * .6, z = moteP[i * 3 + 2] + Math.cos(ph * .8) * .6;
+    a[i * 3] = P.x + ((x - P.x % 28 + 42) % 28 - 14); a[i * 3 + 1] = P.y - 2 + moteP[i * 3 + 1]; a[i * 3 + 2] = P.z + ((z - P.z % 28 + 42) % 28 - 14); }
+  moteGeo.attributes.position.needsUpdate = true; moteMat.color.setHex(MOTE_C[biomeNow] || 0x9df7ff); moteMat.opacity = .35 + night * .5 + (ev.k === "rain" ? .2 : 0); moteMat.size = biomeNow === "FROST CHAIN" ? .13 : .09; }
+// achievements (local, in-game only)
+const ACH = [
+  ["vein", "💎", "FIRST SHARD", "Mine a SOL vein", () => stats.veins >= 1], ["miner", "⛏", "TILE MUNCHER", "Mine 250 tiles", () => stats.mined >= 250],
+  ["build", "🏗", "ARCHITECT", "Build 50 pieces", () => stats.placed >= 50], ["rug", "🧹", "RUG BUSTER", "Bust THE RUG PULLER", () => (stats.k_rug | 0) >= 1 || stats.kills >= 1],
+  ["king", "👑", "KING DETHRONED", "Beat THE FUD KING", () => (stats.k_king | 0) >= 1], ["whale", "🐋", "WHALE BEACHED", "Beat THE DUMP WHALE", () => (stats.k_whale | 0) >= 1],
+  ["fish", "🎣", "HOOKED", "Catch a fish", () => (stats.fish | 0) >= 1], ["fish10", "🐟", "NEON ANGLER", "Catch 10 fish", () => (stats.fish | 0) >= 10],
+  ["dex", "📘", "FISHDEX FIVE", "Catch 5 kinds of fish", () => Object.keys(fish.dex).length >= 5], ["dia", "💠", "DIAMOND SPOTTER", "Zap a Diamond Hands", () => (stats.diamond | 0) >= 1],
+  ["meteor", "☄", "STARGAZER", "See a meteor land", () => (stats.meteors | 0) >= 1], ["cache", "🗝", "TREASURE HUNTER", "Find a secret cache", () => cachesFound() >= 1],
+  ["cache5", "🏆", "SECRET KEEPER", "Find all 5 secret caches", () => cachesFound() >= 5], ["bounce", "🟢", "BOING", "Bounce 10 times on Bounce Pads", () => (stats.bounces | 0) >= 10],
+  ["fw", "🎆", "SHOWTIME", "Pop 3 Firework Crates", () => (stats.fireworks | 0) >= 3], ["keys", "🎹", "KEYBOARD HERO", "Play 16 notes on Synth Keys", () => (stats.notes | 0) >= 16],
+  ["moon", "🌙", "MOONWALKER", "Visit the Moon Basin", () => !!stats.moon], ["core", "✨", "CORE MEMORY", "Mine a SOL Core vein", () => stats.cores >= 1],
+  ["drill", "🔩", "BOSS DRILL", "Build the BOSS DRILL MK IV", () => upg.drill >= 4], ["event", "🌌", "WEATHER WATCHER", "Live through a world event", () => (stats.events | 0) >= 1],
+  ["streak", "🔥", "ON A STREAK", "3-day daily streak", () => (daily.streak | 0) >= 3] ];
+let ach = {}, achT = 0;
+function achTick() { if (mp.on || !running) return; for (const a of ACH) if (!ach[a[0]] && a[4]()) { ach[a[0]] = Date.now(); shards += 5; updShards(); const el = $("ach"); $("achN").textContent = `${a[1]} ${a[2]}`; $("achD").textContent = `${a[3]} · ◆+5 (in-game)`; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); clearTimeout(achT); achT = setTimeout(() => el.classList.remove("show"), 3600); sfx.ach(); charJoy = 1; buzz(40); save(); break; } }
+function achHTML() { return `<b>🏆 ACHIEVEMENTS ${Object.keys(ach).length}/${ACH.length}</b><div class="achg">` + ACH.map(a => `<span class="${ach[a[0]] ? "on" : ""}" title="${a[2]}: ${a[3]}">${a[1]}<i>${ach[a[0]] ? a[2] : "???"}</i></span>`).join("") + "</div>"; }
+
 // ---------------- boot ----------------
 const saved = load();
 let migrated = false;
 if (saved && !saved.migr) { seed = saved.seed; edits = saved.edits || {}; shards = saved.shards | 0; sel = saved.sel | 0; tod = saved.tod ?? tod;
   if (saved.upg) Object.assign(upg, saved.upg); if (saved.stats) Object.assign(stats, saved.stats); Qi = saved.Qi | 0; if (!saved.qv && Qi >= 7) Qi++; qBase = saved.qBase || {}; P.hp = saved.hp || maxHp();
-  if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; lookMul = saved.set.look || 1; } if (saved.daily) Object.assign(daily, saved.daily); if (saved.dex) fish.dex = saved.dex; if (saved.char) charId = saved.char; introDone = saved.intro !== false; if (introDone) met.t = 150 + Math.random() * 120; }
+  if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; lookMul = saved.set.look || 1; } if (saved.daily) Object.assign(daily, saved.daily); if (saved.dex) fish.dex = saved.dex; if (saved.ach) ach = saved.ach; if (saved.char) charId = saved.char; introDone = saved.intro !== false; if (introDone) met.t = 150 + Math.random() * 120; }
 else { seed = parseInt(Q.get("seed")) || 1337; if (saved && saved.migr) { shards = saved.shards; migrated = true; } qStart(); }
 generate(seed); applyEdits(); const tris = buildAll();
 respawn(); if (saved && saved.p) { [P.x, P.y, P.z, P.yaw, P.pitch] = saved.p; if (collides(P.x, P.y, P.z)) respawn(); }
@@ -1104,6 +1191,6 @@ setInterval(save, 5000);
 requestAnimationFrame(frame);
 
 // test / debug hooks (harmless; used by automated checks)
-window.__SB = { P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
+window.__SB = { brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
   state: () => ({ x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, ground: P.ground, shards, sel, running, tris, fps: Math.round(fps), fuds: fuds.length, tod, mp: mp.on ? { id: mp.id, rejects: mp.rejects || 0, lastEmote: mp.lastEmote || null, others: [...mp.others.values()].map(o => ({ name: o.p.name, x: o.p.x, y: o.p.y, z: o.p.z })) } : null, info: renderer.info.render }),
   select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, upg, stats, quest: () => ({ i: Qi, ...qDef(Qi), v: qVal(qDef(Qi)) }), boss: () => ({ on: boss.on, hp: boss.hp, max: boss.max, phase: boss.phase }), summon: k => summonBoss(k), daily: () => ({ ...daily, line: dailyLine() }), meteor: () => { met.t = 0; }, met: () => ({ on: met.on, crater: met.crater }), critters: () => critters.map(c => ({ x: c.s.position.x, y: c.s.position.y, z: c.s.position.z })), spawnCritter: () => spawnCritter(true), lookAtCrit: () => { const c = critters.slice().sort((a, b) => a.s.position.distanceTo(camera.position) - b.s.position.distanceTo(camera.position))[0]; if (!c) return false; const o = c.s.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return true; }, shot: () => { wantShot = true; }, lastShot: () => lastShotInfo, touchLook: (dx, dy) => touchLook(dx, dy), setLookMul: v => { lookMul = v; }, mem: () => ({ geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures, heap: performance.memory ? performance.memory.usedJSHeapSize : 0, scene: scene.children.length, orbs: orbs.length, fuds: fuds.length, shots: boss.shots.length, crit: critters.length }), fishSt: () => ({ st: fish.st, prog: fish.prog, sp: fish.sp && fish.sp.n, dex: fish.dex, n: stats.fish || 0 }), pools: () => pools, setView: v => { view = v; }, setChar: id => setChar(id, true), charId: () => charId, chars: () => CHARS.map(c => c[0]), aimState: () => ({ pool: !!poolHit, boss: bossHit, crit: !!critHit, fud: !!fudHit }), lookAtBoss: () => { if (!boss.on) return; const o = boss.g.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); }, bossDamage: n => bossDamage(n), openLab, closeLab, buy: id => buyUpg(id), hp: () => P.hp, biome: () => biomeName(P.x, P.z), give: n => { shards += n; updShards(); }, setTod: t => { tod = t; }, dpr: () => renderer.getPixelRatio(), combo: () => comboN, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };
