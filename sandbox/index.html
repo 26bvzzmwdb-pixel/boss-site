@@ -146,6 +146,12 @@ body.inmenu #viewBtn{visibility:hidden}
 #ach b{display:block;font:900 9px Orbitron,sans-serif;letter-spacing:2px;color:#ffd24a}#ach span{display:block;font:900 14px Orbitron,sans-serif;color:#fff;margin:2px 0}#ach small{font-size:10px;color:#e8dcc0}
 #achL{margin:8px 0;font-size:10px}#achL b{color:#ffd24a;letter-spacing:1px}.achg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:5px}.achg span{position:relative;display:flex;flex-direction:column;align-items:center;padding:4px 1px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:16px;filter:grayscale(1);opacity:.45}.achg span.on{filter:none;opacity:1;border-color:#ffd24a;box-shadow:0 0 8px rgba(255,210,74,.35)}.achg i{font-style:normal;font-size:6.5px;letter-spacing:.3px;margin-top:2px;text-align:center;line-height:1.1;color:#ddd}
 #petL{margin:8px 0;font-size:10px}#petL>b{color:#14f195;letter-spacing:1px}.pet{display:flex;align-items:center;gap:8px;margin-top:5px;padding:5px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(20,241,149,.25)}.pet img{width:40px;height:40px}.pet div{flex:1;text-align:left}.pet div b{display:block;font:900 11px Orbitron,sans-serif;color:#fff}.pet small{font-size:9px;color:#cfd}.pet button{padding:8px 10px;border-radius:10px;border:2px solid #14f195;background:rgba(20,241,149,.15);color:#fff;font:900 10px Orbitron,sans-serif;touch-action:manipulation}.pet button.on{background:#14f195;color:#06120c}
+#photoBtn{position:fixed;z-index:4;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 192px);width:44px;height:40px;border-radius:12px;border:1px solid rgba(255,210,74,.55);background:rgba(8,6,24,.62);font-size:18px;touch-action:manipulation}
+body.inmenu #photoBtn{visibility:hidden}#photoPad,#photoBar{display:none}body.photo #shareBtn{z-index:8}
+body.photo .hud,body.photo .tbtn,body.photo #labBtn,body.photo #shotBtn,body.photo #viewBtn,body.photo #pauseBtn,body.photo #lookSlow,body.photo #stick,body.photo #stickHint,body.photo #photoBtn,body.photo #lookPad,body.photo #scan{display:none!important}
+body.photo #photoPad{display:block;position:fixed;inset:0;z-index:6;touch-action:none;cursor:grab}
+body.photo #photoBar{display:block;touch-action:manipulation;position:fixed;z-index:7;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));width:min(420px,94vw);padding:8px;border-radius:18px;background:rgba(8,6,24,.78);border:1px solid rgba(255,210,74,.5);box-shadow:0 0 18px rgba(255,79,216,.3);text-align:center}
+.phh{font:900 9px Orbitron,sans-serif;letter-spacing:2px;color:#ffd24a;margin-bottom:6px}.phr{display:flex;gap:6px;margin-top:6px}.phr button{flex:1;padding:10px 4px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.07);color:#fff;font:900 10px Orbitron,sans-serif;letter-spacing:.5px;touch-action:manipulation}.phr .snap{flex:1.6;background:linear-gradient(180deg,#ff4fd8,#9945ff);border-color:#ffb0f0}
 /* menu */
 #menu{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(60,20,110,.75),rgba(5,6,15,.94));padding:16px;overflow:auto}
 #menu.hide{display:none}
@@ -183,6 +189,9 @@ body.inmenu #viewBtn{visibility:hidden}
 <button id="shotBtn" aria-label="Save screenshot">📸</button>
 <button id="shareBtn" type="button" aria-label="Share screenshot">SHARE 📤</button>
 <button id="viewBtn" aria-label="Change view">👤</button>
+<button id="photoBtn" aria-label="Photo mode">🖼</button>
+<div id="photoPad"></div>
+<div id="photoBar"><div class="phh">📷 PHOTO MODE · drag to orbit</div><div class="phr"><button data-k="f" id="phF">NO FILTER</button><button data-k="p" id="phP">POSE: IDLE</button><button data-k="t" id="phT">TIME</button></div><div class="phr"><button data-k="in">＋</button><button data-k="snap" class="snap">📸 SNAP</button><button data-k="out">－</button><button data-k="x">✕ EXIT</button></div></div>
 <div class="hud" id="reel"><div class="track"><div id="reelZone"></div><div id="reelFish"></div></div><div class="pb"><div id="reelProg"></div></div></div>
 <div id="flash"></div>
 <div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
