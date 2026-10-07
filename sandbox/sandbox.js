@@ -687,7 +687,7 @@ function syncLookBtn() { const b = $("lookSlow"); if (b) { b.classList.toggle("o
 // ---------------- quests (also the tutorial) ----------------
 const QUESTS = [
   { t: "Mine 5 tiles", h: IS_TOUCH ? "Aim at a tile, hold MINE" : "Aim at a tile, hold left click", k: "mined", n: 5, r: 3 },
-  { t: "Mine a SOL Shard vein", h: "Purple crystals near the plaza", k: "veins", n: 1, r: 3 },
+  { t: "Mine any SOL vein", h: "Glowing crystals near the plaza · follow the ▲ scanner", k: "veins", n: 1, r: 3 },
   { t: "Build 5 pieces", h: IS_TOUCH ? "Pick a piece bottom-left, tap BUILD" : "Right click to place", k: "placed", n: 5, r: 4 },
   { t: "Upgrade to Drill MK II", h: "Open the ⚡ LAB (top right)", k: "drill", n: 2, r: 5, abs: 1 },
   { t: "Find a SOL Prism vein", h: "Green crystals, dig deep or explore caves", k: "prisms", n: 1, r: 6 },
@@ -794,6 +794,19 @@ function updBoss(dt, time) { if (!boss.on) return; const g = boss.g; boss.t += d
     if (q.l <= 0 || get(Math.floor(s.position.x), Math.floor(s.position.y), Math.floor(s.position.z))) { burst(s.position.x, s.position.y, s.position.z, [0xff3250, 0xff6a8a], 8, 3); scene.remove(s); boss.shots.splice(i, 1); } }
   if (Math.hypot(g.position.x - P.x, g.position.z - P.z) > 45) bossEnd(false); }
 
+// ---------------- ore scanner: points the way to what the current quest needs ----------------
+const SCAN_IDS = { veins: [8, 9, 10, 18], prisms: [9], golds: [18], cores: [10] };
+let scanT = 0, scanTgt = null;
+function updScan(dt) { scanT -= dt; const q = qDef(Qi), ids = SCAN_IDS[q.k], el = $("scan");
+  if (!ids || boss.on) { el.style.display = "none"; scanTgt = null; return; }
+  if (scanT <= 0) { scanT = 1; scanTgt = null; let best = 1e9; const px = Math.floor(P.x), py = Math.floor(P.y + 1), pz = Math.floor(P.z), R0 = 14;
+    for (let y = Math.max(1, py - R0); y <= Math.min(SY - 1, py + 6); y++) for (let z = Math.max(0, pz - R0); z <= Math.min(SZ - 1, pz + R0); z++) for (let x = Math.max(0, px - R0); x <= Math.min(SX - 1, px + R0); x++) {
+      const id = world[idx(x, y, z)]; if (!id || !ids.includes(id)) continue; const d = (x - px) ** 2 + (y - py) ** 2 * 1.5 + (z - pz) ** 2; if (d < best) { best = d; scanTgt = [x + .5, y + .5, z + .5, id]; } } }
+  if (!scanTgt) { el.style.display = "block"; el.className = "hud none"; $("scanTx").textContent = ids.includes(10) ? "SCANNER: DIG DEEPER" : "SCANNER: NOTHING NEAR, EXPLORE"; $("scanAr").style.transform = ""; return; }
+  const dx = scanTgt[0] - P.x, dz = scanTgt[2] - P.z, dy = scanTgt[1] - (P.y + 1), d = Math.hypot(dx, dy, dz);
+  const ang = Math.atan2(-dx, -dz) - P.yaw; el.style.display = "block"; el.className = "hud";
+  $("scanAr").style.transform = `rotate(${(-ang * 180 / Math.PI).toFixed(1)}deg)`; $("scanTx").textContent = `${B[scanTgt[3]].name.replace(" VEIN", "")} ${d.toFixed(0)}m ${dy < -2 ? "▼" : dy > 2 ? "▲" : ""}`; }
+
 // ---------------- biome toast + adaptive resolution ----------------
 let biomeNow = "", bT = 0;
 function bTick(dt) { bT -= dt; if (bT > 0) return; bT = .5; const b = topH[Math.floor(P.x) + Math.floor(P.z) * SX] > P.y + 3 ? "UNDERGROUND" : biomeName(P.x, P.z); if (b && b !== biomeNow) { biomeNow = b; lampT = b === "UNDERGROUND" ? 1 : 0; const el = $("biome"); el.textContent = b; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); } updHP(); }
@@ -807,7 +820,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; const time = now / 1000;
   const night = updSky(running ? dt : 0);
-  if (running) { updPlayer(dt); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); }
+  if (running) { updPlayer(dt); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); }
   updMP(dt); updParts(dt); updDebris(dt); audioTick(); adaptRes(dt);
   let n = 0; for (const ci of dirty) { buildChunk(ci); dirty.delete(ci); if (++n >= 3) break; }
   trauma = Math.max(0, trauma - dt * 1.8); const sh = trauma * trauma;

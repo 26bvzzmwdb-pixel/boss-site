@@ -76,7 +76,7 @@ body.touch #target{font-size:9px;top:calc(50% + 22px)}
   body.touch #bMine{width:64px;height:64px;right:max(10px,env(safe-area-inset-right));bottom:calc(max(8px,env(safe-area-inset-bottom)) + 72px)}
   body.touch #bBuild{width:56px;height:56px;right:calc(max(10px,env(safe-area-inset-right)) + 76px);bottom:calc(max(8px,env(safe-area-inset-bottom)) + 96px)}
   body.touch #bJump{width:56px;height:56px;right:calc(max(10px,env(safe-area-inset-right)) + 6px);bottom:calc(max(8px,env(safe-area-inset-bottom)) + 4px)}
-  body.touch #palette{left:50%;transform:translateX(-50%);top:calc(max(6px,env(safe-area-inset-top)) + 4px);bottom:auto;max-width:70vw;padding:3px}
+  body.touch #palette{left:50%;transform:translateX(-50%);top:calc(max(6px,env(safe-area-inset-top)) + 4px);bottom:auto;max-width:44vw;padding:3px}
   body.touch #matName{left:50%;transform:translateX(-50%);top:calc(max(6px,env(safe-area-inset-top)) + 48px);bottom:auto;text-align:center;max-width:70vw}
   body.touch #lookSlow{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 6px)}
   body.touch #stickHint{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 70px)}
@@ -110,6 +110,8 @@ body.touch #quest{top:calc(max(10px,env(safe-area-inset-top)) + 18px);width:min(
 body.touch #hp{left:max(10px,env(safe-area-inset-left));transform:none;top:max(8px,env(safe-area-inset-top))}body.touch #hp i{width:7px;height:7px}body.touch #bossbar{top:calc(max(10px,env(safe-area-inset-top)) + 112px);width:70vw}
 body.touch #banner h2{font-size:20px}body.touch #combo{font-size:16px;top:34%}
 @media (orientation:landscape){body.touch #quest{top:calc(max(6px,env(safe-area-inset-top)) + 18px);width:200px}body.touch #bossbar{top:calc(max(6px,env(safe-area-inset-top)) + 62px);width:40vw}}
+#scan{left:50%;top:calc(50% - 86px);transform:translateX(-50%);text-align:center;font-size:9px;letter-spacing:1px;color:#ffe9a8;text-shadow:0 0 6px #000}
+#scanAr{font-size:20px;color:var(--gold);text-shadow:0 0 10px var(--gold);transition:transform .15s;line-height:1}#scan.none #scanAr{opacity:.25}
 /* menu */
 #menu{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(60,20,110,.75),rgba(5,6,15,.94));padding:16px;overflow:auto}
 #menu.hide{display:none}
@@ -140,6 +142,7 @@ body.touch #banner h2{font-size:20px}body.touch #combo{font-size:16px;top:34%}
 <div class="hud" id="combo"></div>
 <div class="hud" id="banner"><h2></h2><p></p></div>
 <div class="hud" id="biome"></div>
+<div class="hud" id="scan" style="display:none"><div id="scanAr">▲</div><div id="scanTx"></div></div>
 <button id="labBtn" aria-label="Upgrade lab">⚡<small>LAB</small></button>
 <div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
 <div id="labList"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
