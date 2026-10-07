@@ -22,13 +22,13 @@ const B = [
   { id: 13, name: "CHROME PLATE", tex: [15, 15, 15], hard: .45, col: 0xd8e0ff },
   { id: 14, name: "DUNE GLASS", tex: [16, 17, 1], hard: .3, col: 0xff7ab8 },
   { id: 15, name: "FROST CIRCUIT", tex: [18, 19, 1], hard: .35, col: 0xa8e8ff },
-  { id: 16, name: "HOLO MOSS", tex: [20, 21, 1], hard: .3, col: 0x7dffb0 },
+  { id: 16, name: "HEX FIELD", tex: [20, 21, 1], hard: .3, col: 0x78c8ff },
   { id: 17, name: "HOLO FROND", tex: [22, 22, 22], hard: .15, col: 0x3cffc8 },
   { id: 18, name: "BOSS GOLD VEIN", tex: [23, 23, 23], hard: 1.5, col: 0xffd24a, drop: 5 },
 ];
 const PALETTE = [1, 13, 4, 5, 7, 2, 6, 12, 14, 17];
 // Biomes: 0 NEON FLATS, 1 PUMP DUNES, 2 CRYSTAL GROVE, 3 FROST CHAIN
-const BIOMES = ["NEON FLATS", "PUMP DUNES", "CRYSTAL GROVE", "FROST CHAIN"];
+const BIOMES = ["NEON FLATS", "PUMP DUNES", "SIGNAL GROVE", "FROST CHAIN"];
 const BIOME_TOP = [3, 14, 16, 15];
 
 // ---------------- seeded noise ----------------
@@ -48,6 +48,7 @@ const get = (x, y, z) => inB(x, y, z) ? world[idx(x, y, z)] : (y < 0 ? 11 : 0);
 function biomeAt(x, z, sd) { const a = fbm(x / 44, z / 44, sd + 501), b = fbm(x / 38, z / 38, sd + 733);
   if (a > .58) return 3; if (a < .43) return b > .5 ? 2 : 1; return b > .64 ? 2 : b < .36 ? 1 : 0; }
 const biome = new Uint8Array(SX * SZ);
+export const pools = [];
 export function generate(sd) {
   world.fill(0);
   const R = rng(sd), H = new Int16Array(SX * SZ);
@@ -71,6 +72,16 @@ export function generate(sd) {
     world[idx(x, h, z)] = bt; if (bt === 14) world[idx(x, h - 1, z)] = 14;
   }
   const far = (X, Z, r) => Math.abs(X - cx) + Math.abs(Z - cz) > r;
+  // neon pools (fishing spots): shallow elliptical basins on flat ground, lit neon floor
+  pools.length = 0;
+  for (let tries = 0; tries < 300 && pools.length < 9; tries++) { const rx = 2.5 + R() * 2, rz = 2 + R() * 2, x0 = 6 + R() * (SX - 12), z0 = 6 + R() * (SZ - 12);
+    if (!far(x0, z0, 20) || pools.some(q => Math.hypot(q.x - x0, q.z - z0) < 16)) continue; let lo = 99, hi = -1;
+    for (let z = Math.floor(z0 - rz); z <= z0 + rz; z++) for (let x = Math.floor(x0 - rx); x <= x0 + rx; x++) { const h = H[x + z * SX]; lo = Math.min(lo, h); hi = Math.max(hi, h); }
+    if (hi - lo > 2) continue; const wl = lo;
+    for (let z = Math.floor(z0 - rz - 1); z <= z0 + rz + 1; z++) for (let x = Math.floor(x0 - rx - 1); x <= x0 + rx + 1; x++) { const q = ((x + .5 - x0) / rx) ** 2 + ((z + .5 - z0) / rz) ** 2; if (!inB(x, 1, z)) continue;
+      if (q < 1) { for (let y = wl - 1; y < Math.min(SY, wl + 4); y++) world[idx(x, y, z)] = 0; world[idx(x, wl - 2, z)] = 1; H[x + z * SX] = wl - 2; }
+      else if (q < 1.6) { for (let y = wl + 1; y < Math.min(SY, wl + 4); y++) world[idx(x, y, z)] = 0; world[idx(x, wl, z)] = 13; H[x + z * SX] = wl; } }
+    pools.push({ x: x0, z: z0, rx, rz, y: wl + .55 }); }
   // worm tunnels
   for (let w = 0; w < 15; w++) {
     let x = R() * SX, y = 4 + R() * 9, z = R() * SZ, yaw = R() * 6.28, pit = 0;
@@ -100,9 +111,9 @@ export function generate(sd) {
     const h = H[x + z * SX], bm = biome[x + z * SX]; if (world[idx(x, h, z)] !== BIOME_TOP[bm]) continue; const roll = R();
     if (bm === 2 && roll < .16) { // holo trees: chrome trunk + frond crown
       const th = 3 + Math.floor(R() * 3); for (let y = h + 1; y <= h + th; y++) world[idx(x, y, z)] = 13;
-      const top = h + th; for (let dy = -1; dy <= 2; dy++) for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) {
-        const r2 = dx * dx + dz * dz + (dy - .3) * (dy - .3) * 1.8; if (r2 > 5.2 || R() < .12) continue; const X = x + dx, Y = top + dy, Z = z + dz; if (inB(X, Y, Z) && !world[idx(X, Y, Z)]) world[idx(X, Y, Z)] = 17; }
-      if (R() < .3) world[idx(x, top + 1, z)] = 12;
+      // signal spire: chrome mast with glowing cross-arm fronds and a lamp tip (antenna look, not a tree)
+      const top = h + th, L = 2 + Math.floor(R() * 2); for (let k = 1; k <= L; k++) for (const [dx, dz] of [[k, 0], [-k, 0], [0, k], [0, -k]]) { const X = x + dx, Y = top - (k > 1 ? 1 : 0), Z = z + dz; if (inB(X, Y, Z) && !world[idx(X, Y, Z)]) world[idx(X, Y, Z)] = 17; }
+      if (inB(x, top + 1, z)) world[idx(x, top + 1, z)] = 13; if (inB(x, top + 2, z)) world[idx(x, top + 2, z)] = 12;
     } else if (bm === 1 && roll < .1) { const t = R() < .55 ? 4 : 5, L = 2 + Math.floor(R() * 7); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = t; }
     else if (bm === 3 && roll < .08) { const L = 3 + Math.floor(R() * 5); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = y > h + L - 2 ? 7 : 15; }
     else if (bm === 0 && roll < .035) { const t = R() < .55 ? 4 : 5, L = 2 + Math.floor(R() * 5); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = t; }

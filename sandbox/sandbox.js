@@ -8,14 +8,14 @@ const $ = id => document.getElementById(id);
 const IS_TOUCH = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
 if (IS_TOUCH) document.body.classList.add("touch");
 
-import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName } from "./world.js";
+import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools } from "./world.js";
 const SAVE_KEY = "boss_sandbox_v2", OLD_KEY = "boss_sandbox_v1";
 const DAY_LEN = 480;                               // seconds per full day/night cycle
 let seed = 1337, edits = {}, shards = 0, plaza = { x: 40, y: 20, z: 40 };
 const topH = new Int16Array(SX * SZ);
 function calcTop(x, z) { for (let y = SY - 1; y >= 0; y--) if (world[idx(x, y, z)]) { topH[x + z * SX] = y; return; } topH[x + z * SX] = -1; }
 function calcAllTop() { for (let z = 0; z < SZ; z++) for (let x = 0; x < SX; x++) calcTop(x, z); }
-function generate(sd) { plaza = genWorld(sd); calcAllTop(); }
+function generate(sd) { plaza = genWorld(sd); calcAllTop(); if (typeof buildPools === "function") try { buildPools(); } catch (e) {} }
 function applyEdits() { for (const k in edits) world[+k] = edits[k]; calcAllTop(); }
 function setBlock(x, y, z, id, fromNet) {
   if (!inB(x, y, z)) return false; const i = idx(x, y, z); if (world[i] === id) return false;
@@ -25,7 +25,7 @@ function setBlock(x, y, z, id, fromNet) {
 // ---------------- save / load ----------------
 let saveT = 0;
 function scheduleSave() { saveT = 1.0; }
-function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qBase, hp: P.hp, daily, intro: introDone, set: { snd: sndOn, mus: musOn, slow: lookSlow, look: lookMul } })); } catch (e) {} }
+function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qBase, hp: P.hp, daily, intro: introDone, dex: fish.dex, char: charId, set: { snd: sndOn, mus: musOn, slow: lookSlow, look: lookMul } })); } catch (e) {} }
 function load() { if (Q.has("reset")) try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {}
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); if (s && s.v === 2) return s;
     const o = JSON.parse(localStorage.getItem(OLD_KEY) || "null"); if (o && o.v === 1) return { migr: true, shards: o.shards | 0 }; } catch (e) {} return null; }
@@ -106,8 +106,8 @@ atlasC.width = atlasC.height = glowC.width = glowC.height = TS * ATL;
   slot(18, (g, e) => { bevel(g, "#1c3a52", "#2e5878", "#0c1c2c", 4); for (const c of [g, e]) { c.strokeStyle = c === g ? "rgba(168,232,255,.8)" : "rgba(168,232,255,.45)"; c.lineWidth = 1.6; c.beginPath(); c.moveTo(8, 20); c.lineTo(26, 20); c.lineTo(34, 30); c.lineTo(56, 30); c.moveTo(14, 48); c.lineTo(30, 48); c.lineTo(38, 40); c.moveTo(46, 8); c.lineTo(46, 22); c.stroke(); c.fillStyle = "#e8f8ff"; for (const [x, y] of [[8, 20], [56, 30], [14, 48], [38, 40], [46, 8]]) { c.beginPath(); c.arc(x, y, 2.4, 0, 7); c.fill(); } } });
   sideBand(19, "#1c3a52", "#a8e8ff");
   // 20/21 HOLO MOSS: dark green with glowing hex dots
-  slot(20, (g, e) => { bevel(g, "#06301e", "#0b4a30", "#031a10", 3); for (const c of [g, e]) { c.fillStyle = c === g ? "rgba(125,255,176,.75)" : "rgba(125,255,176,.6)"; for (let y = 8; y < TS; y += 14) for (let x = (y / 14 & 1) ? 14 : 7; x < TS; x += 14) { c.beginPath(); c.arc(x, y, 2.2, 0, 7); c.fill(); } } });
-  sideBand(21, "#06301e", "#7dffb0");
+  slot(20, (g, e) => { bevel(g, "#160a3a", "#24125a", "#0a0420", 3); for (const c of [g, e]) { c.fillStyle = c === g ? "rgba(120,200,255,.8)" : "rgba(180,106,255,.6)"; for (let y = 8; y < TS; y += 14) for (let x = (y / 14 & 1) ? 14 : 7; x < TS; x += 14) { c.beginPath(); c.arc(x, y, 2.2, 0, 7); c.fill(); } } });
+  sideBand(21, "#160a3a", "#78c8ff");
   // 22 HOLO FROND: glowing crystal fronds
   slot(22, (g, e) => { g.fillStyle = "#04261e"; g.fillRect(0, 0, TS, TS); for (const c of [g, e]) { for (let i = 0; i < 9; i++) { const x = R() * TS, y = R() * TS, l = 10 + R() * 14, a = -.8 + R() * 1.6; c.strokeStyle = i % 3 ? "#3cffc8" : "#9df7ff"; c.globalAlpha = c === e ? .55 : .9; c.lineWidth = 3; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.sin(a) * l, y - Math.cos(a) * l); c.stroke(); } c.globalAlpha = 1; } neonRect([g], "rgba(60,255,200,.35)", 2, 1.5, 4); });
   // 23 BOSS GOLD VEIN: rock with gold nuggets
@@ -226,7 +226,8 @@ function updPlayer(dt) {
   let f = input.f, s = input.s; const k = input.keys;
   if (k.KeyW || k.ArrowUp) f += 1; if (k.KeyS || k.ArrowDown) f -= 1; if (k.KeyD || k.ArrowRight) s += 1; if (k.KeyA || k.ArrowLeft) s -= 1;
   const len = Math.hypot(f, s); if (len > 1) { f /= len; s /= len; }
-  const sp = (input.sprint || k.ShiftLeft || k.ShiftRight || len > .95 && IS_TOUCH && joy.active && joy.mag > .95) ? 6.4 : 4.4;
+  const wet = inPool(P.x, P.z) && P.y < (inPool(P.x, P.z) || {}).y; if (wet && !P.wet && P.vy < -3) { burst(P.x, P.y + .5, P.z, [0x28dcff, 0xffffff], 24, 4); noise(.3, 900, .15); } P.wet = wet;
+  const sp = (wet ? .6 : 1) * ((input.sprint || k.ShiftLeft || k.ShiftRight || len > .95 && IS_TOUCH && joy.active && joy.mag > .95) ? 6.4 : 4.4);
   const sy = Math.sin(P.yaw), cy = Math.cos(P.yaw);
   const tx = (-sy * f + cy * s) * sp, tz = (-cy * f - sy * s) * sp;
   const acc = P.ground ? 14 : 5; P.vx += (tx - P.vx) * Math.min(1, acc * dt); P.vz += (tz - P.vz) * Math.min(1, acc * dt);
@@ -320,7 +321,7 @@ function updFuds(dt, night) {
 let mineT = 0, mineKey = "", hit = null, fudHit = null, bossHit = false, critHit = null;
 const tmpV = new THREE.Vector3(), tmpD = new THREE.Vector3();
 function aim() {
-  camera.getWorldPosition(tmpV); camera.getWorldDirection(tmpD);
+  { const cp = Math.cos(P.pitch); tmpV.set(P.x, P.y + P.eye, P.z); tmpD.set(-Math.sin(P.yaw) * cp, Math.sin(P.pitch), -Math.cos(P.yaw) * cp); }
   hit = raycast(tmpV, tmpD, REACH[upg.drill]);
   fudHit = null; bossHit = false; critHit = null; let best = hit ? hit.t : 9;
   if (boss.on) { const o = boss.g.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z; if (t > 0 && t < 30) { const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < (boss.kind === "king" ? (IS_TOUCH ? 3.2 : 2.6) : (IS_TOUCH ? 2.7 : 2)) ** 2 && (!hit || t < hit.t + 1)) { bossHit = true; hit = null; best = t; } } }
@@ -328,6 +329,7 @@ function aim() {
     if (t < 0 || t > best) continue; const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < .8 * .8) { best = t; fudHit = f; } }
   for (const c of critters) { const o = c.s.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z;
     if (t < 0 || t > Math.min(best, 14)) continue; const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < (IS_TOUCH ? .8 : .6) ** 2) { best = t; critHit = c; fudHit = null; bossHit = false; hit = null; } }
+  if (!critHit && !bossHit && !fudHit) aimPool(); else poolHit = null;
 }
 let mineGrace = 0; // keeps mining briefly if the thumb wobbles off the button
 function breakBlock(x, y, z, id, chained) {
@@ -355,6 +357,8 @@ function trySoftTapMine() {
 }
 function updMining(dt, time) {
   aim();
+  if (!mp.on && updFishing(dt, curNight, time)) { outline.visible = false; laser.visible = false; isFiring = false; minePitch = 0; $("ring").setAttribute("stroke-dashoffset", "94.25"); $("target").textContent = fish.st === "idle" ? "NEON POOL · " + (IS_TOUCH ? "TAP MINE" : "CLICK") + " TO CAST" : fish.st === "wait" ? "WAITING FOR A BITE…" : fish.st === "bite" ? "❗ BITE! TAP!" : "HOLD = ZONE RIGHT · RELEASE = LEFT"; return; }
+  if (poolHit) { $("target").textContent = "NEON POOL · " + (IS_TOUCH ? "TAP MINE" : "CLICK") + " TO CAST"; outline.visible = false; }
   const tgt = $("target");
   if (critHit) { outline.visible = false; tgt.textContent = "PAPER HANDS · HOLD TO ZAP"; }
   else if (bossHit) { outline.visible = false; tgt.textContent = BOSSES[boss.kind].name + " · HOLD MINE TO BLAST"; }
@@ -479,7 +483,7 @@ document.addEventListener("mousemove", e => { if (!locked) return; if (Math.abs(
 window.addEventListener("wheel", e => { if (running) select(sel + (e.deltaY > 0 ? 1 : -1)); }, { passive: true });
 window.addEventListener("keydown", e => { input.keys[e.code] = true; if (e.code === "Space") e.preventDefault();
   if (/^Digit[0-9]$/.test(e.code)) select((+e.code[5] + 9) % 10); if ((e.code === "KeyU" || e.code === "Tab") && running) { e.preventDefault(); labOpen ? closeLab() : openLab(); } if (e.code === "KeyQ") select(sel - 1); if (e.code === "KeyE") select(sel + 1);
-  if (e.code === "KeyR" && running) respawn(); if (e.code === "KeyG" && mp.on && mp.ws) mp.ws.send(JSON.stringify({ t: "emote", k: 0 })); if ((e.code === "KeyP") && running) pause(); if (e.code === "KeyK" && running) wantShot = true; });
+  if (e.code === "KeyR" && running) respawn(); if (e.code === "KeyG" && mp.on && mp.ws) mp.ws.send(JSON.stringify({ t: "emote", k: 0 })); if ((e.code === "KeyP") && running) pause(); if (e.code === "KeyK" && running) wantShot = true; if (e.code === "KeyV" && running) cycleView(); });
 window.addEventListener("keyup", e => { input.keys[e.code] = false; });
 window.addEventListener("blur", () => { input.keys = {}; input.mine = false; });
 let lookMul = 1;
@@ -600,7 +604,7 @@ if (IS_TOUCH) {
 }
 $("pauseBtn").addEventListener("click", () => { if (running) pause(); else startGame(); });
 $("playBtn").addEventListener("click", startGame);
-$("resetBtn").addEventListener("click", () => { if (!confirm("Start a fresh world? Your builds, upgrades, quests and SOL shards on this device will be cleared.")) return; try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {} seed = (Math.random() * 1e9) | 0; edits = {}; shards = 0; Object.assign(upg, { drill: 1, boots: 0, shield: 0, hp: 0 }); for (const k in stats) stats[k] = 0; Qi = 0; qStart(); if (boss.on) bossEnd(false, true); daily.key = ""; introDone = false; met.crater = null; P.hp = maxHp(); updHP(); generate(seed); buildAll(); respawn(); updShards(); save(); });
+$("resetBtn").addEventListener("click", () => { if (!confirm("Start a fresh world? Your builds, upgrades, quests and SOL shards on this device will be cleared.")) return; try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {} seed = (Math.random() * 1e9) | 0; edits = {}; shards = 0; Object.assign(upg, { drill: 1, boots: 0, shield: 0, hp: 0, rod: 1 }); fish.dex = {}; for (const k in stats) stats[k] = 0; Qi = 0; qStart(); if (boss.on) bossEnd(false, true); daily.key = ""; introDone = false; met.crater = null; P.hp = maxHp(); updHP(); generate(seed); buildAll(); respawn(); updShards(); save(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden) { save(); if (running && IS_TOUCH) pause(); } });
 window.addEventListener("pagehide", save);
 
@@ -645,7 +649,7 @@ function avatar(name, skin) { const g = new THREE.Group(); const col = SKIN_COL[
 function mpConnect(url) {
   mp.on = true; const name = (Q.get("name") || "anon").replace(/[^\w-]/g, "").slice(0, 14) || "anon", skin = Q.get("skin") || "default";
   const ws = new WebSocket(url); mp.ws = ws; $("badge").innerHTML = "<b>$BOSS SANDBOX</b> · LOCAL MP TEST<br><span>connecting…</span>";
-  $("labBtn").style.display = "none"; $("quest").style.display = "none"; $("shotBtn").style.display = "none";
+  $("labBtn").style.display = "none"; $("quest").style.display = "none"; $("shotBtn").style.display = "none"; $("viewBtn").style.display = "none";
   ws.onopen = () => ws.send(JSON.stringify({ t: "hello", name, skin }));
   ws.onmessage = ev => { const m = JSON.parse(ev.data);
     if (m.t === "welcome") { mp.id = m.id; seed = m.seed; edits = {}; generate(seed); for (const [i, id] of m.edits) world[i] = id; buildAll(); respawn(); for (const p of m.players) mp.others.set(p.id, { g: avatar(p.name, p.skin), p }); $("badge").innerHTML = `<b>$BOSS SANDBOX</b> · LOCAL MP TEST<br><span>${name} · ${m.players.length + 1} online</span>`; }
@@ -665,7 +669,7 @@ function updMP(dt) { if (!mp.on) return; mp.sendT -= dt;
 
 // ---------------- progression: drill tiers, upgrades, stats ----------------
 const SPEED = [0, 1, 1.6, 2.4, 3.5], REACH = [0, 5, 6, 7, 8], DMG = [0, 9, 15, 24, 38], LASER = [0, 0x14f195, 0x28dcff, 0xffd24a, 0xff4fd8];
-const upg = { drill: 1, boots: 0, shield: 0, hp: 0 };
+const upg = { drill: 1, boots: 0, shield: 0, hp: 0, rod: 1 };
 const stats = { mined: 0, veins: 0, placed: 0, prisms: 0, golds: 0, cores: 0, fud: 0, kills: 0, combos: 0, dj: 0 };
 const maxHp = () => 10 + upg.hp * 4;
 let trauma = 0;
@@ -675,6 +679,8 @@ const UPG = [
   { id: "drill3", name: "DRILL MK III", desc: "2.4× faster · reach 7 · gold laser", cost: 90, have: () => upg.drill >= 3, can: () => upg.drill === 2, need: "needs MK II", buy: () => upg.drill = 3 },
   { id: "shield", name: "FUD SHIELD", desc: "FUD can't steal shards", cost: 60, have: () => upg.shield, can: () => true, buy: () => upg.shield = 1 },
   { id: "heart", name: "VIBE CORE", desc: "+4 max health (up to 3)", cost: 50, cst: () => 50 + upg.hp * 30, have: () => upg.hp >= 3, can: () => true, buy: () => { upg.hp++; P.hp = maxHp(); updHP(); } },
+  { id: "rod2", name: "SYNTH ROD MK II", desc: "Faster bites · wider reel zone · rarer fish", cost: 30, have: () => (upg.rod || 1) >= 2, can: () => true, buy: () => upg.rod = 2 },
+  { id: "rod3", name: "SYNTH ROD MK III", desc: "Even faster · widest zone · Golden Boss Fish odds up", cost: 90, have: () => (upg.rod || 1) >= 3, can: () => (upg.rod || 1) === 2, need: "needs ROD MK II", buy: () => upg.rod = 3 },
   { id: "drill4", name: "BOSS DRILL MK IV", desc: "3.5× · reach 8 · chain-mines whole SOL veins", cost: 220, have: () => upg.drill >= 4, can: () => upg.drill === 3, need: "needs MK III", buy: () => upg.drill = 4 },
 ];
 let labOpen = false;
@@ -685,7 +691,7 @@ function renderLab() { const L = $("labList"); L.innerHTML = "";
   const sb = $("summonBtn"), sk = $("summonBtn2"), lv = stats.kills ? " · LV " + (stats.kills + 1) : ""; sb.disabled = boss.on || upg.drill < 2; sk.disabled = boss.on || stats.kills < 1;
   sb.textContent = boss.on ? BOSSES[boss.kind].name + " IS HERE" : upg.drill < 2 ? "SUMMON BOSS · needs Drill MK II" : "SUMMON THE RUG PULLER" + lv; sk.textContent = stats.kills < 1 ? "THE FUD KING · bust the Rug Puller first" : "SUMMON THE FUD KING" + lv;
   $("dailyL").textContent = dailyLine();
-  $("labShards").textContent = shards; $("labStats").textContent = `Tiles mined ${stats.mined} · Veins ${stats.veins} · Bosses busted ${stats.kills}`; }
+  $("labShards").textContent = shards; $("labStats").innerHTML = `Tiles mined ${stats.mined} · Veins ${stats.veins} · Bosses busted ${stats.kills} · Fish ${stats.fish || 0}<br><b>FISHDEX</b> ` + FISH.map(f => fish.dex[f.n] ? `<span style="color:${f.c}">${f.n} ×${fish.dex[f.n]}</span>` : `<span style="opacity:.4">???</span>`).join(" · "); }
 function buyUpg(id) { const u = UPG.find(q => q.id === id); if (!u || u.have() || !u.can()) return false; const c = costOf(u);
   if (shards < c) { pop(`NEED ◆${c}`, "#ff6a8a"); sfx.hurt(); return false; } shards -= c; u.buy(); updShards(); sfx.buy(); buzz(20); banner(u.name, "UNLOCKED"); renderLab(); save(); qTick(); return true; }
 function openLab() { labOpen = true; input.mine = false; input.f = input.s = 0; renderLab(); $("lab").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
@@ -708,6 +714,7 @@ const QUESTS = [
   { t: "Find a SOL Prism vein", h: "Green crystals, dig deep or explore caves", k: "prisms", n: 1, r: 6 },
   { t: "Mine 3 BOSS Gold veins", h: "Gold flecks in mid-depth rock", k: "golds", n: 3, r: 8 },
   { t: "Buy Jet Boots", h: "⚡ LAB · then double-jump", k: "boots", n: 1, r: 5, abs: 1 },
+  { t: "Catch a fish", h: "Find a glowing NEON POOL, aim at it, tap MINE to cast", k: "fish", n: 1, r: 6 },
   { t: "Zap 3 FUD clouds", h: "They drift in at night. Hold MINE on them", k: "fud", n: 3, r: 8 },
   { t: "Mine a SOL Core vein", h: "Rarest. Down near the Genesis floor", k: "cores", n: 1, r: 15 },
   { t: "Bust THE RUG PULLER", h: "Summon it from the ⚡ LAB, blast its eye", k: "kills", n: 1, r: 40 },
@@ -832,6 +839,7 @@ function updBoss(dt, time) { if (!boss.on) return; const g = boss.g; boss.t += d
 const SCAN_IDS = { veins: [8, 9, 10, 18], prisms: [9], golds: [18], cores: [10] };
 let scanT = 0, scanTgt = null;
 function updScan(dt) { scanT -= dt; const q = qDef(Qi), el = $("scan"); let ids = SCAN_IDS[q.k]; if (met.crater && met.craterT > 0) ids = [9, 10];
+  if (q.k === "fish" && !boss.on && fish.st === "idle") { let bq = null, bd = 1e9; for (const pq of pools) { const d = Math.hypot(pq.x - P.x, pq.z - P.z); if (d < bd) { bd = d; bq = pq; } } if (bq) { el.style.display = "block"; el.className = "hud"; const ang = Math.atan2(-(bq.x - P.x), -(bq.z - P.z)) - P.yaw; $("scanAr").style.transform = `rotate(${(-ang * 180 / Math.PI).toFixed(1)}deg)`; $("scanTx").textContent = `NEON POOL ${bd.toFixed(0)}m`; return; } }
   if (!ids || boss.on) { el.style.display = "none"; scanTgt = null; return; }
   if (scanT <= 0) { scanT = 1; scanTgt = null; let best = 1e9; const px = Math.floor(P.x), py = Math.floor(P.y + 1), pz = Math.floor(P.z), R0 = met.crater && met.craterT > 0 ? 22 : 14;
     for (let y = Math.max(1, py - R0); y <= Math.min(SY - 1, py + 6); y++) for (let z = Math.max(0, pz - R0); z <= Math.min(SZ - 1, pz + R0); z++) for (let x = Math.max(0, px - R0); x <= Math.min(SX - 1, px + R0); x++) {
@@ -905,7 +913,7 @@ function updCritters(dt, night) { if (mp.on || Q.has("nocrit")) return; critT -=
 // ---------------- daily quest (local only, rotates by your device's date, streaks) ----------------
 const daily = { key: "", base: {}, done: false, streak: 0, last: "" };
 const DPOOL = [ { t: "Mine 3 BOSS Gold veins", k: "golds", n: 3 }, { t: "Zap 3 Paper Hands", k: "paper", n: 3 }, { t: "Bust a boss", k: "kills", n: 1 }, { t: "Mine 60 tiles", k: "mined", n: 60 },
-  { t: "Hit a ×10 combo twice", k: "combos", n: 2 }, { t: "Mine 2 SOL Prism veins", k: "prisms", n: 2 }, { t: "Zap 4 FUD clouds", k: "fud", n: 4 }, { t: "Build 25 pieces", k: "placed", n: 25 }, { t: "Mine 12 SOL veins", k: "veins", n: 12 } ];
+  { t: "Hit a ×10 combo twice", k: "combos", n: 2 }, { t: "Mine 2 SOL Prism veins", k: "prisms", n: 2 }, { t: "Zap 4 FUD clouds", k: "fud", n: 4 }, { t: "Build 25 pieces", k: "placed", n: 25 }, { t: "Mine 12 SOL veins", k: "veins", n: 12 }, { t: "Catch 3 fish", k: "fish", n: 3 }, { t: "Catch 2 fish at night", k: "fish", n: 2 } ];
 const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 function dailyDef() { let h = 0; for (const ch of daily.key) h = Math.imul(h ^ ch.charCodeAt(0), 2654435761) >>> 0; return DPOOL[h % DPOOL.length]; }
 function dailyEnsure() { const k = todayKey(); if (daily.key === k) return; daily.key = k; daily.done = false; daily.base = {}; for (const s in stats) daily.base[s] = stats[s] || 0; }
@@ -935,12 +943,87 @@ $("lookDn").addEventListener("click", () => { lookMul = Math.max(.4, +(lookMul -
 $("lookUp").addEventListener("click", () => { lookMul = Math.min(2.2, +(lookMul + .1).toFixed(2)); menuStats(); save(); });
 $("howBtn").addEventListener("click", () => $("how").classList.toggle("open"));
 
+// ---------------- NEON POOLS + FISHING (cast, bite timing, hold-to-reel minigame) ----------------
+const waterU = { uT: { value: 0 }, uNight: { value: 0 } };
+const waterMat = new THREE.ShaderMaterial({ uniforms: waterU, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+  vertexShader: `varying vec2 vU; varying vec3 vW; void main(){ vU = uv; vec4 w = modelMatrix*vec4(position,1.0); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
+  fragmentShader: `uniform float uT, uNight; varying vec2 vU; varying vec3 vW; void main(){ vec2 c = vU*2.0-1.0; float r = length(c); if (r > 1.0) discard;
+    float w = sin(vW.x*2.3+uT*1.7)*sin(vW.z*2.1-uT*1.3) + sin((vW.x+vW.z)*3.1+uT*2.4)*.5; float ring = smoothstep(.06,.0,abs(fract(r*3.0-uT*.25)-.5)-.44);
+    vec3 col = mix(vec3(.05,.25,.55), vec3(.1,.85,.95), .5+.25*w); col = mix(col, vec3(1.0,.35,.85), ring*.35) + vec3(smoothstep(.95,1.0,r))*.6;
+    gl_FragColor = vec4(col*(1.0+uNight*.3), .72 + .1*w);
+    #include <colorspace_fragment>
+  }` });
+const poolMeshes = [];
+function buildPools() { for (const m of poolMeshes) { scene.remove(m); m.geometry.dispose(); } poolMeshes.length = 0;
+  for (const q of pools) { const m = new THREE.Mesh(new THREE.PlaneGeometry(q.rx * 2, q.rz * 2), waterMat); m.rotation.x = -Math.PI / 2; m.position.set(q.x, q.y, q.z); m.renderOrder = 2; scene.add(m); poolMeshes.push(m); } }
+const inPool = (x, z) => pools.find(q => ((x - q.x) / q.rx) ** 2 + ((z - q.z) / q.rz) ** 2 < 1);
+const FISH = [
+  { n: "NEON MINNOW", v: 1, w: 60, sp: .5, er: .2, c: "#28dcff", r: "COMMON" }, { n: "PUMP KOI", v: 3, w: 26, sp: .75, er: .35, c: "#ff4fd8", r: "COMMON" },
+  { n: "CANDLE EEL", v: 4, w: 13, sp: 1.05, er: .8, c: "#28ff8c", r: "UNCOMMON" }, { n: "SHARD SNAPPER", v: 6, w: 8, sp: 1.15, er: .5, c: "#c69bff", r: "RARE" },
+  { n: "RUG RAY", v: 12, w: 3, sp: 1.35, er: 1.1, c: "#ff6a8a", r: "EPIC", night: 2 }, { n: "GOLDEN BOSS FISH", v: 30, w: .7, sp: 1.6, er: 1.4, c: "#ffd24a", r: "LEGENDARY", rodW: 1.2 } ];
+const fish = { st: "idle", t: 0, bob: null, pool: null, sp: null, f: .5, fv: 0, z: .4, zv: 0, prog: .3, wasDown: false, dex: {} };
+const bobMat = new THREE.SpriteMaterial({ map: null, color: 0xff4fd8, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]); const fLine = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xcfefff, transparent: true, opacity: .7, fog: false })); fLine.frustumCulled = false; fLine.visible = false; scene.add(fLine);
+let poolHit = null;
+function aimPool() { poolHit = null; if (fish.st !== "idle" || tmpD.y > -0.02) return; const maxT = hit ? hit.t : 14;
+  for (const q of pools) { const t = (q.y - tmpV.y) / tmpD.y; if (t <= 0 || t > Math.min(maxT + 1.2, 14)) continue; const x = tmpV.x + tmpD.x * t, z = tmpV.z + tmpD.z * t;
+    if (((x - q.x) / q.rx) ** 2 + ((z - q.z) / q.rz) ** 2 < 1) { poolHit = { q, x, z }; hit = null; return; } } }
+function rollFish(night) { const rod = upg.rod || 1, ws = FISH.map((f, i) => f.w * (i >= 2 ? 1 + (rod - 1) * .6 : 1) * (night > .6 && f.night ? f.night : 1) * (f.rodW ? Math.pow(f.rodW, rod) * (rod - 1 + .5) : 1));
+  let r = Math.random() * ws.reduce((a, b) => a + b, 0); for (let i = 0; i < FISH.length; i++) { r -= ws[i]; if (r <= 0) return FISH[i]; } return FISH[0]; }
+function fishEnd(msg, col) { fish.st = "idle"; if (fish.bob) { scene.remove(fish.bob); fish.bob = null; } fLine.visible = false; $("reel").classList.remove("show"); if (msg) pop(msg, col || "#cfefff"); }
+// returns true when fishing owns the MINE input this frame
+function updFishing(dt, night, time) { const down = input.mine, press = down && !fish.wasDown; fish.wasDown = down; const rod = upg.rod || 1;
+  if (fish.st === "idle") { if (poolHit && press) { bobMat.map = shotTex; fish.bob = new THREE.Sprite(bobMat); fish.bob.scale.set(.35, .35, 1); fish.bob.position.set(poolHit.x, poolHit.q.y + .05, poolHit.z); scene.add(fish.bob);
+      fish.pool = poolHit.q; fish.st = "wait"; fish.t = (2 + Math.random() * 4) / (1 + (rod - 1) * .4); note(500, .25, "sine", .05, -300); noise(.2, 2500, .08); fLine.visible = true; burst(poolHit.x, poolHit.q.y, poolHit.z, [0x28dcff, 0xffffff], 10, 2); stats.casts = (stats.casts || 0) + 1; return true; }
+    return poolHit != null && down; }
+  const b = fish.bob.position; dTip.getWorldPosition(tmpV); const la = lineGeo.attributes.position; la.setXYZ(0, tmpV.x, tmpV.y, tmpV.z); la.setXYZ(1, b.x, b.y, b.z); la.needsUpdate = true;
+  if (Math.hypot(b.x - P.x, b.z - P.z) > 16) { fishEnd("LINE SNAPPED (TOO FAR)", "#ff6a8a"); return false; }
+  if (fish.st === "wait") { b.y = fish.pool.y + .05 + Math.sin(time * 3) * .03; fish.t -= dt; if (press) { fishEnd("REELED IN EARLY", "#cfefff"); return true; }
+    if (fish.t <= 0) { fish.st = "bite"; fish.t = .95 + (rod - 1) * .25; fish.sp = rollFish(night); pop("❗ BITE! TAP NOW", "#ffd24a"); note(1320, .08, "square", .06); note(1760, .1, "square", .05, 0, AC ? AC.currentTime + .09 : 0); buzz(40); burst(b.x, b.y, b.z, [0x28dcff, 0xffffff], 14, 3); trauma = Math.max(trauma, .15); } return true; }
+  if (fish.st === "bite") { b.y = fish.pool.y - .12 + Math.sin(time * 30) * .05; fish.t -= dt; if (press) { fish.st = "reel"; fish.f = .5; fish.fv = 0; fish.z = .4; fish.zv = 0; fish.prog = .3; $("reel").classList.add("show"); $("reelFish").style.background = fish.sp.c; return true; }
+    if (fish.t <= 0) { fishEnd("TOO SLOW · IT SWAM OFF", "#ff6a8a"); } return true; }
+  if (fish.st === "reel") { const sp = fish.sp, zw = .24 + (rod - 1) * .06;
+    // fish: wanders, darts more for rarer fish
+    if (Math.random() < dt * (1 + sp.er * 2)) fish.fv = (Math.random() - .5) * 2.2 * sp.sp; fish.f += fish.fv * dt; if (fish.f < .03 || fish.f > .97) { fish.fv *= -1; fish.f = Math.max(.03, Math.min(.97, fish.f)); }
+    // zone: hold to push right, release drifts left (touch friendly: one button)
+    fish.zv += (down ? 2.6 : -2.2) * dt; fish.zv *= Math.pow(.15, dt); fish.z += fish.zv * dt; if (fish.z < 0) { fish.z = 0; fish.zv = 0; } if (fish.z > 1 - zw) { fish.z = 1 - zw; fish.zv = 0; }
+    const inZ = fish.f >= fish.z && fish.f <= fish.z + zw; fish.prog += (inZ ? .32 : -.22) * dt * (1.15 - sp.sp * .15);
+    $("reelZone").style.left = (fish.z * 100).toFixed(1) + "%"; $("reelZone").style.width = (zw * 100).toFixed(0) + "%"; $("reelZone").classList.toggle("on", inZ); $("reelFish").style.left = (fish.f * 100).toFixed(1) + "%"; $("reelProg").style.width = (Math.max(0, Math.min(1, fish.prog)) * 100).toFixed(0) + "%";
+    b.x += (Math.random() - .5) * dt * 2; b.z += (Math.random() - .5) * dt * 2; b.y = fish.pool.y - .05 + Math.sin(time * 18) * .04; if (Math.random() < dt * 8) burst(b.x, b.y, b.z, [0x28dcff], 1, 1.5);
+    if (inZ && Math.random() < dt * 10) note(300 + fish.prog * 500, .04, "triangle", .02);
+    if (fish.prog >= 1) { stats.fish = (stats.fish || 0) + 1; fish.dex[sp.n] = (fish.dex[sp.n] || 0) + 1; spawnOrbs(b.x, b.y + .3, b.z, sp.v, parseInt(sp.c.slice(1), 16)); banner(`CAUGHT: ${sp.n}`, `${sp.r} · ◆+${sp.v} SOL shards${fish.dex[sp.n] === 1 ? " · NEW IN FISHDEX!" : ""}`);
+      burst(b.x, b.y + .3, b.z, [parseInt(sp.c.slice(1), 16), 0xffffff, 0x28dcff], IS_TOUCH ? 30 : 60, 6); sfx.vein(sp.v); trauma = Math.max(trauma, sp.v >= 12 ? .6 : .25); buzz(60); fishEnd(); save(); }
+    else if (fish.prog <= 0) fishEnd(`${sp.n} GOT AWAY`, "#ff6a8a"); return true; }
+  return false; }
+function updWater(dt, time, night) { waterU.uT.value = time; waterU.uNight.value = night; }
+
+// ---------------- characters ($BOSS runner + holder skins) and camera views ----------------
+const CHARS = [
+  ["base_climb", "Cave Climber", 0], ["base_factory", "Factory Worker", 0], ["base_grave", "Pumpkin Head", 0], ["base_moon", "Astronaut", 0], ["base_surf", "Surfer", 0],
+  ["h_fudder", "Troglodyte Fudder", 1], ["h_pumpkin", "Pumpkin King", 1], ["h_reaper", "Grim Reaper", 1], ["h_hardhat", "Gold Foreman", 1], ["h_gearcrown", "Molten Mech", 1], ["h_moonhalo", "Moon Walker", 1],
+  ["h_liftoff", "Rocketeer", 1], ["h_sharkfin", "Shark Surfer", 1], ["h_tidal", "Tide King", 1], ["h_fossil", "Cave Chief", 1], ["h_volcano", "Lava Warlord", 1],
+  ["m_survivor_3", "3-Round Survivor", 2], ["m_survivor_5", "5-Round Survivor", 2], ["m_survivor_10", "10-Round Survivor", 2], ["m_slayer_ohio", "Boss Slayer: Ohio", 2], ["m_slayer_moon", "Boss Slayer: Moon", 2], ["m_score_50k", "High Score 50K", 2] ];
+let charId = "h_fudder", view = 0; const VIEWS = ["FIRST-PERSON", "THIRD-PERSON", "SELFIE"];
+const charMat = new THREE.SpriteMaterial({ transparent: true, alphaTest: .05 }); const charSpr = new THREE.Sprite(charMat); charSpr.scale.set(2.1, 2.1, 1); charSpr.visible = false; scene.add(charSpr);
+const texLoader = new THREE.TextureLoader(), charTex = {};
+function setChar(id, quiet) { if (!CHARS.find(c => c[0] === id)) id = "h_fudder"; charId = id; const t = charTex[id] || (charTex[id] = texLoader.load(`../assets/chars/${id}.webp`, tt => { tt.colorSpace = THREE.SRGBColorSpace; }));
+  charMat.map = t; charMat.needsUpdate = true; document.querySelectorAll("#chars .ch").forEach(e => e.classList.toggle("sel", e.dataset.id === id)); const c = CHARS.find(c => c[0] === id); $("charName").textContent = c[1] + (c[2] === 1 ? " · HOLDER SKIN" : c[2] === 2 ? " · MEDAL SKIN" : ""); if (!quiet) { sfx.click(); save(); } }
+function buildCharPicker() { const el = $("chars"); el.innerHTML = ""; for (const [id, nm, k] of CHARS) { const b = document.createElement("button"); b.type = "button"; b.className = "ch" + (k ? " h" + k : ""); b.dataset.id = id; b.title = nm; b.innerHTML = `<img src="../assets/chars/${id}.webp" alt="${nm}" loading="lazy">`; b.addEventListener("click", () => setChar(id)); el.appendChild(b); } }
+function cycleView() { view = (view + 1) % 3; pop("VIEW: " + VIEWS[view], "#28dcff"); sfx.click(); }
+const camOff = new THREE.Vector3();
+function applyView(time) { const third = view > 0; drill.visible = !third; charSpr.visible = third;
+  if (!third) return; const moving = Math.hypot(P.vx, P.vz); charSpr.position.set(P.x, P.y + 1.0 + Math.abs(Math.sin(bob)) * .08 * Math.min(1, moving / 3), P.z); charMat.rotation = Math.sin(bob) * .05 * Math.min(1, moving / 3);
+  const dir = view === 1 ? 1 : -1, dist = view === 1 ? 3.6 : 2.6, sy = Math.sin(P.yaw), cy = Math.cos(P.yaw), up = view === 1 ? 1.1 : .2;
+  let d = dist; for (let k = .4; k <= dist; k += .2) { const x = P.x + sy * k * dir, z = P.z + cy * k * dir, y = P.y + P.eye + up * k / dist; if (get(Math.floor(x), Math.floor(y), Math.floor(z))) { d = Math.max(.6, k - .3); break; } }
+  camera.position.set(P.x + sy * d * dir, P.y + P.eye + up * d / dist, P.z + cy * d * dir); if (view === 2) camera.rotation.set(-P.pitch * .5, P.yaw + Math.PI, 0); else camera.rotation.set(P.pitch - .18, P.yaw, 0); }
+$("viewBtn").addEventListener("click", e => { e.stopPropagation(); if (running) cycleView(); });
+
 // ---------------- main loop ----------------
-let last = performance.now(), fpsN = 0, fpsT = 0, fps = 0, bob = 0;
+let curNight = 0, last = performance.now(), fpsN = 0, fpsT = 0, fps = 0, bob = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; const time = now / 1000;
-  const night = updSky(running ? dt : 0);
+  const night = updSky(running ? dt : 0); curNight = night; updWater(dt, time, night);
   if (running) { updPlayer(dt); landCheck(); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); updMeteor(dt, time); updCritters(dt, night); }
   else menuCam(dt);
   updMP(dt); updParts(dt); updDebris(dt); audioTick(); adaptRes(dt);
@@ -948,6 +1031,7 @@ function frame(now) {
   trauma = Math.max(0, trauma - dt * 1.8); const sh = trauma * trauma;
   camera.position.set(P.x + (Math.random() - .5) * sh * .25, P.y + P.eye + (Math.random() - .5) * sh * .25, P.z + (Math.random() - .5) * sh * .25); camera.rotation.set(P.pitch + (Math.random() - .5) * sh * .04, P.yaw + (Math.random() - .5) * sh * .04, (Math.random() - .5) * sh * .06);
   if (!running) camera.rotation.set(-.1, P.yaw + menuA, 0);
+  if (running) applyView(time);
   const spd = Math.hypot(P.vx, P.vz), fovT = baseFov + (spd > 5.5 ? 6 : 0); if (Math.abs(camera.fov - fovT) > .05) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   const moving = Math.hypot(P.vx, P.vz); bob += dt * moving * 2.2; drillKick = Math.max(0, drillKick - dt * 6);
   drill.position.set(drillBase.x + Math.cos(bob * .5) * .006 * Math.min(1, moving / 4), drillBase.y + Math.sin(bob) * .01 * Math.min(1, moving / 4) - drillKick * .025, drillBase.z + drillKick * .05);
@@ -963,11 +1047,11 @@ const saved = load();
 let migrated = false;
 if (saved && !saved.migr) { seed = saved.seed; edits = saved.edits || {}; shards = saved.shards | 0; sel = saved.sel | 0; tod = saved.tod ?? tod;
   if (saved.upg) Object.assign(upg, saved.upg); if (saved.stats) Object.assign(stats, saved.stats); Qi = saved.Qi | 0; qBase = saved.qBase || {}; P.hp = saved.hp || maxHp();
-  if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; lookMul = saved.set.look || 1; } if (saved.daily) Object.assign(daily, saved.daily); introDone = saved.intro !== false; if (introDone) met.t = 150 + Math.random() * 120; }
+  if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; lookMul = saved.set.look || 1; } if (saved.daily) Object.assign(daily, saved.daily); if (saved.dex) fish.dex = saved.dex; if (saved.char) charId = saved.char; introDone = saved.intro !== false; if (introDone) met.t = 150 + Math.random() * 120; }
 else { seed = parseInt(Q.get("seed")) || 1337; if (saved && saved.migr) { shards = saved.shards; migrated = true; } qStart(); }
 generate(seed); applyEdits(); const tris = buildAll();
 respawn(); if (saved && saved.p) { [P.x, P.y, P.z, P.yaw, P.pitch] = saved.p; if (collides(P.x, P.y, P.z)) respawn(); }
-buildPalette(); updShards(); resize(); updQuest(); dailyEnsure(); updDaily(); menuStats(); updHP(); updSetBtns(); syncLookBtn(); if (migrated) setTimeout(() => banner("BIGGER WORLD!", "Your SOL shards carried over to the new map"), 600);
+buildPools(); buildCharPicker(); setChar(Q.get("char") || charId, true); buildPalette(); updShards(); resize(); updQuest(); dailyEnsure(); updDaily(); menuStats(); updHP(); updSetBtns(); syncLookBtn(); if (migrated) setTimeout(() => banner("BIGGER WORLD!", "Your SOL shards carried over to the new map"), 600);
 // Phase-2 hook is for LOCAL testing only: only localhost servers are accepted.
 if (Q.get("mp")) { try { const u = new URL(Q.get("mp")); if (/^wss?:$/.test(u.protocol) && ["localhost", "127.0.0.1"].includes(u.hostname)) mpConnect(u.href); } catch (e) {} }
 $("load").remove();
@@ -977,4 +1061,4 @@ requestAnimationFrame(frame);
 // test / debug hooks (harmless; used by automated checks)
 window.__SB = { P, input, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
   state: () => ({ x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, ground: P.ground, shards, sel, running, tris, fps: Math.round(fps), fuds: fuds.length, tod, mp: mp.on ? { id: mp.id, rejects: mp.rejects || 0, lastEmote: mp.lastEmote || null, others: [...mp.others.values()].map(o => ({ name: o.p.name, x: o.p.x, y: o.p.y, z: o.p.z })) } : null, info: renderer.info.render }),
-  select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, upg, stats, quest: () => ({ i: Qi, ...qDef(Qi), v: qVal(qDef(Qi)) }), boss: () => ({ on: boss.on, hp: boss.hp, max: boss.max, phase: boss.phase }), summon: k => summonBoss(k), daily: () => ({ ...daily, line: dailyLine() }), meteor: () => { met.t = 0; }, met: () => ({ on: met.on, crater: met.crater }), critters: () => critters.map(c => ({ x: c.s.position.x, y: c.s.position.y, z: c.s.position.z })), spawnCritter: () => spawnCritter(true), lookAtCrit: () => { const c = critters.slice().sort((a, b) => a.s.position.distanceTo(camera.position) - b.s.position.distanceTo(camera.position))[0]; if (!c) return false; const o = c.s.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return true; }, shot: () => { wantShot = true; }, lastShot: () => lastShotInfo, touchLook: (dx, dy) => touchLook(dx, dy), setLookMul: v => { lookMul = v; }, mem: () => ({ geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures, heap: performance.memory ? performance.memory.usedJSHeapSize : 0, scene: scene.children.length, orbs: orbs.length, fuds: fuds.length, shots: boss.shots.length, crit: critters.length }), aimState: () => ({ boss: bossHit, crit: !!critHit, fud: !!fudHit }), lookAtBoss: () => { if (!boss.on) return; const o = boss.g.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); }, bossDamage: n => bossDamage(n), openLab, closeLab, buy: id => buyUpg(id), hp: () => P.hp, biome: () => biomeName(P.x, P.z), give: n => { shards += n; updShards(); }, setTod: t => { tod = t; }, dpr: () => renderer.getPixelRatio(), combo: () => comboN, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };
+  select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, upg, stats, quest: () => ({ i: Qi, ...qDef(Qi), v: qVal(qDef(Qi)) }), boss: () => ({ on: boss.on, hp: boss.hp, max: boss.max, phase: boss.phase }), summon: k => summonBoss(k), daily: () => ({ ...daily, line: dailyLine() }), meteor: () => { met.t = 0; }, met: () => ({ on: met.on, crater: met.crater }), critters: () => critters.map(c => ({ x: c.s.position.x, y: c.s.position.y, z: c.s.position.z })), spawnCritter: () => spawnCritter(true), lookAtCrit: () => { const c = critters.slice().sort((a, b) => a.s.position.distanceTo(camera.position) - b.s.position.distanceTo(camera.position))[0]; if (!c) return false; const o = c.s.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return true; }, shot: () => { wantShot = true; }, lastShot: () => lastShotInfo, touchLook: (dx, dy) => touchLook(dx, dy), setLookMul: v => { lookMul = v; }, mem: () => ({ geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures, heap: performance.memory ? performance.memory.usedJSHeapSize : 0, scene: scene.children.length, orbs: orbs.length, fuds: fuds.length, shots: boss.shots.length, crit: critters.length }), fishSt: () => ({ st: fish.st, prog: fish.prog, sp: fish.sp && fish.sp.n, dex: fish.dex, n: stats.fish || 0 }), pools: () => pools, setView: v => { view = v; }, setChar: id => setChar(id, true), charId: () => charId, chars: () => CHARS.map(c => c[0]), aimState: () => ({ pool: !!poolHit, boss: bossHit, crit: !!critHit, fud: !!fudHit }), lookAtBoss: () => { if (!boss.on) return; const o = boss.g.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); }, bossDamage: n => bossDamage(n), openLab, closeLab, buy: id => buyUpg(id), hp: () => P.hp, biome: () => biomeName(P.x, P.z), give: n => { shards += n; updShards(); }, setTod: t => { tod = t; }, dpr: () => renderer.getPixelRatio(), combo: () => comboN, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };

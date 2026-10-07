@@ -29,11 +29,11 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden;touch-actio
 #cross{left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px}
 #cross svg{width:44px;height:44px;overflow:visible}
 #target{left:50%;top:calc(50% + 30px);transform:translateX(-50%);font-size:10px;letter-spacing:1px;text-shadow:0 0 6px #000;opacity:.85;white-space:nowrap}
-#palette{left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:6px;pointer-events:auto;padding:6px;border-radius:16px;background:rgba(8,6,24,.55);border:1px solid rgba(255,79,216,.35)}
-.chip{position:relative;width:52px;height:52px;border-radius:14px;border:2px solid rgba(255,255,255,.15);background:#0b0a1c;padding:0;cursor:pointer;touch-action:manipulation;overflow:hidden}
+#palette{left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:2px;pointer-events:auto;padding:6px 14px;border-radius:30px 30px 10px 10px;background:rgba(8,6,24,.55);border:1px solid rgba(255,79,216,.35)}
+.chip{position:relative;width:52px;height:52px;border-radius:14px;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);border:2px solid rgba(255,255,255,.15);background:#0b0a1c;padding:0;cursor:pointer;touch-action:manipulation;overflow:hidden}
 .chip canvas{width:100%;height:100%;display:block;border-radius:11px}
-.chip.sel{border-color:var(--cyan);box-shadow:0 0 12px var(--cyan),inset 0 0 8px rgba(40,220,255,.5);transform:translateY(-3px)}
-.chip .k{position:absolute;left:4px;top:2px;font-size:9px;color:#fff;text-shadow:0 0 3px #000}
+.chip.sel{border-color:var(--cyan);background:var(--cyan);box-shadow:0 0 12px var(--cyan);transform:translateY(-5px) scale(1.08)}.chip.sel canvas{transform:scale(.86)}
+.chip .k{position:absolute;left:50%;transform:translateX(-50%);top:1px;font-size:9px;color:#fff;text-shadow:0 0 3px #000}
 .chip .c{position:absolute;right:2px;bottom:2px;font-size:8.5px;font-weight:900;color:#0b0a1c;background:linear-gradient(90deg,#c69bff,#14f195);border-radius:6px;padding:1px 3px}
 #matName{left:50%;transform:translateX(-50%);bottom:calc(max(12px,env(safe-area-inset-bottom)) + 78px);font-size:12px;letter-spacing:2px;color:#fff;text-shadow:0 0 8px var(--pink);transition:opacity .4s}
 #pops{left:50%;top:38%;transform:translateX(-50%);width:300px;text-align:center}
@@ -126,6 +126,16 @@ body.touch #banner h2{font-size:20px}body.touch #combo{font-size:16px;top:34%}
 .row{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px}.lk{font-size:10px;margin-left:6px}.lk b{display:inline-block;min-width:38px}.lk .btn{padding:6px 10px;margin:2px}
 #how{display:none}#how.open{display:block}
 body.inmenu .hud,body.inmenu .tbtn,body.inmenu #labBtn,body.inmenu #shotBtn,body.inmenu #pauseBtn,body.inmenu #lookSlow,body.inmenu #stickHint{visibility:hidden}
+#viewBtn{position:fixed;z-index:4;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 146px);width:44px;height:40px;border-radius:12px;border:1px solid rgba(40,220,255,.5);background:rgba(8,6,24,.62);font-size:18px;touch-action:manipulation}
+#reel{left:50%;transform:translateX(-50%);top:62%;width:min(320px,80vw);display:none;text-align:center}#reel.show{display:block}#reel .lbl{font-size:9px;letter-spacing:1px;color:#cfefff;margin-bottom:4px;text-shadow:0 0 6px #000}
+#reel .track{position:relative;height:30px;border-radius:15px;background:rgba(8,6,24,.8);border:2px solid #28dcff;overflow:hidden;box-shadow:0 0 14px rgba(40,220,255,.5)}
+#reelZone{position:absolute;top:2px;bottom:2px;border-radius:12px;background:rgba(40,220,255,.25);border:2px solid rgba(40,220,255,.7)}#reelZone.on{background:rgba(20,241,149,.45);border-color:#14f195}
+#reelFish{position:absolute;top:6px;width:16px;height:14px;margin-left:-8px;border-radius:50% 40% 40% 50%;box-shadow:0 0 10px currentColor}
+#reel .pb{height:6px;border-radius:4px;background:rgba(255,255,255,.12);margin-top:5px;overflow:hidden}#reelProg{height:100%;width:30%;background:linear-gradient(90deg,#ff4fd8,#ffd24a,#14f195)}
+.charbox{margin:6px 0}.cl{font-size:9px;letter-spacing:2px;color:#28dcff;margin-bottom:4px}#chars{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch;touch-action:pan-x;scrollbar-width:thin}
+#chars .ch{flex:0 0 auto;width:58px;height:58px;border-radius:14px;border:2px solid rgba(255,255,255,.15);background:radial-gradient(circle at 50% 40%,#2a1a50,#0b0a1c);padding:0;cursor:pointer;touch-action:manipulation}#chars .ch img{width:100%;height:100%;object-fit:contain}
+#chars .ch.h1{border-color:rgba(255,210,74,.45)}#chars .ch.h2{border-color:rgba(198,155,255,.45)}#chars .ch.sel{border-color:var(--teal);box-shadow:0 0 12px var(--teal);transform:translateY(-2px)}#charName{font-size:10px;color:#fff;letter-spacing:1px}
+body.inmenu #viewBtn{visibility:hidden}
 /* menu */
 #menu{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(60,20,110,.75),rgba(5,6,15,.94));padding:16px;overflow:auto}
 #menu.hide{display:none}
@@ -159,6 +169,8 @@ body.inmenu .hud,body.inmenu .tbtn,body.inmenu #labBtn,body.inmenu #shotBtn,body
 <div class="hud" id="scan" style="display:none"><div id="scanAr">▲</div><div id="scanTx"></div></div>
 <button id="labBtn" aria-label="Upgrade lab">⚡<small>LAB</small></button>
 <button id="shotBtn" aria-label="Save screenshot">📸</button>
+<button id="viewBtn" aria-label="Change view">👤</button>
+<div class="hud" id="reel"><div class="track"><div id="reelZone"></div><div id="reelFish"></div></div><div class="pb"><div id="reelProg"></div></div></div>
 <div id="flash"></div>
 <div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
 <div id="labList"></div><div id="dailyL" class="dl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
@@ -195,7 +207,8 @@ body.inmenu .hud,body.inmenu .tbtn,body.inmenu #labBtn,body.inmenu #shotBtn,body
  <div class="card">
   <img src="../assets/logo.webp" alt="$BOSS" class="logo">
   <h1 class="title">$BOSS<br><span>SANDBOX</span></h1>
-  <div class="tag">FREE · FIRST-PERSON · DIG · BUILD · BUST THE RUG · v0.4</div>
+  <div class="tag">FREE · FIRST-PERSON · DIG · BUILD · BUST THE RUG · FISH · v0.5</div>
+  <div class="charbox"><div class="cl">CHOOSE YOUR CHARACTER</div><div id="chars"></div><div id="charName"></div></div>
   <div id="mStats" class="mstats"></div>
   <div id="dailyM" class="dl"></div>
   <button class="btn big" id="playBtn">PLAY</button>
@@ -203,16 +216,16 @@ body.inmenu .hud,body.inmenu .tbtn,body.inmenu #labBtn,body.inmenu #shotBtn,body
    <span class="lk">LOOK <button class="btn sm" id="lookDn" type="button">−</button><b id="lookV">100%</b><button class="btn sm" id="lookUp" type="button">+</button></span></div>
   <button class="btn sm" id="howBtn" type="button">HOW TO PLAY ▾</button>
   <div id="how">
-  <p>Explore four neon biomes and dig into glowing caves for <b style="color:#c69bff">SOL shard</b>, Prism, Gold and Core veins with your <b style="color:#14f195">Rug-Buster</b> drill. Catch falling <b style="color:#fff2b0">SOL meteors</b>, zap <b style="color:#28dcff">Paper Hands</b>, survive <b style="color:#ff6a8a">FUD clouds</b> at night, upgrade in the <b style="color:#ffd24a">⚡ LAB</b>, then bust <b style="color:#ff4fd8">THE RUG PULLER</b> and <b style="color:#b46aff">THE FUD KING</b>.</p>
+  <p>Explore four neon zones and dig into glowing caves for <b style="color:#c69bff">SOL shard</b>, Prism, Gold and Core veins with your <b style="color:#14f195">Rug-Buster</b> drill. Fish the glowing <b style="color:#28dcff">neon pools</b>, catch falling <b style="color:#fff2b0">SOL meteors</b>, zap <b style="color:#28dcff">Paper Hands</b>, survive <b style="color:#ff6a8a">FUD clouds</b> at night, upgrade in the <b style="color:#ffd24a">⚡ LAB</b>, then bust <b style="color:#ff4fd8">THE RUG PULLER</b> and <b style="color:#b46aff">THE FUD KING</b>.</p>
   <div class="ctl" id="ctlDesk">
    <div><b>WASD</b> move · <b>SHIFT</b> sprint</div><div><b>MOUSE</b> look · <b>SPACE</b> jump</div>
    <div><b>HOLD LEFT CLICK</b> mine / zap</div><div><b>RIGHT CLICK</b> build</div>
-   <div><b>1–0 / WHEEL</b> piece · <b>U</b> lab</div><div><b>K</b> screenshot · <b>R</b> plaza</div>
+   <div><b>1–0 / WHEEL</b> piece · <b>U</b> lab</div><div><b>K</b> screenshot · <b>V</b> view</div><div><b>CLICK POOL</b> cast · hold to reel</div>
   </div>
   <div class="ctl" id="ctlTouch" style="display:none">
    <div><b>LEFT</b> drag to move</div><div><b>RIGHT</b> drag to look</div>
    <div><b>HOLD MINE</b> dig · slide on it to aim</div><div><b>BUILD</b> place · <b>JUMP</b> ×2 boots</div>
-   <div><b>⚡</b> upgrades · <b>📸</b> screenshot</div><div><b>II</b> menu · auto-saves</div>
+   <div><b>⚡</b> upgrades · <b>📸</b> photo · <b>👤</b> view</div><div><b>TAP POOL</b> cast · hold MINE to reel</div><div><b>II</b> menu · auto-saves</div>
   </div></div>
   <div class="row"><button class="btn sm" id="resetBtn">NEW WORLD</button><a class="btn sm" href="../">$BOSS SITE</a><a class="btn sm pk" href="../game/">RUNNER</a></div>
   <div class="nv2">◆ SOL shards are in-game items with no cash value. They don't connect to any wallet and can't be cashed out.</div>
