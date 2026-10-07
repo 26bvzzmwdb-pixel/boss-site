@@ -136,6 +136,11 @@ body.inmenu .hud,body.inmenu .tbtn,body.inmenu #labBtn,body.inmenu #shotBtn,body
 #chars .ch{flex:0 0 auto;width:58px;height:58px;border-radius:14px;border:2px solid rgba(255,255,255,.15);background:radial-gradient(circle at 50% 40%,#2a1a50,#0b0a1c);padding:0;cursor:pointer;touch-action:manipulation}#chars .ch img{width:100%;height:100%;object-fit:contain}
 #chars .ch.h1{border-color:rgba(255,210,74,.45)}#chars .ch.h2{border-color:rgba(198,155,255,.45)}#chars .ch.sel{border-color:var(--teal);box-shadow:0 0 12px var(--teal);transform:translateY(-2px)}#charName{font-size:10px;color:#fff;letter-spacing:1px}
 body.inmenu #viewBtn{visibility:hidden}
+#summonBtn3{width:100%;margin:2px 0 4px;padding:11px;border-radius:12px;border:2px solid #28dcff;background:linear-gradient(180deg,rgba(40,220,255,.32),rgba(40,220,255,.06));color:#fff;font:900 11px Orbitron,sans-serif;letter-spacing:1.2px;touch-action:manipulation}#summonBtn3:disabled{opacity:.45}
+#shareBtn{position:fixed;z-index:5;right:calc(max(10px,env(safe-area-inset-right)) + 54px);top:calc(max(10px,env(safe-area-inset-top)) + 100px);height:40px;padding:0 12px;border-radius:12px;border:2px solid #14f195;background:rgba(8,6,24,.82);color:#fff;font:900 11px Orbitron,sans-serif;letter-spacing:1px;box-shadow:0 0 14px rgba(20,241,149,.5);opacity:0;pointer-events:none;transform:translateX(10px);transition:.25s;touch-action:manipulation}#shareBtn.show{opacity:1;pointer-events:auto;transform:none}
+.heroRow{display:flex;align-items:center;justify-content:center;gap:14px}.heroWrap{position:relative;width:96px;height:104px}.heroWrap:after{content:"";position:absolute;left:12%;right:12%;bottom:0;height:12px;border-radius:50%;background:radial-gradient(rgba(40,220,255,.7),transparent 70%);filter:blur(2px);animation:pad 2.4s ease-in-out infinite}
+#charHero{position:relative;z-index:1;width:96px;height:96px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(40,220,255,.6)) drop-shadow(0 6px 4px rgba(0,0,0,.5));animation:hero 2.4s ease-in-out infinite}@keyframes hero{50%{transform:translateY(-7px) scale(1.03,.98)}}@keyframes pad{50%{transform:scaleX(.8);opacity:.6}}
+.card{background-image:linear-gradient(160deg,rgba(255,79,216,.08),transparent 40%,rgba(40,220,255,.08))}
 /* menu */
 #menu{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(60,20,110,.75),rgba(5,6,15,.94));padding:16px;overflow:auto}
 #menu.hide{display:none}
@@ -169,11 +174,12 @@ body.inmenu #viewBtn{visibility:hidden}
 <div class="hud" id="scan" style="display:none"><div id="scanAr">▲</div><div id="scanTx"></div></div>
 <button id="labBtn" aria-label="Upgrade lab">⚡<small>LAB</small></button>
 <button id="shotBtn" aria-label="Save screenshot">📸</button>
+<button id="shareBtn" type="button" aria-label="Share screenshot">SHARE 📤</button>
 <button id="viewBtn" aria-label="Change view">👤</button>
 <div class="hud" id="reel"><div class="track"><div id="reelZone"></div><div id="reelFish"></div></div><div class="pb"><div id="reelProg"></div></div></div>
 <div id="flash"></div>
 <div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
-<div id="labList"></div><div id="dailyL" class="dl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
+<div id="labList"></div><div id="dailyL" class="dl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
 <div class="hud" id="badge"><b>$BOSS SANDBOX</b> <span class="bt">BETA</span><br><span>first-person · practice only</span></div>
 <div class="hud" id="clock">--</div>
 <div class="hud" id="shards"><div class="n" id="shardN">0</div><div class="l">◆ SOL SHARDS</div><div class="nv">in-game items · no cash value</div></div>
@@ -205,9 +211,9 @@ body.inmenu #viewBtn{visibility:hidden}
 </div>
 <div id="menu">
  <div class="card">
-  <img src="../assets/logo.webp" alt="$BOSS" class="logo">
+  <div class="heroRow"><img src="../assets/logo.webp" alt="$BOSS" class="logo"><div class="heroWrap"><img id="charHero" alt="Your character" src="../assets/chars/h_fudder.webp"></div></div>
   <h1 class="title">$BOSS<br><span>SANDBOX</span></h1>
-  <div class="tag">FREE · FIRST-PERSON · DIG · BUILD · BUST THE RUG · FISH · v0.5</div>
+  <div class="tag">FREE · FIRST-PERSON · DIG · BUILD · BUST THE RUG · FISH · v0.6</div>
   <div class="charbox"><div class="cl">CHOOSE YOUR CHARACTER</div><div id="chars"></div><div id="charName"></div></div>
   <div id="mStats" class="mstats"></div>
   <div id="dailyM" class="dl"></div>
