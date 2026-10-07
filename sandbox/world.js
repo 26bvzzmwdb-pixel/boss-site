@@ -32,11 +32,12 @@ const B = [
   { id: 23, name: "SECRET CACHE", tex: [30, 30, 30], hard: 1.2, col: 0xffd24a, drop: 25, secret: 1 },
   { id: 24, name: "MOON DUST", tex: [31, 32, 1], hard: .3, col: 0xc8c0e8 },
   { id: 25, name: "MOON CRYSTAL", tex: [33, 33, 33], hard: .3, col: 0xe0d0ff },
+  { id: 26, name: "GLITCH TILE", tex: [34, 35, 1], hard: .3, col: 0xff2ad4 },
 ];
 const PALETTE = [1, 13, 4, 5, 7, 2, 6, 12, 14, 17, 19, 20, 21, 22];
 // Biomes: 0 NEON FLATS, 1 PUMP DUNES, 2 CRYSTAL GROVE, 3 FROST CHAIN
-const BIOMES = ["NEON FLATS", "PUMP DUNES", "SIGNAL GROVE", "FROST CHAIN", "MOON BASIN"];
-const BIOME_TOP = [3, 14, 16, 15, 24];
+const BIOMES = ["NEON FLATS", "PUMP DUNES", "SIGNAL GROVE", "FROST CHAIN", "MOON BASIN", "GLITCH WASTES"];
+const BIOME_TOP = [3, 14, 16, 15, 24, 26];
 
 // ---------------- seeded noise ----------------
 function hash3(x, y, z, s) { let h = Math.imul(x, 374761393) ^ Math.imul(y, 668265263) ^ Math.imul(z, 2147483647) ^ Math.imul(s, 1274126177); h = Math.imul(h ^ (h >>> 13), 1103515245); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
@@ -52,7 +53,8 @@ const idx = (x, y, z) => x + SX * (z + SZ * y);
 const inB = (x, y, z) => x >= 0 && y >= 0 && z >= 0 && x < SX && y < SY && z < SZ;
 const get = (x, y, z) => inB(x, y, z) ? world[idx(x, y, z)] : (y < 0 ? 11 : 0);
 
-function biomeAt(x, z, sd) { const a = fbm(x / 44, z / 44, sd + 501), b = fbm(x / 38, z / 38, sd + 733);
+export const MOON = { x: 86, z: 50, r: 15 };
+function biomeAt(x, z, sd) { if (Math.hypot(x - MOON.x, z - MOON.z) < MOON.r + (fbm(x / 6, z / 6, sd + 77) - .5) * 5) return 4; if (fbm(x / 34, z / 34, sd + 1213) < .35 && Math.hypot(x - 56, z - 56) > 30) return 5; const a = fbm(x / 44, z / 44, sd + 501), b = fbm(x / 38, z / 38, sd + 733);
   if (a > .58) return 3; if (a > .44 && a < .57 && fbm(x / 30, z / 30, sd + 911) > .6) return 4; if (a < .43) return b > .5 ? 2 : 1; return b > .64 ? 2 : b < .36 ? 1 : 0; }
 const biome = new Uint8Array(SX * SZ);
 export const pools = [], caches = [];
@@ -72,6 +74,9 @@ export function generate(sd) {
   // gentle valley around spawn so the plaza opens onto the world instead of sitting in a pit
   for (let z = 0; z < SZ; z++) for (let x = 0; x < SX; x++) { const d = Math.hypot(x - cx, z - cz); if (d > 26) continue; const t = Math.max(0, Math.min(1, (d - 6) / 20)), e = t * t * (3 - 2 * t);
     H[x + z * SX] = Math.round(ph + (H[x + z * SX] - ph) * e); }
+  { const mh = H[MOON.x + MOON.z * SX]; const cr = [[0, 0, 5, 2], [-7, 4, 3.5, 2], [6, -6, 4, 2], [5, 7, 3, 1]];
+    for (let z = 0; z < SZ; z++) for (let x = 0; x < SX; x++) { const d = Math.hypot(x - MOON.x, z - MOON.z); if (d > MOON.r + 4) continue; const t = Math.max(0, Math.min(1, (d - MOON.r + 4) / 6)); let h = Math.round(mh + (H[x + z * SX] - mh) * t);
+      for (const [ox, oz, r, dp] of cr) { const q = Math.hypot(x - MOON.x - ox, z - MOON.z - oz); if (q < r) h -= Math.round(dp * (1 - (q / r) ** 2)); else if (q < r + 1.2) h += 1; } H[x + z * SX] = Math.max(6, h); } }
   for (let z = 0; z < SZ; z++) for (let x = 0; x < SX; x++) {
     const h = H[x + z * SX], bt = BIOME_TOP[biome[x + z * SX]];
     world[idx(x, 0, z)] = 11;
@@ -81,7 +86,7 @@ export function generate(sd) {
   const far = (X, Z, r) => Math.abs(X - cx) + Math.abs(Z - cz) > r;
   // neon pools (fishing spots): shallow elliptical basins on flat ground, lit neon floor
   pools.length = 0;
-  for (let tries = 0; tries < 300 && pools.length < 9; tries++) { const rx = 2.5 + R() * 2, rz = 2 + R() * 2, x0 = 6 + R() * (SX - 12), z0 = 6 + R() * (SZ - 12);
+  for (let tries = 0; tries < 300 && pools.length < 9; tries++) { const rx = 2.5 + R() * 2, rz = 2 + R() * 2; let x0 = 6 + R() * (SX - 12), z0 = 6 + R() * (SZ - 12); if (tries === 0) { x0 = MOON.x + 9; z0 = MOON.z + 1; }
     if (!far(x0, z0, 20) || pools.some(q => Math.hypot(q.x - x0, q.z - z0) < 16)) continue; let lo = 99, hi = -1;
     for (let z = Math.floor(z0 - rz); z <= z0 + rz; z++) for (let x = Math.floor(x0 - rx); x <= x0 + rx; x++) { const h = H[x + z * SX]; lo = Math.min(lo, h); hi = Math.max(hi, h); }
     if (hi - lo > 2) continue; const wl = lo;
@@ -124,6 +129,7 @@ export function generate(sd) {
     } else if (bm === 1 && roll < .1) { const t = R() < .55 ? 4 : 5, L = 2 + Math.floor(R() * 7); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = t; }
     else if (bm === 3 && roll < .08) { const L = 3 + Math.floor(R() * 5); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = y > h + L - 2 ? 7 : 15; }
     else if (bm === 4 && roll < .13) { const L = 1 + Math.floor(R() * 3); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = 25; }
+    else if (bm === 5 && roll < .06) { const y0 = h + 2 + Math.floor(R() * 3); if (y0 < SY - 2) { world[idx(x, y0, z)] = R() < .5 ? 26 : 7; if (R() < .4 && y0 + 1 < SY - 1) world[idx(x, y0 + 1, z)] = 26; } }
     else if (bm === 0 && roll < .035) { const t = R() < .55 ? 4 : 5, L = 2 + Math.floor(R() * 5); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = t; }
   }
   // plaza: neon floor, chrome rim, lamps
