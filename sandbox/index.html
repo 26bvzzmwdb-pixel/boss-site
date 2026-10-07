@@ -112,6 +112,20 @@ body.touch #banner h2{font-size:20px}body.touch #combo{font-size:16px;top:34%}
 @media (orientation:landscape){body.touch #quest{top:calc(max(6px,env(safe-area-inset-top)) + 18px);width:200px}body.touch #bossbar{top:calc(max(6px,env(safe-area-inset-top)) + 62px);width:40vw}}
 #scan{left:50%;top:calc(50% - 86px);transform:translateX(-50%);text-align:center;font-size:9px;letter-spacing:1px;color:#ffe9a8;text-shadow:0 0 6px #000}
 #scanAr{font-size:20px;color:var(--gold);text-shadow:0 0 10px var(--gold);transition:transform .15s;line-height:1}#scan.none #scanAr{opacity:.25}
+#qD{margin-top:5px;padding-top:4px;border-top:1px solid rgba(255,255,255,.1);color:#ffe9a8;font-size:8.5px;line-height:1.3}
+.dl{font-size:10px;color:#ffe9a8;margin:6px 0}
+#summonBtn2{width:100%;margin:2px 0 4px;padding:11px;border-radius:12px;border:2px solid #b46aff;background:linear-gradient(180deg,rgba(180,106,255,.35),rgba(180,106,255,.08));color:#fff;font:900 11px Orbitron,sans-serif;letter-spacing:1.2px;touch-action:manipulation}#summonBtn2:disabled{opacity:.45}
+#shotBtn{position:fixed;z-index:4;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 100px);width:44px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.4);background:rgba(8,6,24,.62);font-size:18px;touch-action:manipulation}
+#flash{position:fixed;inset:0;z-index:9;background:#fff;opacity:0;pointer-events:none}#flash.go{animation:fl .35s ease-out}@keyframes fl{from{opacity:.8}to{opacity:0}}
+#menu{background:radial-gradient(ellipse at 50% 20%,rgba(60,20,110,.55),rgba(5,6,15,.82))}
+.card .logo{width:92px;height:92px;animation:bob 3s ease-in-out infinite}@keyframes bob{50%{transform:translateY(-6px) rotate(-3deg)}}
+.title{font-size:34px!important;line-height:1;margin:8px 0 6px!important;background:linear-gradient(90deg,#28dcff,#ff4fd8,#ffd24a,#28dcff)!important;background-size:300% 100%!important;-webkit-background-clip:text!important;background-clip:text!important;animation:sh 6s linear infinite}
+.title span{font-size:20px;letter-spacing:8px}@keyframes sh{to{background-position:300% 0}}
+.btn.big{font-size:18px;padding:15px 46px;border-color:var(--teal);background:linear-gradient(180deg,rgba(20,241,149,.35),rgba(20,241,149,.06));box-shadow:0 0 22px rgba(20,241,149,.45);animation:pu 1.6s ease-in-out infinite}@keyframes pu{50%{box-shadow:0 0 34px rgba(20,241,149,.8)}}
+.mstats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:4px 0}.mstats div{background:rgba(255,255,255,.05);border-radius:8px;padding:5px 2px;font-size:8px;opacity:.9}.mstats b{display:block;font-size:13px;color:#fff}
+.row{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px}.lk{font-size:10px;margin-left:6px}.lk b{display:inline-block;min-width:38px}.lk .btn{padding:6px 10px;margin:2px}
+#how{display:none}#how.open{display:block}
+body.inmenu .hud,body.inmenu .tbtn,body.inmenu #labBtn,body.inmenu #shotBtn,body.inmenu #pauseBtn,body.inmenu #lookSlow,body.inmenu #stickHint{visibility:hidden}
 /* menu */
 #menu{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(60,20,110,.75),rgba(5,6,15,.94));padding:16px;overflow:auto}
 #menu.hide{display:none}
@@ -132,20 +146,22 @@ body.touch #banner h2{font-size:20px}body.touch #combo{font-size:16px;top:34%}
 #err{position:fixed;left:8px;right:8px;bottom:8px;z-index:30;display:none;font:11px monospace;color:#ffb0c0;background:rgba(40,0,10,.85);padding:8px;border-radius:8px}
 </style>
 </head>
-<body>
+<body class="inmenu">
 <canvas id="game"></canvas>
 <div id="touch"></div>
 <div class="hud" id="hurt"></div>
 <div class="hud" id="hp"></div>
-<div class="hud" id="quest"><div class="hd"><span id="qN">QUEST</span><span id="qR"></span></div><div id="qT"></div><div id="qH"></div><div class="bar"><div id="qBar"></div></div><div id="qC"></div></div>
+<div class="hud" id="quest"><div class="hd"><span id="qN">QUEST</span><span id="qR"></span></div><div id="qT"></div><div id="qH"></div><div class="bar"><div id="qBar"></div></div><div id="qC"></div><div id="qD"></div></div>
 <div class="hud" id="bossbar"><span id="bossLv">THE RUG PULLER</span><div class="b"><div id="bossFill"></div></div></div>
 <div class="hud" id="combo"></div>
 <div class="hud" id="banner"><h2></h2><p></p></div>
 <div class="hud" id="biome"></div>
 <div class="hud" id="scan" style="display:none"><div id="scanAr">▲</div><div id="scanTx"></div></div>
 <button id="labBtn" aria-label="Upgrade lab">⚡<small>LAB</small></button>
+<button id="shotBtn" aria-label="Save screenshot">📸</button>
+<div id="flash"></div>
 <div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
-<div id="labList"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
+<div id="labList"></div><div id="dailyL" class="dl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
 <div class="hud" id="badge"><b>$BOSS SANDBOX</b> <span class="bt">BETA</span><br><span>first-person · practice only</span></div>
 <div class="hud" id="clock">--</div>
 <div class="hud" id="shards"><div class="n" id="shardN">0</div><div class="l">◆ SOL SHARDS</div><div class="nv">in-game items · no cash value</div></div>
@@ -177,25 +193,30 @@ body.touch #banner h2{font-size:20px}body.touch #combo{font-size:16px;top:34%}
 </div>
 <div id="menu">
  <div class="card">
-  <img src="../assets/logo.webp" alt="$BOSS">
-  <h1>$BOSS SANDBOX</h1>
-  <div class="tag">FIRST-PERSON BETA · SINGLE-PLAYER · FREE · NO RANKED SCORES</div>
-  <p>Explore four neon biomes, dig into caves for glowing <b style="color:#c69bff">SOL shard</b>, Prism, Gold and Core veins with your <b style="color:#14f195">Rug-Buster</b> laser drill, and build anything. Spend shards in the <b style="color:#ffd24a">⚡ LAB</b> on drill upgrades, Jet Boots and more. Follow the quests, survive <b style="color:#ff6a8a">FUD clouds</b> at night, then summon and bust <b style="color:#ff4fd8">THE RUG PULLER</b>.</p>
+  <img src="../assets/logo.webp" alt="$BOSS" class="logo">
+  <h1 class="title">$BOSS<br><span>SANDBOX</span></h1>
+  <div class="tag">FREE · FIRST-PERSON · DIG · BUILD · BUST THE RUG · v0.4</div>
+  <div id="mStats" class="mstats"></div>
+  <div id="dailyM" class="dl"></div>
+  <button class="btn big" id="playBtn">PLAY</button>
+  <div class="row"><button class="btn sm" id="sndBtn" type="button">SFX: ON</button><button class="btn sm" id="musBtn" type="button">MUSIC: ON</button>
+   <span class="lk">LOOK <button class="btn sm" id="lookDn" type="button">−</button><b id="lookV">100%</b><button class="btn sm" id="lookUp" type="button">+</button></span></div>
+  <button class="btn sm" id="howBtn" type="button">HOW TO PLAY ▾</button>
+  <div id="how">
+  <p>Explore four neon biomes and dig into glowing caves for <b style="color:#c69bff">SOL shard</b>, Prism, Gold and Core veins with your <b style="color:#14f195">Rug-Buster</b> drill. Catch falling <b style="color:#fff2b0">SOL meteors</b>, zap <b style="color:#28dcff">Paper Hands</b>, survive <b style="color:#ff6a8a">FUD clouds</b> at night, upgrade in the <b style="color:#ffd24a">⚡ LAB</b>, then bust <b style="color:#ff4fd8">THE RUG PULLER</b> and <b style="color:#b46aff">THE FUD KING</b>.</p>
   <div class="ctl" id="ctlDesk">
-   <div><b>WASD / ARROWS</b> move · <b>SHIFT</b> sprint</div><div><b>MOUSE</b> look · <b>SPACE</b> jump</div>
-   <div><b>HOLD LEFT CLICK</b> mine / zap FUD</div><div><b>RIGHT CLICK</b> build piece</div>
-   <div><b>1–0 / WHEEL</b> pick piece · <b>U</b> lab</div><div><b>R</b> back to plaza · <b>ESC</b> menu</div><div><b>SPACE ×2</b> jet-boost (with boots)</div><div><b>ESC</b> pause · auto-saves</div>
+   <div><b>WASD</b> move · <b>SHIFT</b> sprint</div><div><b>MOUSE</b> look · <b>SPACE</b> jump</div>
+   <div><b>HOLD LEFT CLICK</b> mine / zap</div><div><b>RIGHT CLICK</b> build</div>
+   <div><b>1–0 / WHEEL</b> piece · <b>U</b> lab</div><div><b>K</b> screenshot · <b>R</b> plaza</div>
   </div>
   <div class="ctl" id="ctlTouch" style="display:none">
-   <div><b>LEFT</b> drag to move</div><div><b>RIGHT</b> drag to look (slower by default)</div>
-   <div><b>HOLD MINE</b> dig · slide thumb on it to aim</div><div><b>BUILD</b> place · <b>JUMP</b></div>
-   <div><b>BOTTOM-LEFT</b> pick piece</div><div><b>LOOK: SLOW</b> toggle · <b>II</b> menu</div>
-  </div>
-  <button class="btn" id="playBtn">PLAY</button><br>
-  <button class="btn sm" id="sndBtn" type="button">SFX: ON</button><button class="btn sm" id="musBtn" type="button">MUSIC: ON</button><br>
-  <button class="btn sm" id="resetBtn">NEW WORLD</button><a class="btn sm" href="../">$BOSS SITE</a><a class="btn sm pk" href="../game/">RUNNER (PRACTICE)</a>
+   <div><b>LEFT</b> drag to move</div><div><b>RIGHT</b> drag to look</div>
+   <div><b>HOLD MINE</b> dig · slide on it to aim</div><div><b>BUILD</b> place · <b>JUMP</b> ×2 boots</div>
+   <div><b>⚡</b> upgrades · <b>📸</b> screenshot</div><div><b>II</b> menu · auto-saves</div>
+  </div></div>
+  <div class="row"><button class="btn sm" id="resetBtn">NEW WORLD</button><a class="btn sm" href="../">$BOSS SITE</a><a class="btn sm pk" href="../game/">RUNNER</a></div>
   <div class="nv2">◆ SOL shards are in-game items with no cash value. They don't connect to any wallet and can't be cashed out.</div>
-  <div class="legal">Beta sandbox. Not part of ranked play, the leaderboard, or prize rounds. Your world saves on this device. Joke game · not financial advice.</div>
+  <div class="legal">Single-player. Not part of ranked play, the leaderboard, or prize rounds. Saves on this device. Screenshots save to your device only. Joke game · not financial advice.</div>
  </div>
 </div>
 <div id="load">LOADING…</div>

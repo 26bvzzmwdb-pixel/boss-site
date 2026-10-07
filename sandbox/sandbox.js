@@ -25,7 +25,7 @@ function setBlock(x, y, z, id, fromNet) {
 // ---------------- save / load ----------------
 let saveT = 0;
 function scheduleSave() { saveT = 1.0; }
-function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qBase, hp: P.hp, set: { snd: sndOn, mus: musOn, slow: lookSlow } })); } catch (e) {} }
+function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qBase, hp: P.hp, daily, intro: introDone, set: { snd: sndOn, mus: musOn, slow: lookSlow, look: lookMul } })); } catch (e) {} }
 function load() { if (Q.has("reset")) try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {}
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); if (s && s.v === 2) return s;
     const o = JSON.parse(localStorage.getItem(OLD_KEY) || "null"); if (o && o.v === 1) return { migr: true, shards: o.shards | 0 }; } catch (e) {} return null; }
@@ -43,7 +43,7 @@ scene.add(camera);
 scene.fog = new THREE.Fog(0x2a1040, IS_TOUCH ? 18 : 26, IS_TOUCH ? 52 : 72);
 const hemi = new THREE.HemisphereLight(0xb8a8ff, 0x201030, 1.0); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffd0e0, 1.0); scene.add(sun); scene.add(sun.target);
-const lamp = new THREE.PointLight(0xc8ecff, 0, 14, 1); camera.add(lamp); lamp.position.set(.2, .1, 0); let lampT = 0;
+const lamp = new THREE.PointLight(0xd8f0ff, 0, 20, 1); camera.add(lamp); lamp.position.set(.2, .1, 0); let lampT = 0;
 
 // ---------------- procedural textures (original neon / beveled style) ----------------
 const TS = 64, ATL = 5;
@@ -141,7 +141,7 @@ function buildChunk(ci) {
       const nx = x + f.n[0], ny = y + f.n[1], nz = z + f.n[2];
       if (ny < 0) continue; if (ny < SY && solid(nx, ny, nz)) continue;
       const s = bd.tex[f.t], su = (s % ATL) / ATL, sv = Math.floor(s / ATL); const base = pos.length / 3; const ao = [];
-      let skyL = 1; if (nx >= 0 && nz >= 0 && nx < SX && nz < SZ) { const tt = topH[nx + nz * SX]; if (ny <= tt) skyL = Math.max(.36, .82 - (tt - ny) * .08); }
+      let skyL = 1; if (nx >= 0 && nz >= 0 && nx < SX && nz < SZ) { const tt = topH[nx + nz * SX]; if (ny <= tt) skyL = Math.max(.52, .86 - (tt - ny) * .06); }
       // tangent axes for AO
       const ax = f.n[0] ? 0 : f.n[1] ? 1 : 2, ua = (ax + 1) % 3, va = (ax + 2) % 3;
       for (const c of f.c) {
@@ -243,7 +243,11 @@ function updPlayer(dt) {
   P.hurtCD = Math.max(0, P.hurtCD - dt);
   P.regenT -= dt; if (P.regenT <= 0 && P.hp < maxHp()) { P.hp++; P.regenT = 1.4; updHP(); }
 }
-function respawn() { P.x = plaza.x; P.y = plaza.y + .1; P.z = plaza.z; P.vx = P.vy = P.vz = 0; P.yaw = 0; P.pitch = -.08; while (collides(P.x, P.y, P.z) && P.y < SY) P.y += 1; }
+function respawn() { P.x = plaza.x; P.y = plaza.y + .1; P.z = plaza.z; P.vx = P.vy = P.vz = 0; P.yaw = 0; P.pitch = -.08;
+  // safe spawn: if the plaza floor under spawn was dug out, rebuild a 3x3 chrome pad so you never respawn into a pit
+  const fx = Math.floor(P.x), fz = Math.floor(P.z), fy = Math.floor(plaza.y) - 1; for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) { if (!get(fx + dx, fy, fz + dz)) setBlock(fx + dx, fy, fz + dz, 13, true); for (let y = fy + 1; y <= fy + 2; y++) if (get(fx + dx, y, fz + dz) && !(dx || dz)) setBlock(fx, y, fz, 0, true); }
+  let best = 1e9; for (let z = fz - 22; z <= fz + 22; z++) for (let x = fx - 22; x <= fx + 22; x++) { if (!inB(x, 1, z)) continue; const t = topH[x + z * SX]; if (t > 0 && world[idx(x, t, z)] === 8) { const d = (x - fx) ** 2 + (z - fz) ** 2; if (d < best && d > 9) { best = d; P.yaw = Math.atan2(-(x + .5 - P.x), -(z + .5 - P.z)); } } }
+  while (collides(P.x, P.y, P.z) && P.y < SY) P.y += 1; }
 
 // ---------------- voxel raycast (Amanatides & Woo) ----------------
 function raycast(o, d, max) {
@@ -305,7 +309,7 @@ function updFuds(dt, night) {
   for (let i = fuds.length - 1; i >= 0; i--) { const f = fuds[i], s = f.s; f.t += dt;
     const dx = P.x - s.position.x, dy = P.y + 1.2 - s.position.y, dz = P.z - s.position.z, d = Math.hypot(dx, dy, dz);
     const gone = want === 0; s.material.opacity = Math.max(0, Math.min(1, s.material.opacity + (gone ? -dt : dt)));
-    if (gone && s.material.opacity <= 0) { scene.remove(s); fuds.splice(i, 1); continue; }
+    if (gone && s.material.opacity <= 0) { scene.remove(s); s.material.dispose(); fuds.splice(i, 1); continue; }
     if (d < 26 && !gone) { const sp = 1.9 / Math.max(d, .01); s.position.x += dx * sp * dt; s.position.y += dy * sp * dt + Math.sin(f.t * 2) * .01; s.position.z += dz * sp * dt; }
     if (d < 1.1 && P.hurtCD <= 0 && !gone) { P.hurtCD = 1.6; P.vx -= dx / d * 9; P.vz -= dz / d * 9; P.vy = 5; const lost = upg.shield ? 0 : Math.min(1, shards); shards -= lost; updShards();
       pop(lost ? "FUD! −1 SHARD" : "FUD!", "#ff6a8a"); hurt(1); }
@@ -313,15 +317,17 @@ function updFuds(dt, night) {
 }
 
 // ---------------- mining / building ----------------
-let mineT = 0, mineKey = "", hit = null, fudHit = null, bossHit = false;
+let mineT = 0, mineKey = "", hit = null, fudHit = null, bossHit = false, critHit = null;
 const tmpV = new THREE.Vector3(), tmpD = new THREE.Vector3();
 function aim() {
   camera.getWorldPosition(tmpV); camera.getWorldDirection(tmpD);
   hit = raycast(tmpV, tmpD, REACH[upg.drill]);
-  fudHit = null; bossHit = false; let best = hit ? hit.t : 9;
-  if (boss.on) { const o = boss.g.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z; if (t > 0 && t < 30) { const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < (IS_TOUCH ? 2.7 : 2) ** 2 && (!hit || t < hit.t + 1)) { bossHit = true; hit = null; best = t; } } }
+  fudHit = null; bossHit = false; critHit = null; let best = hit ? hit.t : 9;
+  if (boss.on) { const o = boss.g.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z; if (t > 0 && t < 30) { const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < (boss.kind === "king" ? (IS_TOUCH ? 3.2 : 2.6) : (IS_TOUCH ? 2.7 : 2)) ** 2 && (!hit || t < hit.t + 1)) { bossHit = true; hit = null; best = t; } } }
   for (const f of fuds) { const o = f.s.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z;
     if (t < 0 || t > best) continue; const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < .8 * .8) { best = t; fudHit = f; } }
+  for (const c of critters) { const o = c.s.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z;
+    if (t < 0 || t > Math.min(best, 14)) continue; const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < (IS_TOUCH ? .8 : .6) ** 2) { best = t; critHit = c; fudHit = null; bossHit = false; hit = null; } }
 }
 let mineGrace = 0; // keeps mining briefly if the thumb wobbles off the button
 function breakBlock(x, y, z, id, chained) {
@@ -350,14 +356,16 @@ function trySoftTapMine() {
 function updMining(dt, time) {
   aim();
   const tgt = $("target");
-  if (bossHit) { outline.visible = false; tgt.textContent = "THE RUG PULLER · HOLD MINE TO BLAST"; }
+  if (critHit) { outline.visible = false; tgt.textContent = "PAPER HANDS · HOLD TO ZAP"; }
+  else if (bossHit) { outline.visible = false; tgt.textContent = BOSSES[boss.kind].name + " · HOLD MINE TO BLAST"; }
   else if (hit && !fudHit) { outline.visible = true; outline.position.set(hit.x + .5, hit.y + .5, hit.z + .5); const bd = B[hit.id]; tgt.textContent = bd.name + (bd.drop ? `  ◆+${bd.drop}` : bd.hard === Infinity ? "  (unbreakable)" : ""); }
   else { outline.visible = false; tgt.textContent = fudHit ? "FUD CLOUD · HOLD TO ZAP" : ""; }
   if (input.mine) mineGrace = IS_TOUCH ? 0.28 : 0; else if (mineGrace > 0) mineGrace -= dt;
   const mining = input.mine || mineGrace > 0;
   let prog = 0;
-  if (mining && bossHit) { bossDamage(DMG[upg.drill] * dt); mineKey = ""; mineT = 0; prog = 1 - boss.hp / boss.max; }
-  else if (mining && fudHit) { fudHit.hp -= dt; prog = 1 - fudHit.hp / .7; if (fudHit.hp <= 0) { const p = fudHit.s.position; burst(p.x, p.y, p.z, ["#ff6a8a", "#ff3250", "#ffd0d8"], IS_TOUCH ? 30 : 60, 6); scene.remove(fudHit.s); fuds.splice(fuds.indexOf(fudHit), 1); spawnOrbs(p.x, p.y, p.z, 2, 0xff6a8a); stats.fud++; pop("FUD CLEARED ◆+2", "#14f195"); sfx.zap(); trauma = Math.max(trauma, .3); } mineKey = ""; mineT = 0; }
+  if (mining && critHit) { critHit.hp -= dt; prog = 1 - critHit.hp / .35; if (critHit.hp <= 0) zapCritter(critHit); mineKey = ""; mineT = 0; }
+  else if (mining && bossHit) { bossDamage(DMG[upg.drill] * dt); mineKey = ""; mineT = 0; prog = 1 - boss.hp / boss.max; }
+  else if (mining && fudHit) { fudHit.hp -= dt; prog = 1 - fudHit.hp / .7; if (fudHit.hp <= 0) { const p = fudHit.s.position; burst(p.x, p.y, p.z, ["#ff6a8a", "#ff3250", "#ffd0d8"], IS_TOUCH ? 30 : 60, 6); scene.remove(fudHit.s); fudHit.s.material.dispose(); fuds.splice(fuds.indexOf(fudHit), 1); spawnOrbs(p.x, p.y, p.z, 2, 0xff6a8a); stats.fud++; pop("FUD CLEARED ◆+2", "#14f195"); sfx.zap(); trauma = Math.max(trauma, .3); } mineKey = ""; mineT = 0; }
   else if (mining && hit && B[hit.id].hard !== Infinity) {
     const key = hit.x + "," + hit.y + "," + hit.z; if (key !== mineKey) { mineKey = key; mineT = 0; }
     mineT += dt; const bd = B[hit.id]; const need = Math.max(0.12, bd.hard * (IS_TOUCH ? 0.85 : 1) / SPEED[upg.drill]); minePitch = mineT / need; // slightly faster on phone
@@ -369,9 +377,9 @@ function updMining(dt, time) {
   } else if (!mining) { mineT = 0; mineKey = ""; outline.scale.setScalar(1); coreGlow.material.opacity = 0; }
   if (!mining) { outline.scale.setScalar(1); coreGlow.material.opacity = 0; }
   $("ring").setAttribute("stroke-dashoffset", (94.25 * (1 - prog)).toFixed(2));
-  const firing = mining && (bossHit || fudHit || (hit && B[hit.id].hard !== Infinity)); isFiring = !!firing; if (!firing) minePitch = 0;
+  const firing = mining && (critHit || bossHit || fudHit || (hit && B[hit.id].hard !== Infinity)); isFiring = !!firing; if (!firing) minePitch = 0;
   laser.visible = !!firing; laser.material.color.setHex(LASER[upg.drill]); dTip.material.color.setHex(firing ? (Math.sin(time * 40) > 0 ? 0x14f195 : 0xffffff) : 0x9945ff); dRing.rotation.z += dt * (firing ? 30 : 2);
-  if (firing) { dTip.getWorldPosition(tmpV); const end = bossHit ? boss.eye.getWorldPosition(new THREE.Vector3()) : fudHit ? fudHit.s.position.clone() : new THREE.Vector3(hit.x + .5 + hit.n[0] * .5, hit.y + .5 + hit.n[1] * .5, hit.z + .5 + hit.n[2] * .5);
+  if (firing) { dTip.getWorldPosition(tmpV); const end = critHit ? critHit.s.position.clone() : bossHit ? boss.eye.getWorldPosition(new THREE.Vector3()) : fudHit ? fudHit.s.position.clone() : new THREE.Vector3(hit.x + .5 + hit.n[0] * .5, hit.y + .5 + hit.n[1] * .5, hit.z + .5 + hit.n[2] * .5);
     laser.position.copy(tmpV); laser.lookAt(end); laser.scale.set(1, 1, tmpV.distanceTo(end)); laser.material.opacity = .6 + Math.random() * .4; }
 }
 function place() {
@@ -458,10 +466,10 @@ function maybeShowTip() {
   try { if (localStorage.getItem(TIP_KEY) === "1") return; } catch (e) {}
   $("tip").classList.add("show");
 }
-function startGame() { initAudio(); $("menu").classList.add("hide"); closeLab(true); running = true; last = performance.now();
+function startGame() { initAudio(); $("menu").classList.add("hide"); document.body.classList.remove("inmenu"); closeLab(true); running = true; last = performance.now(); if (!introDone && !mp.on && !Q.has("nointro")) intro();
   maybeShowTip();
   if (!IS_TOUCH && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
-function pause() { running = false; input.mine = false; $("menu").classList.remove("hide"); $("playBtn").textContent = "RESUME"; save(); if (document.pointerLockElement) document.exitPointerLock(); }
+function pause() { running = false; document.body.classList.add("inmenu"); input.mine = false; $("menu").classList.remove("hide"); $("playBtn").textContent = "RESUME"; menuStats(); save(); if (document.pointerLockElement) document.exitPointerLock(); }
 document.addEventListener("pointerlockchange", () => { locked = document.pointerLockElement === canvas; if (!locked && running && !IS_TOUCH && !window.__SB_TEST && !labOpen) pause(); });
 canvas.addEventListener("mousedown", e => { if (IS_TOUCH) return; if (!running || labOpen) return; if (!locked && canvas.requestPointerLock && !window.__SB_TEST) { startGame(); return; }
   if (e.button === 0) input.mine = true; else if (e.button === 2) place(); });
@@ -471,16 +479,19 @@ document.addEventListener("mousemove", e => { if (!locked) return; if (Math.abs(
 window.addEventListener("wheel", e => { if (running) select(sel + (e.deltaY > 0 ? 1 : -1)); }, { passive: true });
 window.addEventListener("keydown", e => { input.keys[e.code] = true; if (e.code === "Space") e.preventDefault();
   if (/^Digit[0-9]$/.test(e.code)) select((+e.code[5] + 9) % 10); if ((e.code === "KeyU" || e.code === "Tab") && running) { e.preventDefault(); labOpen ? closeLab() : openLab(); } if (e.code === "KeyQ") select(sel - 1); if (e.code === "KeyE") select(sel + 1);
-  if (e.code === "KeyR" && running) respawn(); if (e.code === "KeyG" && mp.on && mp.ws) mp.ws.send(JSON.stringify({ t: "emote", k: 0 })); if ((e.code === "KeyP") && running) pause(); });
+  if (e.code === "KeyR" && running) respawn(); if (e.code === "KeyG" && mp.on && mp.ws) mp.ws.send(JSON.stringify({ t: "emote", k: 0 })); if ((e.code === "KeyP") && running) pause(); if (e.code === "KeyK" && running) wantShot = true; });
 window.addEventListener("keyup", e => { input.keys[e.code] = false; });
 window.addEventListener("blur", () => { input.keys = {}; input.mine = false; });
+let lookMul = 1;
 function look(dx, dy) { P.yaw -= dx; P.pitch = Math.max(-1.55, Math.min(1.55, P.pitch - dy)); }
+// touch look: user speed setting, gentle acceleration (precise when slow, quick flicks), aim friction over targets
+function touchLook(dx, dy, mul = 1) { const sp = Math.hypot(dx, dy), acc = .7 + Math.min(.9, sp / 22), fr = (bossHit || fudHit || critHit) ? .6 : 1, k = LOOK_SENS() * lookMul * acc * fr * mul; look(dx * k, dy * k); }
 
 // ---------------- controls: touch (left joystick, right drag-look, buttons) ----------------
 const joy = { id: null, ox: 0, oy: 0, active: false, mag: 0, R: 64, dead: 0.18 };
 const lookT = { id: null, x: 0, y: 0, moved: false };
 let lookSlow = false;
-const LOOK_SENS = () => lookSlow ? 0.0020 : 0.0032; // was 0.0058; slower default for iPhone thumbs
+const LOOK_SENS = () => lookSlow ? 0.0026 : 0.0042; // was 0.0058; slower default for iPhone thumbs
 const TIP_KEY = "boss_sandbox_tip_v2";
 function overUI(x, y) {
   // Don't start look/joystick on HUD buttons, palette, tip, or pause.
@@ -554,7 +565,7 @@ if (IS_TOUCH) {
         const dx = t.clientX - lookT.x, dy = t.clientY - lookT.y;
         if (!lookT.moved && Math.hypot(dx, dy) < 4) continue; // tiny wiggle ignore
         lookT.moved = true;
-        look(dx * LOOK_SENS(), dy * LOOK_SENS());
+        touchLook(dx, dy);
         lookT.x = t.clientX; lookT.y = t.clientY;
       }
     }
@@ -575,7 +586,7 @@ if (IS_TOUCH) {
   };
   // MINE doubles as a look pad: slide your thumb while holding to aim and dig at the same time.
   const mineLook = { on: false, x: 0, y: 0, moved: 0 };
-  $("bMine").addEventListener("pointermove", e => { if (!mineLook.on) return; const dx = e.clientX - mineLook.x, dy = e.clientY - mineLook.y; mineLook.x = e.clientX; mineLook.y = e.clientY; mineLook.moved += Math.abs(dx) + Math.abs(dy); look(dx * LOOK_SENS() * 1.15, dy * LOOK_SENS() * 1.15); });
+  $("bMine").addEventListener("pointermove", e => { if (!mineLook.on) return; const dx = e.clientX - mineLook.x, dy = e.clientY - mineLook.y; mineLook.x = e.clientX; mineLook.y = e.clientY; mineLook.moved += Math.abs(dx) + Math.abs(dy); touchLook(dx, dy, 1.15); });
   hold("bMine", e => { input.mine = true; mineDownAt = performance.now(); mineGrace = 0.28; mineLook.on = true; mineLook.x = e.clientX; mineLook.y = e.clientY; mineLook.moved = 0; },
     () => { const held = performance.now() - mineDownAt; input.mine = false; mineLook.on = false;
       if (held < 220 && mineLook.moved < 12) trySoftTapMine(); // short tap = soft-block one-shot
@@ -589,7 +600,7 @@ if (IS_TOUCH) {
 }
 $("pauseBtn").addEventListener("click", () => { if (running) pause(); else startGame(); });
 $("playBtn").addEventListener("click", startGame);
-$("resetBtn").addEventListener("click", () => { if (!confirm("Start a fresh world? Your builds, upgrades, quests and SOL shards on this device will be cleared.")) return; try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {} seed = (Math.random() * 1e9) | 0; edits = {}; shards = 0; Object.assign(upg, { drill: 1, boots: 0, shield: 0, hp: 0 }); for (const k in stats) stats[k] = 0; Qi = 0; qStart(); if (boss.on) bossEnd(false, true); P.hp = maxHp(); updHP(); generate(seed); buildAll(); respawn(); updShards(); save(); });
+$("resetBtn").addEventListener("click", () => { if (!confirm("Start a fresh world? Your builds, upgrades, quests and SOL shards on this device will be cleared.")) return; try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {} seed = (Math.random() * 1e9) | 0; edits = {}; shards = 0; Object.assign(upg, { drill: 1, boots: 0, shield: 0, hp: 0 }); for (const k in stats) stats[k] = 0; Qi = 0; qStart(); if (boss.on) bossEnd(false, true); daily.key = ""; introDone = false; met.crater = null; P.hp = maxHp(); updHP(); generate(seed); buildAll(); respawn(); updShards(); save(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden) { save(); if (running && IS_TOUCH) pause(); } });
 window.addEventListener("pagehide", save);
 
@@ -616,7 +627,7 @@ function updSky(dt) {
   sun.position.set(P.x + skyU.uSun.value.x * 50, P.y + Math.abs(skyU.uSun.value.y) * 50 + 5, P.z + skyU.uSun.value.z * 50); sun.target.position.set(P.x, P.y, P.z);
   sun.color.copy(day > .2 ? C(0xffe0f0) : C(0x8a9aff));
   blockMat.emissiveIntensity = .55 + (1 - day) * .65;
-  lamp.intensity += (Math.max(lampT * 6, (1 - day) * 2.2) - lamp.intensity) * Math.min(1, dt * 3 + .02);
+  lamp.intensity += (Math.max(lampT * 9, (1 - day) * 2.6) - lamp.intensity) * Math.min(1, dt * 3 + .02);
   const hrs = Math.floor(tod * 24), mins = Math.floor((tod * 24 - hrs) * 60); $("clock").textContent = `${day > .5 ? "☀" : "☾"} ${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
   return 1 - day;
 }
@@ -634,6 +645,7 @@ function avatar(name, skin) { const g = new THREE.Group(); const col = SKIN_COL[
 function mpConnect(url) {
   mp.on = true; const name = (Q.get("name") || "anon").replace(/[^\w-]/g, "").slice(0, 14) || "anon", skin = Q.get("skin") || "default";
   const ws = new WebSocket(url); mp.ws = ws; $("badge").innerHTML = "<b>$BOSS SANDBOX</b> · LOCAL MP TEST<br><span>connecting…</span>";
+  $("labBtn").style.display = "none"; $("quest").style.display = "none"; $("shotBtn").style.display = "none";
   ws.onopen = () => ws.send(JSON.stringify({ t: "hello", name, skin }));
   ws.onmessage = ev => { const m = JSON.parse(ev.data);
     if (m.t === "welcome") { mp.id = m.id; seed = m.seed; edits = {}; generate(seed); for (const [i, id] of m.edits) world[i] = id; buildAll(); respawn(); for (const p of m.players) mp.others.set(p.id, { g: avatar(p.name, p.skin), p }); $("badge").innerHTML = `<b>$BOSS SANDBOX</b> · LOCAL MP TEST<br><span>${name} · ${m.players.length + 1} online</span>`; }
@@ -670,7 +682,9 @@ function costOf(u) { return u.cst ? u.cst() : u.cost; }
 function renderLab() { const L = $("labList"); L.innerHTML = "";
   for (const u of UPG) { const have = u.have(), can = u.can(), c = costOf(u), d = document.createElement("div"); d.className = "upg" + (have ? " own" : !can ? " lock" : shards >= c ? " ok" : "");
     d.innerHTML = `<div><b>${u.name}</b><span>${u.desc}</span></div><button type="button" data-id="${u.id}">${have ? "OWNED" : !can ? (u.need || "LOCKED") : "◆" + c}</button>`; L.appendChild(d); }
-  const sb = $("summonBtn"); sb.disabled = boss.on || upg.drill < 2; sb.textContent = boss.on ? "THE RUG PULLER IS HERE" : upg.drill < 2 ? "SUMMON BOSS · needs Drill MK II" : `SUMMON THE RUG PULLER${stats.kills ? " · LV " + (stats.kills + 1) : ""}`;
+  const sb = $("summonBtn"), sk = $("summonBtn2"), lv = stats.kills ? " · LV " + (stats.kills + 1) : ""; sb.disabled = boss.on || upg.drill < 2; sk.disabled = boss.on || stats.kills < 1;
+  sb.textContent = boss.on ? BOSSES[boss.kind].name + " IS HERE" : upg.drill < 2 ? "SUMMON BOSS · needs Drill MK II" : "SUMMON THE RUG PULLER" + lv; sk.textContent = stats.kills < 1 ? "THE FUD KING · bust the Rug Puller first" : "SUMMON THE FUD KING" + lv;
+  $("dailyL").textContent = dailyLine();
   $("labShards").textContent = shards; $("labStats").textContent = `Tiles mined ${stats.mined} · Veins ${stats.veins} · Bosses busted ${stats.kills}`; }
 function buyUpg(id) { const u = UPG.find(q => q.id === id); if (!u || u.have() || !u.can()) return false; const c = costOf(u);
   if (shards < c) { pop(`NEED ◆${c}`, "#ff6a8a"); sfx.hurt(); return false; } shards -= c; u.buy(); updShards(); sfx.buy(); buzz(20); banner(u.name, "UNLOCKED"); renderLab(); save(); qTick(); return true; }
@@ -678,8 +692,9 @@ function openLab() { labOpen = true; input.mine = false; input.f = input.s = 0; 
 function closeLab(quiet) { if (!labOpen) return; labOpen = false; $("lab").classList.remove("show"); if (!quiet && !IS_TOUCH && running && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
 $("labList").addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if (b) buyUpg(b.dataset.id); });
 $("labClose").addEventListener("click", () => closeLab());
-$("labBtn").addEventListener("click", e => { e.stopPropagation(); if (!running) return; labOpen ? closeLab() : openLab(); });
-$("summonBtn").addEventListener("click", () => { if (summonBoss()) closeLab(); });
+$("labBtn").addEventListener("click", e => { e.stopPropagation(); if (!running || mp.on) return; labOpen ? closeLab() : openLab(); });
+$("summonBtn").addEventListener("click", () => { if (summonBoss("rug")) closeLab(); });
+$("summonBtn2").addEventListener("click", () => { if (summonBoss("king")) closeLab(); });
 $("sndBtn").addEventListener("click", () => { sndOn = !sndOn; initAudio(); updSetBtns(); save(); });
 $("musBtn").addEventListener("click", () => { musOn = !musOn; initAudio(); updSetBtns(); save(); });
 function syncLookBtn() { const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }
@@ -704,11 +719,12 @@ function qDef(i) { if (i < QUESTS.length) return QUESTS[i]; const j = i - QUESTS
     { t: "Hit a ×10 combo", h: "Mine tiles fast, no pauses", k: "combos", n: 1, r: 8 * lv }, { t: `Bust THE RUG PULLER (LV ${stats.kills + 1})`, h: "It gets tougher every time", k: "kills", n: 1, r: 30 + 10 * lv }][j % 4]; }
 function qVal(q) { const v = q.abs ? (q.k === "drill" ? upg.drill : upg[q.k] ? 1 : 0) : stats[q.k] - (qBase[q.k] || 0); return Math.max(0, Math.min(q.n, v)); }
 function qStart() { qBase = {}; for (const k in stats) qBase[k] = stats[k]; updQuest(); }
-function qTick() { const q = qDef(Qi); if (qVal(q) >= q.n) { shards += q.r; updShards(); banner("QUEST COMPLETE", `${q.t} · ◆+${q.r}`); sfx.quest(); buzz(40); burst(P.x, P.y + 1.2, P.z, [0xffd24a, 0x14f195, 0xff4fd8], 40, 5); Qi++; qStart(); save(); } else updQuest(); }
+function qTick() { dailyTick(); const q = qDef(Qi); if (qVal(q) >= q.n) { shards += q.r; updShards(); banner("QUEST COMPLETE", `${q.t} · ◆+${q.r}`); sfx.quest(); buzz(40); burst(P.x, P.y + 1.2, P.z, [0xffd24a, 0x14f195, 0xff4fd8], 40, 5); Qi++; qStart(); save(); } else updQuest(); }
 let lastQ = "";
 function updQuest() { const q = qDef(Qi), v = qVal(q), key = Qi + ":" + v; if (key === lastQ) return; lastQ = key;
-  $("qN").textContent = Qi < QUESTS.length ? `QUEST ${Qi + 1}/${QUESTS.length}` : "BONUS QUEST"; $("qT").textContent = q.t; $("qH").textContent = q.h; $("qR").textContent = `◆+${q.r}`;
-  $("qBar").style.width = (100 * v / q.n).toFixed(0) + "%"; $("qC").textContent = q.n > 1 ? `${v}/${q.n}` : ""; }
+  $("qN").textContent = (Qi < QUESTS.length ? `QUEST ${Qi + 1}/${QUESTS.length}` : "BONUS QUEST") + (q.n > 1 ? ` · ${v}/${q.n}` : ""); $("qT").textContent = q.t; $("qH").textContent = q.h; $("qR").textContent = `◆+${q.r}`;
+  $("qBar").style.width = (100 * v / q.n).toFixed(0) + "%"; $("qC").textContent = ""; }
+let lastD = ""; function updDaily() { const t = dailyLine(); if (t !== lastD) { lastD = t; $("qD").textContent = t; } }
 
 // ---------------- banner, HP ----------------
 let banT = null;
@@ -749,7 +765,7 @@ function comboHit() { comboN++; comboT = 2.2; if (comboN >= 3) { const c = $("co
 function updCombo(dt) { if (comboT > 0) { comboT -= dt; if (comboT <= 0) { comboN = 0; $("combo").classList.remove("show"); } } }
 
 // ---------------- THE RUG PULLER (boss) ----------------
-const boss = { on: false, g: null, eye: null, rug: null, hp: 0, max: 0, t: 0, shotT: 2, phase: 1, shots: [], flash: 0 };
+const boss = { kind: "rug", on: false, g: null, eye: null, rug: null, hp: 0, max: 0, t: 0, shotT: 2, phase: 1, shots: [], flash: 0 };
 const rugTex = (() => { const c = document.createElement("canvas"); c.width = 256; c.height = 168; const g = c.getContext("2d");
   const gr = g.createLinearGradient(0, 0, 0, 168); gr.addColorStop(0, "#3a0838"); gr.addColorStop(.5, "#6a1050"); gr.addColorStop(1, "#2a0628"); g.fillStyle = gr; g.fillRect(0, 12, 256, 144);
   g.strokeStyle = "#ffd24a"; g.lineWidth = 4; g.strokeRect(10, 20, 236, 128); g.lineWidth = 2; g.strokeStyle = "#ff4fd8";
@@ -758,48 +774,66 @@ const rugTex = (() => { const c = document.createElement("canvas"); c.width = 25
   g.font = "900 22px Orbitron,Verdana"; g.textAlign = "center"; g.fillStyle = "#ffd24a"; g.fillText("RUG", 50, 92); g.fillText("PULL", 206, 92);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const shotTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d"); const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, "#fff"); r.addColorStop(.25, "#ff6a8a"); r.addColorStop(.6, "rgba(255,50,80,.5)"); r.addColorStop(1, "rgba(255,50,80,0)"); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
-function makeBoss() { const g = new THREE.Group();
-  const rug = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 2.9, 16, 10), new THREE.MeshBasicMaterial({ map: rugTex, side: THREE.DoubleSide, transparent: true }));
-  rug.userData.base = rug.geometry.attributes.position.array.slice(); g.add(rug);
-  const eye = new THREE.Mesh(new THREE.SphereGeometry(.55, 20, 14), new THREE.MeshBasicMaterial({ color: 0xff3250 })); eye.position.z = .35; g.add(eye);
-  const pupil = new THREE.Mesh(new THREE.SphereGeometry(.24, 12, 10), new THREE.MeshBasicMaterial({ color: 0x110010 })); pupil.position.z = .42; eye.add(pupil);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(.8, .07, 8, 32), new THREE.MeshBasicMaterial({ color: 0xffd24a })); ring.position.z = .3; g.add(ring);
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: shotTex, color: 0xff4fd8, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.set(6, 6, 1); halo.position.z = -.2; g.add(halo);
-  boss.g = g; boss.eye = eye; boss.rug = rug; boss.ring = ring; }
-function summonBoss() { if (boss.on || upg.drill < 2) return false; if (!boss.g) makeBoss(); boss.on = true; boss.phase = 1; boss.t = 0; boss.shotT = 3.5; boss.max = Math.round(200 * (1 + .6 * stats.kills)); boss.hp = boss.max;
+const BOSSES = { rug: { name: "THE RUG PULLER", hp: 200, tag: "Blast its eye with your drill!" }, king: { name: "THE FUD KING", hp: 220, tag: "Zap the crowned cloud! It splits into minions" } };
+const kingTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d"); g.translate(128, 140); const r = 80;
+  g.fillStyle = "#24163c"; g.strokeStyle = "#b46aff"; g.lineWidth = 7; g.shadowColor = "#9945ff"; g.shadowBlur = 30;
+  g.beginPath(); g.arc(-r * .55, 10, r * .55, 0, 7); g.arc(0, -r * .25, r * .7, 0, 7); g.arc(r * .6, 12, r * .5, 0, 7); g.arc(0, r * .32, r * .62, 0, 7); g.fill(); g.shadowBlur = 0; g.stroke();
+  g.fillStyle = "#ffd24a"; g.beginPath(); g.moveTo(-46, -70); g.lineTo(-46, -112); g.lineTo(-24, -88); g.lineTo(0, -122); g.lineTo(24, -88); g.lineTo(46, -112); g.lineTo(46, -70); g.closePath(); g.fill();
+  g.fillStyle = "#ff3250"; for (const x of [-26, 0, 26]) { g.beginPath(); g.arc(x, -80, 5, 0, 7); g.fill(); }
+  g.strokeStyle = "#ff3250"; g.lineWidth = 7; g.beginPath(); g.moveTo(-44, -20); g.lineTo(-14, -6); g.moveTo(44, -20); g.lineTo(14, -6); g.stroke();
+  g.fillStyle = "#ff3250"; g.beginPath(); g.arc(-26, 6, 9, 0, 7); g.arc(26, 6, 9, 0, 7); g.fill(); g.strokeStyle = "#ffd0d8"; g.lineWidth = 5; g.beginPath(); g.arc(0, 50, 24, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+  g.font = "900 26px Orbitron,Verdana"; g.textAlign = "center"; g.fillStyle = "#e8d0ff"; g.fillText("FUD KING", 0, 96); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const shotMat = new THREE.SpriteMaterial({ map: null, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+const kingShotMat = new THREE.SpriteMaterial({ map: null, color: 0xb46aff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+const bossGroups = {};
+function makeBoss(kind) { const g = new THREE.Group(); let eye, ring, rug = null;
+  if (kind === "rug") { rug = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 2.9, 16, 10), new THREE.MeshBasicMaterial({ map: rugTex, side: THREE.DoubleSide, transparent: true }));
+    rug.userData.base = rug.geometry.attributes.position.array.slice(); g.add(rug);
+    eye = new THREE.Mesh(new THREE.SphereGeometry(.55, 20, 14), new THREE.MeshBasicMaterial({ color: 0xff3250 })); eye.position.z = .35; g.add(eye);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(.24, 12, 10), new THREE.MeshBasicMaterial({ color: 0x110010 })); pupil.position.z = .42; eye.add(pupil);
+    ring = new THREE.Mesh(new THREE.TorusGeometry(.8, .07, 8, 32), new THREE.MeshBasicMaterial({ color: 0xffd24a })); ring.position.z = .3; g.add(ring); }
+  else { const body = new THREE.Sprite(new THREE.SpriteMaterial({ map: kingTex, transparent: true })); body.scale.set(5.4, 5.4, 1); g.add(body); g.userData.body = body;
+    eye = new THREE.Mesh(new THREE.SphereGeometry(.4, 14, 10), new THREE.MeshBasicMaterial({ color: 0xb46aff, transparent: true, opacity: .0 })); eye.position.z = .2; g.add(eye);
+    ring = new THREE.Mesh(new THREE.TorusGeometry(2.4, .06, 6, 40), new THREE.MeshBasicMaterial({ color: 0xb46aff, transparent: true, opacity: .6 })); ring.rotation.x = Math.PI / 2; g.add(ring); }
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: shotTex, color: kind === "rug" ? 0xff4fd8 : 0x9945ff, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.set(6, 6, 1); halo.position.z = -.2; g.add(halo);
+  bossGroups[kind] = { g, eye, ring, rug }; }
+function summonBoss(kind = "rug") { if (boss.on || upg.drill < 2 || mp.on) return false; if (kind === "king" && stats.kills < 1) return false; if (!bossGroups[kind]) makeBoss(kind);
+  shotMat.map = shotTex; kingShotMat.map = shotTex; const bg = bossGroups[kind]; boss.kind = kind; boss.g = bg.g; boss.eye = bg.eye; boss.ring = bg.ring; boss.rug = bg.rug;
+  boss.on = true; boss.phase = 1; boss.t = 0; boss.shotT = 3.5; boss.max = Math.round(BOSSES[kind].hp * (1 + .6 * stats.kills)); boss.hp = boss.max;
   boss.g.position.set(P.x + Math.sin(-P.yaw) * 14, P.y + 14, P.z - Math.cos(P.yaw) * 14); scene.add(boss.g); $("bossbar").classList.add("show"); updBossBar();
-  banner("THE RUG PULLER", "Blast its eye with your drill!"); sfx.roar(); trauma = .8; buzz(120); return true; }
-function updBossBar() { $("bossFill").style.width = (100 * Math.max(0, boss.hp) / boss.max).toFixed(1) + "%"; $("bossLv").textContent = `THE RUG PULLER · LV ${stats.kills + 1}`; }
+  banner(BOSSES[kind].name, BOSSES[kind].tag); sfx.roar(); trauma = .8; buzz(120); return true; }
+function updBossBar() { $("bossFill").style.width = (100 * Math.max(0, boss.hp) / boss.max).toFixed(1) + "%"; $("bossLv").textContent = `${BOSSES[boss.kind].name} · LV ${stats.kills + 1}`; }
 function bossDamage(n) { if (!boss.on) return; boss.hp -= n; boss.flash = .08; updBossBar(); if (Math.random() < .25) { const p = boss.eye.getWorldPosition(tmpV); burst(p.x, p.y, p.z, [0xffd24a, 0xff4fd8, 0xffffff], 2, 5); sfx.bhit(); } trauma = Math.max(trauma, .12);
-  if (boss.phase === 1 && boss.hp < boss.max / 2) { boss.phase = 2; banner("IT'S PULLING THE RUG!", "Phase 2: FUD minions incoming"); sfx.roar(); trauma = .6; fudTimer = 0; }
+  if (boss.phase === 1 && boss.hp < boss.max / 2) { boss.phase = 2; banner(boss.kind === "king" ? "THE KING IS SPLITTING!" : "IT'S PULLING THE RUG!", "Phase 2: FUD minions incoming"); sfx.roar(); trauma = .6; fudTimer = 0; }
   if (boss.hp <= 0) bossEnd(true); }
 function bossEnd(won, silent) { if (!boss.on) return; boss.on = false; const p = boss.g.position.clone(); scene.remove(boss.g); $("bossbar").classList.remove("show");
-  for (const s of boss.shots) scene.remove(s.s); boss.shots.length = 0;
+  for (const s of boss.shots) scene.remove(s.s); boss.shots.length = 0; stats.lastBoss = boss.kind;
   if (won) { stats.kills++; const prize = 40 + 10 * stats.kills; for (let i = 0; i < 6; i++) setTimeout(() => { burst(p.x + (Math.random() - .5) * 3, p.y + (Math.random() - .5) * 2, p.z + (Math.random() - .5) * 3, [0xffd24a, 0xff4fd8, 0x14f195, 0xffffff], IS_TOUCH ? 30 : 60, 8); debris(p.x, p.y, p.z, [0xff4fd8, 0xffd24a, 0x6a1050][i % 3], 6); trauma = 1; }, i * 120);
-    spawnOrbs(p.x, p.y, p.z, prize, 0xffd24a); banner("RUG BUSTED!", `◆+${prize} SOL shards · next one is tougher`); sfx.win(); buzz(200); save(); }
+    spawnOrbs(p.x, p.y, p.z, prize, 0xffd24a); banner(boss.kind === "king" ? "KING DETHRONED!" : "RUG BUSTED!", `◆+${prize} SOL shards · next one is tougher`); sfx.win(); buzz(200); save(); }
   else if (!silent) banner("IT GOT AWAY…", "Summon it again from the ⚡ LAB"); }
 function updBoss(dt, time) { if (!boss.on) return; const g = boss.g; boss.t += dt; const a = boss.t * .35;
   let tx = P.x + Math.cos(a) * 8, tz = P.z + Math.sin(a) * 8; tx = Math.max(2, Math.min(SX - 2, tx)); tz = Math.max(2, Math.min(SZ - 2, tz));
   const gy = Math.max(topH[Math.floor(tx) + Math.floor(tz) * SX] + 4, P.y + 4 + Math.sin(boss.t * .8) * 1.5);
   const k = Math.min(1, dt * 1.3); g.position.x += (tx - g.position.x) * k; g.position.y += (gy - g.position.y) * k; g.position.z += (tz - g.position.z) * k;
   g.lookAt(P.x, P.y + P.eye, P.z); boss.ring.rotation.z += dt * (boss.phase === 2 ? 5 : 2);
-  const pa = boss.rug.geometry.attributes.position, b = boss.rug.userData.base; for (let i = 0; i < pa.count; i++) { const x = b[i * 3], y = b[i * 3 + 1]; pa.array[i * 3 + 2] = Math.sin(x * 1.5 + boss.t * 4) * .28 + Math.sin(y * 2 + boss.t * 3) * .12 - Math.abs(x) * .1; } pa.needsUpdate = true;
-  boss.flash -= dt; boss.eye.material.color.setHex(boss.flash > 0 ? 0xffffff : boss.phase === 2 ? 0xff8a00 : 0xff3250); boss.eye.scale.setScalar(1 + Math.sin(time * 6) * .06 + (boss.flash > 0 ? .15 : 0));
-  boss.shotT -= dt; if (boss.shotT <= 0) { boss.shotT = boss.phase === 2 ? 1.9 : 2.8; const n = boss.phase === 2 ? 3 : 1, o = boss.eye.getWorldPosition(new THREE.Vector3());
-    for (let i = 0; i < n; i++) { const d = new THREE.Vector3(P.x - o.x, P.y + 1.2 - o.y, P.z - o.z).normalize(); d.applyAxisAngle(new THREE.Vector3(0, 1, 0), (i - (n - 1) / 2) * .28);
-      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: shotTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); s.scale.set(.9, .9, 1); s.position.copy(o); scene.add(s); boss.shots.push({ s, v: d.multiplyScalar(boss.phase === 2 ? 7 : 5.5), l: 5 }); } sfx.bshot(); }
+  if (boss.kind === "king") { const bd = g.userData.body; bd.material.rotation = Math.sin(boss.t * 1.3) * .12; const sc = 5.4 * (1 + Math.sin(boss.t * 2.4) * .05) * (boss.flash > 0 ? 1.08 : 1); bd.scale.set(sc, sc, 1); bd.material.color.setHex(boss.flash > 0 ? 0xffffff : boss.phase === 2 ? 0xffb0ff : 0xffffff); }
+  else { const pa = boss.rug.geometry.attributes.position, b = boss.rug.userData.base; for (let i = 0; i < pa.count; i++) { const x = b[i * 3], y = b[i * 3 + 1]; pa.array[i * 3 + 2] = Math.sin(x * 1.5 + boss.t * 4) * .28 + Math.sin(y * 2 + boss.t * 3) * .12 - Math.abs(x) * .1; } pa.needsUpdate = true; }
+  boss.flash -= dt; if (boss.kind === "rug") boss.eye.material.color.setHex(boss.flash > 0 ? 0xffffff : boss.phase === 2 ? 0xff8a00 : 0xff3250); boss.eye.scale.setScalar(1 + Math.sin(time * 6) * .06 + (boss.flash > 0 ? .15 : 0));
+  boss.shotT -= dt; if (boss.shotT <= 0) { const K = boss.kind === "king"; boss.shotT = K ? (boss.phase === 2 ? 2.8 : 3.4) : (boss.phase === 2 ? 1.9 : 2.8); const n = K ? (boss.phase === 2 ? 7 : 5) : (boss.phase === 2 ? 3 : 1), o = boss.eye.getWorldPosition(new THREE.Vector3());
+    for (let i = 0; i < n; i++) { const d = new THREE.Vector3(P.x - o.x, P.y + 1.2 - o.y, P.z - o.z).normalize(); d.applyAxisAngle(new THREE.Vector3(0, 1, 0), (i - (n - 1) / 2) * (K ? .22 : .28));
+      const s = new THREE.Sprite(K ? kingShotMat : shotMat); s.scale.set(K ? 1.1 : .9, K ? 1.1 : .9, 1); s.position.copy(o); scene.add(s); boss.shots.push({ s, v: d.multiplyScalar(K ? (boss.phase === 2 ? 5 : 4.2) : (boss.phase === 2 ? 7 : 5.5)), l: 5 }); } sfx.bshot(); }
   for (let i = boss.shots.length - 1; i >= 0; i--) { const q = boss.shots[i], s = q.s; q.l -= dt; s.position.addScaledVector(q.v, dt);
     const dx = P.x - s.position.x, dy = P.y + 1 - s.position.y, dz = P.z - s.position.z;
-    if (dx * dx + dy * dy + dz * dz < .55) { scene.remove(s); boss.shots.splice(i, 1); P.vx -= q.v.x * .8; P.vz -= q.v.z * .8; P.vy = 4; const dm = boss.phase === 2 ? 2 : 1; pop(`RUGGED! −${dm}`, "#ff6a8a"); hurt(dm); if (!boss.on) return; continue; }
+    if (dx * dx + dy * dy + dz * dz < .55) { scene.remove(s); boss.shots.splice(i, 1); P.vx -= q.v.x * .8; P.vz -= q.v.z * .8; P.vy = 4; const dm = boss.phase === 2 && boss.kind === "rug" ? 2 : 1; pop(`RUGGED! −${dm}`, "#ff6a8a"); hurt(dm); if (!boss.on) return; continue; }
     if (q.l <= 0 || get(Math.floor(s.position.x), Math.floor(s.position.y), Math.floor(s.position.z))) { burst(s.position.x, s.position.y, s.position.z, [0xff3250, 0xff6a8a], 8, 3); scene.remove(s); boss.shots.splice(i, 1); } }
   if (Math.hypot(g.position.x - P.x, g.position.z - P.z) > 45) bossEnd(false); }
 
 // ---------------- ore scanner: points the way to what the current quest needs ----------------
 const SCAN_IDS = { veins: [8, 9, 10, 18], prisms: [9], golds: [18], cores: [10] };
 let scanT = 0, scanTgt = null;
-function updScan(dt) { scanT -= dt; const q = qDef(Qi), ids = SCAN_IDS[q.k], el = $("scan");
+function updScan(dt) { scanT -= dt; const q = qDef(Qi), el = $("scan"); let ids = SCAN_IDS[q.k]; if (met.crater && met.craterT > 0) ids = [9, 10];
   if (!ids || boss.on) { el.style.display = "none"; scanTgt = null; return; }
-  if (scanT <= 0) { scanT = 1; scanTgt = null; let best = 1e9; const px = Math.floor(P.x), py = Math.floor(P.y + 1), pz = Math.floor(P.z), R0 = 14;
+  if (scanT <= 0) { scanT = 1; scanTgt = null; let best = 1e9; const px = Math.floor(P.x), py = Math.floor(P.y + 1), pz = Math.floor(P.z), R0 = met.crater && met.craterT > 0 ? 22 : 14;
     for (let y = Math.max(1, py - R0); y <= Math.min(SY - 1, py + 6); y++) for (let z = Math.max(0, pz - R0); z <= Math.min(SZ - 1, pz + R0); z++) for (let x = Math.max(0, px - R0); x <= Math.min(SX - 1, px + R0); x++) {
       const id = world[idx(x, y, z)]; if (!id || !ids.includes(id)) continue; const d = (x - px) ** 2 + (y - py) ** 2 * 1.5 + (z - pz) ** 2; if (d < best) { best = d; scanTgt = [x + .5, y + .5, z + .5, id]; } } }
   if (!scanTgt) { el.style.display = "block"; el.className = "hud none"; $("scanTx").textContent = ids.includes(10) ? "SCANNER: DIG DEEPER" : "SCANNER: NOTHING NEAR, EXPLORE"; $("scanAr").style.transform = ""; return; }
@@ -814,17 +848,106 @@ let resT = 0, resN = 0, resLow = 0, resHigh = 0;
 function adaptRes(dt) { if (Q.has("dpr") || !running) return; resT += dt; resN++; if (resT < 2) return; const f = resN / resT; resT = 0; resN = 0; const pr = renderer.getPixelRatio(), cap = Math.min(window.devicePixelRatio || 1, DPR_CAP);
   if (f < 48) { resHigh = 0; if (++resLow >= 1 && pr > .75) { renderer.setPixelRatio(Math.max(.75, pr - .25)); resize(); } } else if (f > 58) { resLow = 0; if (++resHigh >= 4 && pr < cap) { renderer.setPixelRatio(Math.min(cap, pr + .25)); resize(); resHigh = 0; } } }
 
+// ---------------- first-minute: drop-in intro ----------------
+let introDone = false;
+function intro() { introDone = true; P.y = plaza.y + 26; P.vy = -2; P.pitch = -.35; banner("WELCOME TO THE $BOSS SANDBOX", "Dig, build, and bust the rug"); sfx.boost(); met.t = 28; save(); }
+let wasAir = false;
+function landCheck() { if (!P.ground) { if (P.vy < -14) wasAir = true; return; } if (wasAir) { wasAir = false; trauma = .7; buzz(60); burst(P.x, P.y + .1, P.z, [0x28dcff, 0xff4fd8, 0xffd24a, 0xffffff], IS_TOUCH ? 40 : 80, 7); sfx.brk(13); note(70, .5, "sine", .2, -40); } }
+
+// ---------------- SOL meteors: the wow moment (first one ~28s into a new game, then every few minutes) ----------------
+const met = { t: 9999, on: false, s: null, from: null, to: null, k: 0, crater: null, craterT: 0 };
+const metMat = new THREE.SpriteMaterial({ map: null, color: 0xfff2b0, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+function launchMeteor() { const a = P.yaw + (Math.random() - .5) * .9, d = 11 + Math.random() * 6; let x = Math.round(P.x - Math.sin(a) * d), z = Math.round(P.z - Math.cos(a) * d);
+  x = Math.max(4, Math.min(SX - 5, x)); z = Math.max(4, Math.min(SZ - 5, z)); if (Math.abs(x - plaza.x) < 8 && Math.abs(z - plaza.z) < 8) { x = Math.round(plaza.x + (x > plaza.x ? 9 : -9)); }
+  const y = topH[x + z * SX] + .5; metMat.map = shotTex; met.s = new THREE.Sprite(metMat); met.s.scale.set(3, 3, 1); scene.add(met.s);
+  met.to = new THREE.Vector3(x + .5, y, z + .5); met.from = met.to.clone().add(new THREE.Vector3(26, 46, -14)); met.k = 0; met.on = true;
+  banner("SOL METEOR INCOMING!", "Look up! ☄️"); noise(2.4, 800, .12, .5); note(900, 2.4, "sawtooth", .03, -800, 0, null, 2000); }
+function impactMeteor() { const c = met.to, cx = Math.floor(c.x), cy = Math.floor(c.y), cz = Math.floor(c.z), R = 2.7;
+  for (let y = cy - 3; y <= cy + 3; y++) for (let z = cz - 3; z <= cz + 3; z++) for (let x = cx - 3; x <= cx + 3; x++) { const d = Math.hypot(x - cx, (y - cy) * 1.2, z - cz); const id = get(x, y, z);
+    if (d < R && id && id !== 11 && y > 0) setBlock(x, y, z, 0); }
+  let ores = 0; for (let y = cy - 4; y <= cy; y++) for (let z = cz - 4; z <= cz + 4; z++) for (let x = cx - 4; x <= cx + 4; x++) { const d = Math.hypot(x - cx, (y - cy) * 1.2, z - cz), id = get(x, y, z);
+    if (d >= R && d < R + 1.3 && id && id !== 11 && !B[id].drop) { const r = Math.random(); if (r < .45) { setBlock(x, y, z, 9); ores++; } else if (r < .7) setBlock(x, y, z, 8); } }
+  const by = cy - 3; if (get(cx, by, cz) !== 11) setBlock(cx, by, cz, 10); else setBlock(cx, by + 1, cz, 10);
+  for (let i = 0; i < 4; i++) setTimeout(() => burst(c.x + (Math.random() - .5) * 3, c.y + Math.random() * 2, c.z + (Math.random() - .5) * 3, [0xfff2b0, 0x14f195, 0x9945ff, 0xffffff], IS_TOUCH ? 40 : 90, 10), i * 90);
+  debris(c.x, c.y + .5, c.z, 0x9945ff, 12); const dist = Math.hypot(c.x - P.x, c.z - P.z); trauma = Math.max(trauma, Math.max(.4, 1.2 - dist / 30)); buzz(150);
+  noise(1.6, 180, .5, .4); note(55, 1.4, "sine", .3, -25); scene.remove(met.s); met.s = null; met.on = false; met.crater = [cx, cy, cz]; met.craterT = 120; stats.meteors = (stats.meteors || 0) + 1;
+  met.t = 180 + Math.random() * 150; banner("METEOR LANDED!", "Mine the crater: SOL Prisms + a Core inside"); }
+function updMeteor(dt) { if (mp.on) return; if (met.craterT > 0) met.craterT -= dt;
+  if (!met.on) { met.t -= dt; if (met.t <= 0 && !boss.on) launchMeteor(); return; }
+  met.k += dt / 2.6; const k = Math.min(1, met.k), e = k * k; met.s.position.lerpVectors(met.from, met.to, e); met.s.material.rotation += dt * 4;
+  if (Math.random() < .9) burst(met.s.position.x, met.s.position.y, met.s.position.z, [0xfff2b0, 0xff4fd8, 0x9945ff], 3, 1.5);
+  if (k >= 1) impactMeteor(); }
+
+// ---------------- PAPER HANDS critters (daytime, harmless, flee; zap for shards) ----------------
+const paperTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 128; const g = c.getContext("2d");
+  g.fillStyle = "#f4f0ff"; g.strokeStyle = "#28dcff"; g.lineWidth = 4; g.beginPath(); g.moveTo(30, 18); g.lineTo(82, 18); g.lineTo(98, 34); g.lineTo(98, 104); g.lineTo(30, 104); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = "#c8c0e8"; g.beginPath(); g.moveTo(82, 18); g.lineTo(82, 34); g.lineTo(98, 34); g.fill(); g.fillStyle = "#3a2a6a"; g.beginPath(); g.arc(50, 54, 6, 0, 7); g.arc(78, 54, 6, 0, 7); g.fill();
+  g.strokeStyle = "#3a2a6a"; g.lineWidth = 3; g.beginPath(); g.arc(64, 82, 10, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
+  g.fillStyle = "#ffd0a0"; g.strokeStyle = "#ff4fd8"; g.lineWidth = 3; for (const x of [12, 116]) { g.beginPath(); g.ellipse(x, 66, 10, 13, 0, 0, 7); g.fill(); g.stroke(); }
+  g.font = "900 11px Orbitron,Verdana"; g.textAlign = "center"; g.fillStyle = "#9945ff"; g.fillText("PAPER", 64, 100); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const critMat = new THREE.SpriteMaterial({ map: paperTex, transparent: true }); const critters = []; let critT = 3;
+function spawnCritter(force) { const a = Math.random() * 6.28, d = force ? 6 : 10 + Math.random() * 10; const x = Math.floor(Math.max(2, Math.min(SX - 3, P.x + Math.cos(a) * d))), z = Math.floor(Math.max(2, Math.min(SZ - 3, P.z + Math.sin(a) * d)));
+  const y = topH[x + z * SX] + 1; if (y < 1 || y > SY - 3) return; const s = new THREE.Sprite(critMat); s.scale.set(.9, .9, 1); s.position.set(x + .5, y + .45, z + .5); scene.add(s);
+  critters.push({ s, hp: .35, vy: 0, dir: Math.random() * 6.28, t: 0, hopT: Math.random() }); }
+function zapCritter(c) { const p = c.s.position; burst(p.x, p.y, p.z, [0xf4f0ff, 0x28dcff, 0xff4fd8], IS_TOUCH ? 24 : 50, 5); scene.remove(c.s); critters.splice(critters.indexOf(c), 1);
+  spawnOrbs(p.x, p.y, p.z, 2, 0x28dcff); stats.paper = (stats.paper || 0) + 1; pop("PAPER HANDS SOLD ◆+2", "#28dcff"); sfx.zap(); trauma = Math.max(trauma, .2); }
+function updCritters(dt, night) { if (mp.on || Q.has("nocrit")) return; critT -= dt; if (night < .5 && critters.length < 3 && critT <= 0) { spawnCritter(); critT = 7 + Math.random() * 6; }
+  for (let i = critters.length - 1; i >= 0; i--) { const c = critters[i], p = c.s.position; c.t += dt; const dx = p.x - P.x, dz = p.z - P.z, d = Math.hypot(dx, dz);
+    if (d > 40 || (night > .7 && Math.random() < dt * .3)) { scene.remove(c.s); critters.splice(i, 1); continue; }
+    let sp = 1.2; if (d < 4.5) { c.dir = Math.atan2(dz, dx) + Math.sin(c.t * 3) * .7; sp = 2.6; } else if (Math.random() < dt * .4) c.dir += (Math.random() - .5) * 2;
+    const nx = p.x + Math.cos(c.dir) * sp * dt, nz = p.z + Math.sin(c.dir) * sp * dt, gx = Math.floor(nx), gz = Math.floor(nz);
+    if (gx < 1 || gz < 1 || gx >= SX - 1 || gz >= SZ - 1) { c.dir += Math.PI; continue; }
+    const gy = topH[gx + gz * SX] + 1; if (gy - (p.y - .45) <= 1.2) { p.x = nx; p.z = nz; } else c.dir += 2;
+    c.hopT -= dt; if (c.hopT <= 0) { c.hopT = .45 + Math.random() * .3; c.vy = sp > 2 ? 4.5 : 3; } c.vy -= 14 * dt; p.y += c.vy * dt;
+    const floor = topH[Math.floor(p.x) + Math.floor(p.z) * SX] + 1.45; if (p.y < floor) { p.y = floor; c.vy = 0; } c.s.material.rotation = 0; c.s.scale.x = .9 * (c.vy > 0 ? .9 : 1.05); }
+}
+
+// ---------------- daily quest (local only, rotates by your device's date, streaks) ----------------
+const daily = { key: "", base: {}, done: false, streak: 0, last: "" };
+const DPOOL = [ { t: "Mine 3 BOSS Gold veins", k: "golds", n: 3 }, { t: "Zap 3 Paper Hands", k: "paper", n: 3 }, { t: "Bust a boss", k: "kills", n: 1 }, { t: "Mine 60 tiles", k: "mined", n: 60 },
+  { t: "Hit a ×10 combo twice", k: "combos", n: 2 }, { t: "Mine 2 SOL Prism veins", k: "prisms", n: 2 }, { t: "Zap 4 FUD clouds", k: "fud", n: 4 }, { t: "Build 25 pieces", k: "placed", n: 25 }, { t: "Mine 12 SOL veins", k: "veins", n: 12 } ];
+const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+function dailyDef() { let h = 0; for (const ch of daily.key) h = Math.imul(h ^ ch.charCodeAt(0), 2654435761) >>> 0; return DPOOL[h % DPOOL.length]; }
+function dailyEnsure() { const k = todayKey(); if (daily.key === k) return; daily.key = k; daily.done = false; daily.base = {}; for (const s in stats) daily.base[s] = stats[s] || 0; }
+function dailyVal() { const q = dailyDef(); return Math.max(0, Math.min(q.n, (stats[q.k] || 0) - (daily.base[q.k] || 0))); }
+function dailyReward() { return 20 + Math.min(6, daily.streak) * 5; }
+function dailyLine() { if (mp.on) return ""; dailyEnsure(); const q = dailyDef(); return daily.done ? `☀ DAILY DONE · streak ${daily.streak} · new one tomorrow` : `☀ DAILY: ${q.t} ${dailyVal()}/${q.n} · ◆+${dailyReward()}`; }
+function dailyTick() { if (mp.on) return; dailyEnsure(); if (!daily.done && dailyVal() >= dailyDef().n) { const y = new Date(Date.now() - 864e5), yk = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
+    daily.streak = daily.last === yk ? daily.streak + 1 : 1; daily.last = daily.key; const r = dailyReward(); daily.done = true; shards += r; updShards(); banner("DAILY COMPLETE!", `◆+${r} · streak ${daily.streak} 🔥`); sfx.quest(); save(); } updDaily(); }
+
+// ---------------- screenshot: saves a PNG on this device (never uploaded) ----------------
+let wantShot = false, lastShotInfo = null;
+function takeShot() { wantShot = false; try { const w = canvas.width, h = canvas.height, c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d"); g.drawImage(canvas, 0, 0);
+    const u = Math.max(1, w / 900); g.fillStyle = "rgba(8,6,24,.7)"; g.fillRect(0, h - 44 * u, w, 44 * u); g.font = `900 ${18 * u}px Orbitron,Verdana`; g.fillStyle = "#ffd24a"; g.textBaseline = "middle"; g.fillText("$BOSS SANDBOX", 14 * u, h - 22 * u);
+    g.font = `700 ${11 * u}px Orbitron,Verdana`; g.fillStyle = "#cfefff"; g.textAlign = "right"; g.fillText(`◆ ${shards} SOL shards (in-game only) · Drill MK ${["", "I", "II", "III", "IV"][upg.drill]} · ${stats.kills} bosses busted`, w - 14 * u, h - 22 * u);
+    const url = c.toDataURL("image/png"); lastShotInfo = { w, h, bytes: url.length }; const d = new Date(), name = `boss-sandbox-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}-${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}${String(d.getSeconds()).padStart(2, "0")}.png`;
+    if (!window.__SB_TEST) { const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+    const f = $("flash"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go"); noise(.08, 5000, .15, 1); note(1800, .05, "square", .03); pop(IS_TOUCH ? "📸 SAVED · check Downloads/Files" : "📸 SCREENSHOT SAVED", "#fff"); } catch (e) { pop("SCREENSHOT FAILED", "#ff6a8a"); } }
+$("shotBtn").addEventListener("click", e => { e.stopPropagation(); if (running) wantShot = true; });
+
+// ---------------- title screen: slow orbit cam behind the menu + stats ----------------
+let menuA = 0;
+function menuCam(dt) { menuA += dt * .06; }
+function menuStats() { const el = $("mStats"); if (!el) return; const any = stats.mined > 0 || shards > 0;
+  el.innerHTML = any ? `<div><b>◆ ${shards}</b>SOL shards</div><div><b>MK ${["", "I", "II", "III", "IV"][upg.drill]}</b>drill</div><div><b>${stats.kills}</b>bosses busted</div><div><b>${daily.streak || 0}🔥</b>daily streak</div>` : "";
+  $("playBtn").textContent = running || !any ? ($("playBtn").textContent === "RESUME" ? "RESUME" : "PLAY") : "CONTINUE"; $("dailyM").textContent = dailyLine(); $("lookV").textContent = Math.round(lookMul * 100) + "%"; }
+$("lookDn").addEventListener("click", () => { lookMul = Math.max(.4, +(lookMul - .1).toFixed(2)); menuStats(); save(); });
+$("lookUp").addEventListener("click", () => { lookMul = Math.min(2.2, +(lookMul + .1).toFixed(2)); menuStats(); save(); });
+$("howBtn").addEventListener("click", () => $("how").classList.toggle("open"));
+
 // ---------------- main loop ----------------
 let last = performance.now(), fpsN = 0, fpsT = 0, fps = 0, bob = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; const time = now / 1000;
   const night = updSky(running ? dt : 0);
-  if (running) { updPlayer(dt); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); }
+  if (running) { updPlayer(dt); landCheck(); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); updMeteor(dt, time); updCritters(dt, night); }
+  else menuCam(dt);
   updMP(dt); updParts(dt); updDebris(dt); audioTick(); adaptRes(dt);
   let n = 0; for (const ci of dirty) { buildChunk(ci); dirty.delete(ci); if (++n >= (IS_TOUCH ? 2 : 3)) break; }
   trauma = Math.max(0, trauma - dt * 1.8); const sh = trauma * trauma;
   camera.position.set(P.x + (Math.random() - .5) * sh * .25, P.y + P.eye + (Math.random() - .5) * sh * .25, P.z + (Math.random() - .5) * sh * .25); camera.rotation.set(P.pitch + (Math.random() - .5) * sh * .04, P.yaw + (Math.random() - .5) * sh * .04, (Math.random() - .5) * sh * .06);
+  if (!running) camera.rotation.set(-.1, P.yaw + menuA, 0);
   const spd = Math.hypot(P.vx, P.vz), fovT = baseFov + (spd > 5.5 ? 6 : 0); if (Math.abs(camera.fov - fovT) > .05) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   const moving = Math.hypot(P.vx, P.vz); bob += dt * moving * 2.2; drillKick = Math.max(0, drillKick - dt * 6);
   drill.position.set(drillBase.x + Math.cos(bob * .5) * .006 * Math.min(1, moving / 4), drillBase.y + Math.sin(bob) * .01 * Math.min(1, moving / 4) - drillKick * .025, drillBase.z + drillKick * .05);
@@ -832,7 +955,7 @@ function frame(now) {
   if (logoBoard) { logoBoard.rotation.y = Math.atan2(P.x - logoBoard.position.x, P.z - logoBoard.position.z); logoBoard.position.y = plaza.y + 4.4 + Math.sin(time * 1.2) * .12; }
   if (saveT > 0) { saveT -= dt; if (saveT <= 0) save(); }
   fpsN++; fpsT += dt; if (fpsT >= 1) { fps = fpsN / fpsT; fpsN = 0; fpsT = 0; }
-  renderer.render(scene, camera);
+  renderer.render(scene, camera); if (wantShot) takeShot();
 }
 
 // ---------------- boot ----------------
@@ -840,11 +963,11 @@ const saved = load();
 let migrated = false;
 if (saved && !saved.migr) { seed = saved.seed; edits = saved.edits || {}; shards = saved.shards | 0; sel = saved.sel | 0; tod = saved.tod ?? tod;
   if (saved.upg) Object.assign(upg, saved.upg); if (saved.stats) Object.assign(stats, saved.stats); Qi = saved.Qi | 0; qBase = saved.qBase || {}; P.hp = saved.hp || maxHp();
-  if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; } }
+  if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; lookMul = saved.set.look || 1; } if (saved.daily) Object.assign(daily, saved.daily); introDone = saved.intro !== false; if (introDone) met.t = 150 + Math.random() * 120; }
 else { seed = parseInt(Q.get("seed")) || 1337; if (saved && saved.migr) { shards = saved.shards; migrated = true; } qStart(); }
 generate(seed); applyEdits(); const tris = buildAll();
 respawn(); if (saved && saved.p) { [P.x, P.y, P.z, P.yaw, P.pitch] = saved.p; if (collides(P.x, P.y, P.z)) respawn(); }
-buildPalette(); updShards(); resize(); updQuest(); updHP(); updSetBtns(); syncLookBtn(); if (migrated) setTimeout(() => banner("BIGGER WORLD!", "Your SOL shards carried over to the new map"), 600);
+buildPalette(); updShards(); resize(); updQuest(); dailyEnsure(); updDaily(); menuStats(); updHP(); updSetBtns(); syncLookBtn(); if (migrated) setTimeout(() => banner("BIGGER WORLD!", "Your SOL shards carried over to the new map"), 600);
 // Phase-2 hook is for LOCAL testing only: only localhost servers are accepted.
 if (Q.get("mp")) { try { const u = new URL(Q.get("mp")); if (/^wss?:$/.test(u.protocol) && ["localhost", "127.0.0.1"].includes(u.hostname)) mpConnect(u.href); } catch (e) {} }
 $("load").remove();
@@ -854,4 +977,4 @@ requestAnimationFrame(frame);
 // test / debug hooks (harmless; used by automated checks)
 window.__SB = { P, input, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
   state: () => ({ x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, ground: P.ground, shards, sel, running, tris, fps: Math.round(fps), fuds: fuds.length, tod, mp: mp.on ? { id: mp.id, rejects: mp.rejects || 0, lastEmote: mp.lastEmote || null, others: [...mp.others.values()].map(o => ({ name: o.p.name, x: o.p.x, y: o.p.y, z: o.p.z })) } : null, info: renderer.info.render }),
-  select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, upg, stats, quest: () => ({ i: Qi, ...qDef(Qi), v: qVal(qDef(Qi)) }), boss: () => ({ on: boss.on, hp: boss.hp, max: boss.max, phase: boss.phase }), summon: () => summonBoss(), lookAtBoss: () => { if (!boss.on) return; const o = boss.g.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); }, bossDamage: n => bossDamage(n), openLab, closeLab, buy: id => buyUpg(id), hp: () => P.hp, biome: () => biomeName(P.x, P.z), give: n => { shards += n; updShards(); }, setTod: t => { tod = t; }, dpr: () => renderer.getPixelRatio(), combo: () => comboN, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };
+  select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, upg, stats, quest: () => ({ i: Qi, ...qDef(Qi), v: qVal(qDef(Qi)) }), boss: () => ({ on: boss.on, hp: boss.hp, max: boss.max, phase: boss.phase }), summon: k => summonBoss(k), daily: () => ({ ...daily, line: dailyLine() }), meteor: () => { met.t = 0; }, met: () => ({ on: met.on, crater: met.crater }), critters: () => critters.map(c => ({ x: c.s.position.x, y: c.s.position.y, z: c.s.position.z })), spawnCritter: () => spawnCritter(true), lookAtCrit: () => { const c = critters.slice().sort((a, b) => a.s.position.distanceTo(camera.position) - b.s.position.distanceTo(camera.position))[0]; if (!c) return false; const o = c.s.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return true; }, shot: () => { wantShot = true; }, lastShot: () => lastShotInfo, touchLook: (dx, dy) => touchLook(dx, dy), setLookMul: v => { lookMul = v; }, mem: () => ({ geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures, heap: performance.memory ? performance.memory.usedJSHeapSize : 0, scene: scene.children.length, orbs: orbs.length, fuds: fuds.length, shots: boss.shots.length, crit: critters.length }), aimState: () => ({ boss: bossHit, crit: !!critHit, fud: !!fudHit }), lookAtBoss: () => { if (!boss.on) return; const o = boss.g.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); }, bossDamage: n => bossDamage(n), openLab, closeLab, buy: id => buyUpg(id), hp: () => P.hp, biome: () => biomeName(P.x, P.z), give: n => { shards += n; updShards(); }, setTod: t => { tod = t; }, dpr: () => renderer.getPixelRatio(), combo: () => comboN, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };
