@@ -61,7 +61,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden;touch-actio
 #lookSlow{position:fixed;z-index:5;display:none;left:max(10px,env(safe-area-inset-left));bottom:calc(max(12px,env(safe-area-inset-bottom)) + 58px);min-width:86px;height:36px;border-radius:12px;border:2px solid rgba(255,210,74,.85);background:rgba(8,6,24,.82);color:#ffe9a8;font:900 10px Orbitron,sans-serif;letter-spacing:1px;touch-action:manipulation;padding:0 10px;box-shadow:0 0 10px rgba(255,210,74,.25)}
 #lookSlow.on{background:rgba(255,210,74,.28);box-shadow:0 0 12px rgba(255,210,74,.45)}
 /* portrait phone: compact top HUD, palette bottom-left away from buttons, keep play center clear */
-body.touch #badge{font-size:9px;padding:5px 8px;max-width:42vw}body.touch #badge b{font-size:11px}body.touch #badge span{font-size:8px;display:block}
+body.touch #badge{display:none;font-size:9px;padding:5px 8px;max-width:42vw}body.touch #badge b{font-size:11px}body.touch #badge span{font-size:8px;display:block}
 body.touch #shards{padding:5px 9px 4px;margin-right:50px}body.touch #shards .n{font-size:17px}body.touch #shards .l{font-size:9px}body.touch #shards .nv{font-size:7.5px;max-width:110px}
 body.touch #pauseBtn{width:44px;height:44px;font-size:13px}
 body.touch #clock{display:none}
@@ -81,6 +81,35 @@ body.touch #target{font-size:9px;top:calc(50% + 22px)}
   body.touch #lookSlow{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 6px)}
   body.touch #stickHint{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 70px)}
 }
+#labBtn{position:fixed;z-index:4;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 50px);width:44px;height:44px;border-radius:12px;border:2px solid rgba(255,210,74,.9);background:rgba(40,28,4,.75);color:#ffe9a8;font:900 18px Orbitron,sans-serif;touch-action:manipulation;box-shadow:0 0 14px rgba(255,210,74,.4)}
+#labBtn small{display:block;font-size:7px;letter-spacing:1px;margin-top:-2px}
+#quest{left:max(10px,env(safe-area-inset-left));top:calc(max(10px,env(safe-area-inset-top)) + 52px);width:min(250px,48vw);background:rgba(8,6,24,.66);border:1px solid rgba(255,210,74,.55);border-radius:12px;padding:7px 9px 8px;font-size:9px;letter-spacing:.5px}
+#quest .hd{display:flex;justify-content:space-between;color:var(--gold);font-weight:900;letter-spacing:1px}
+#qT{font-size:12px;font-weight:900;color:#fff;margin:3px 0 2px;line-height:1.2}#qH{opacity:.7;line-height:1.3}
+#quest .bar{height:5px;border-radius:4px;background:rgba(255,255,255,.12);margin-top:5px;overflow:hidden;position:relative}#qBar{height:100%;width:0;background:linear-gradient(90deg,#ffd24a,#14f195);transition:width .3s}
+#qC{position:absolute;right:9px;bottom:13px;font-size:9px;color:#14f195}
+#hp{left:50%;transform:translateX(-50%);top:calc(max(10px,env(safe-area-inset-top)) + 26px);display:flex;gap:3px}
+#hp i{width:9px;height:9px;border-radius:3px;background:rgba(255,255,255,.12);border:1px solid rgba(255,106,138,.5)}#hp i.on{background:linear-gradient(180deg,#ff8aa8,#ff3250);box-shadow:0 0 6px #ff3250}
+#hp.low i.on{animation:blink .5s infinite alternate}@keyframes blink{to{opacity:.35}}
+#bossbar{left:50%;transform:translateX(-50%);top:calc(max(10px,env(safe-area-inset-top)) + 44px);width:min(420px,54vw);display:none;text-align:center;font-size:10px;letter-spacing:2px;color:#ffb0d8;text-shadow:0 0 8px #ff4fd8}
+#bossbar.show{display:block}#bossbar .b{height:10px;border-radius:6px;border:1px solid #ff4fd8;background:rgba(40,0,30,.7);margin-top:3px;overflow:hidden}#bossFill{height:100%;background:linear-gradient(90deg,#ff3250,#ff4fd8,#ffd24a);transition:width .15s}
+#combo{right:max(14px,env(safe-area-inset-right));top:40%;font-size:20px;font-weight:900;color:#ff4fd8;text-shadow:0 0 12px #ff4fd8;opacity:0;transition:opacity .4s}#combo.show{opacity:1}#combo.hit{animation:cb .25s ease-out}@keyframes cb{from{transform:scale(1.5)}to{transform:scale(1)}}
+#banner{left:50%;top:24%;transform:translateX(-50%);text-align:center;opacity:0;width:90vw}#banner.show{animation:ban 2.6s ease-out forwards}
+#banner h2{margin:0;font-size:26px;letter-spacing:3px;background:linear-gradient(90deg,#ffd24a,#ff4fd8,#28dcff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px rgba(255,79,216,.7))}#banner p{margin:4px 0 0;font-size:11px;letter-spacing:1px;color:#fff;text-shadow:0 0 6px #000}
+@keyframes ban{0%{opacity:0;transform:translateX(-50%) scale(1.6)}10%{opacity:1;transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-14px)}}
+#biome{left:50%;top:62%;transform:translateX(-50%);font-size:11px;letter-spacing:4px;color:#cfefff;text-shadow:0 0 10px var(--cyan);opacity:0}#biome.show{animation:bio 3s ease-out forwards}@keyframes bio{0%{opacity:0}15%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
+#shards.bump .n{animation:cb .2s ease-out}
+#lab{position:fixed;inset:0;z-index:15;display:none;align-items:center;justify-content:center;background:rgba(5,6,15,.72);padding:12px;touch-action:auto}#lab.show{display:flex}
+#lab .card{max-width:440px;padding:14px;max-height:94vh;overflow:auto;touch-action:pan-y}#lab h3{margin:0 0 2px;letter-spacing:3px;color:var(--gold)}#lab .sub{font-size:10px;opacity:.75;margin-bottom:8px}
+.upg{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 9px;margin:5px 0;font-size:9.5px}
+.upg b{display:block;font-size:11.5px;color:#fff;margin-bottom:2px}.upg span{opacity:.75}.upg button{flex:0 0 auto;min-width:74px;padding:9px 8px;border-radius:9px;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#aaa;font:900 11px Orbitron,sans-serif;touch-action:manipulation}
+.upg.ok{border-color:rgba(20,241,149,.6)}.upg.ok button{border-color:var(--teal);color:#fff;background:rgba(20,241,149,.2)}.upg.own{opacity:.55}.upg.own button{color:var(--teal)}.upg.lock{opacity:.45}.upg.lock button{font-size:8px}
+#summonBtn{width:100%;margin:8px 0 4px;padding:12px;border-radius:12px;border:2px solid var(--pink);background:linear-gradient(180deg,rgba(255,79,216,.35),rgba(255,79,216,.08));color:#fff;font:900 12px Orbitron,sans-serif;letter-spacing:1.5px;touch-action:manipulation}#summonBtn:disabled{opacity:.45}
+#labStats{font-size:9px;opacity:.6;margin-top:6px}
+body.touch #quest{top:calc(max(10px,env(safe-area-inset-top)) + 18px);width:min(210px,52vw);padding:5px 8px 6px}body.touch #qT{font-size:10.5px}body.touch #qH{font-size:8.5px}
+body.touch #hp{left:max(10px,env(safe-area-inset-left));transform:none;top:max(8px,env(safe-area-inset-top))}body.touch #hp i{width:7px;height:7px}body.touch #bossbar{top:calc(max(10px,env(safe-area-inset-top)) + 112px);width:70vw}
+body.touch #banner h2{font-size:20px}body.touch #combo{font-size:16px;top:34%}
+@media (orientation:landscape){body.touch #quest{top:calc(max(6px,env(safe-area-inset-top)) + 18px);width:200px}body.touch #bossbar{top:calc(max(6px,env(safe-area-inset-top)) + 62px);width:40vw}}
 /* menu */
 #menu{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(60,20,110,.75),rgba(5,6,15,.94));padding:16px;overflow:auto}
 #menu.hide{display:none}
@@ -105,6 +134,15 @@ body.touch #target{font-size:9px;top:calc(50% + 22px)}
 <canvas id="game"></canvas>
 <div id="touch"></div>
 <div class="hud" id="hurt"></div>
+<div class="hud" id="hp"></div>
+<div class="hud" id="quest"><div class="hd"><span id="qN">QUEST</span><span id="qR"></span></div><div id="qT"></div><div id="qH"></div><div class="bar"><div id="qBar"></div></div><div id="qC"></div></div>
+<div class="hud" id="bossbar"><span id="bossLv">THE RUG PULLER</span><div class="b"><div id="bossFill"></div></div></div>
+<div class="hud" id="combo"></div>
+<div class="hud" id="banner"><h2></h2><p></p></div>
+<div class="hud" id="biome"></div>
+<button id="labBtn" aria-label="Upgrade lab">⚡<small>LAB</small></button>
+<div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
+<div id="labList"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
 <div class="hud" id="badge"><b>$BOSS SANDBOX</b> <span class="bt">BETA</span><br><span>first-person · practice only</span></div>
 <div class="hud" id="clock">--</div>
 <div class="hud" id="shards"><div class="n" id="shardN">0</div><div class="l">◆ SOL SHARDS</div><div class="nv">in-game items · no cash value</div></div>
@@ -127,10 +165,10 @@ body.touch #target{font-size:9px;top:calc(50% + 22px)}
   <div class="rows">
    <div><b>LEFT</b>drag to move</div>
    <div><b>RIGHT</b>drag to look</div>
-   <div><b>HOLD MINE</b>dig / zap FUD</div>
+   <div><b>HOLD MINE</b>dig · slide on it to aim</div>
    <div><b>BUILD</b>places a piece</div>
   </div>
-  <p style="margin:0 0 8px;font-size:10px;opacity:.75">Soft tiles mine with a quick tap. Use LOOK: SLOW if looking feels too fast.</p>
+  <p style="margin:0 0 8px;font-size:10px;opacity:.75">Soft tiles mine with a quick tap. Follow the gold QUEST card. ⚡ LAB = upgrades.</p>
   <button class="got" id="tipGot" type="button">GOT IT</button>
  </div>
 </div>
@@ -138,19 +176,20 @@ body.touch #target{font-size:9px;top:calc(50% + 22px)}
  <div class="card">
   <img src="../assets/logo.webp" alt="$BOSS">
   <h1>$BOSS SANDBOX</h1>
-  <div class="tag">FIRST-PERSON BETA · SINGLE-PLAYER · PRACTICE ONLY · NO RANKED SCORES</div>
-  <p>Explore a neon world, mine glowing <b style="color:#c69bff">SOL shard</b> veins with your <b style="color:#14f195">Rug-Buster</b> laser drill, and build with neon pieces. Watch out at night: <b style="color:#ff6a8a">FUD clouds</b> drift in. Zap them with the drill.</p>
+  <div class="tag">FIRST-PERSON BETA · SINGLE-PLAYER · FREE · NO RANKED SCORES</div>
+  <p>Explore four neon biomes, dig into caves for glowing <b style="color:#c69bff">SOL shard</b>, Prism, Gold and Core veins with your <b style="color:#14f195">Rug-Buster</b> laser drill, and build anything. Spend shards in the <b style="color:#ffd24a">⚡ LAB</b> on drill upgrades, Jet Boots and more. Follow the quests, survive <b style="color:#ff6a8a">FUD clouds</b> at night, then summon and bust <b style="color:#ff4fd8">THE RUG PULLER</b>.</p>
   <div class="ctl" id="ctlDesk">
    <div><b>WASD / ARROWS</b> move · <b>SHIFT</b> sprint</div><div><b>MOUSE</b> look · <b>SPACE</b> jump</div>
    <div><b>HOLD LEFT CLICK</b> mine / zap FUD</div><div><b>RIGHT CLICK</b> build piece</div>
-   <div><b>1–8 / WHEEL</b> pick piece</div><div><b>R</b> back to plaza · <b>ESC</b> menu</div>
+   <div><b>1–0 / WHEEL</b> pick piece · <b>U</b> lab</div><div><b>R</b> back to plaza · <b>ESC</b> menu</div><div><b>SPACE ×2</b> jet-boost (with boots)</div><div><b>ESC</b> pause · auto-saves</div>
   </div>
   <div class="ctl" id="ctlTouch" style="display:none">
    <div><b>LEFT</b> drag to move</div><div><b>RIGHT</b> drag to look (slower by default)</div>
-   <div><b>HOLD MINE</b> dig · tap soft tiles</div><div><b>BUILD</b> place · <b>JUMP</b></div>
+   <div><b>HOLD MINE</b> dig · slide thumb on it to aim</div><div><b>BUILD</b> place · <b>JUMP</b></div>
    <div><b>BOTTOM-LEFT</b> pick piece</div><div><b>LOOK: SLOW</b> toggle · <b>II</b> menu</div>
   </div>
   <button class="btn" id="playBtn">PLAY</button><br>
+  <button class="btn sm" id="sndBtn" type="button">SFX: ON</button><button class="btn sm" id="musBtn" type="button">MUSIC: ON</button><br>
   <button class="btn sm" id="resetBtn">NEW WORLD</button><a class="btn sm" href="../">$BOSS SITE</a><a class="btn sm pk" href="../game/">RUNNER (PRACTICE)</a>
   <div class="nv2">◆ SOL shards are in-game items with no cash value. They don't connect to any wallet and can't be cashed out.</div>
   <div class="legal">Beta sandbox. Not part of ranked play, the leaderboard, or prize rounds. Your world saves on this device. Joke game · not financial advice.</div>

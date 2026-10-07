@@ -8,29 +8,33 @@ const $ = id => document.getElementById(id);
 const IS_TOUCH = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
 if (IS_TOUCH) document.body.classList.add("touch");
 
-import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld } from "./world.js";
-const SAVE_KEY = "boss_sandbox_v1";
+import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName } from "./world.js";
+const SAVE_KEY = "boss_sandbox_v2", OLD_KEY = "boss_sandbox_v1";
 const DAY_LEN = 480;                               // seconds per full day/night cycle
 let seed = 1337, edits = {}, shards = 0, plaza = { x: 40, y: 20, z: 40 };
-function generate(sd) { plaza = genWorld(sd); }
-function applyEdits() { for (const k in edits) world[+k] = edits[k]; }
+const topH = new Int16Array(SX * SZ);
+function calcTop(x, z) { for (let y = SY - 1; y >= 0; y--) if (world[idx(x, y, z)]) { topH[x + z * SX] = y; return; } topH[x + z * SX] = -1; }
+function calcAllTop() { for (let z = 0; z < SZ; z++) for (let x = 0; x < SX; x++) calcTop(x, z); }
+function generate(sd) { plaza = genWorld(sd); calcAllTop(); }
+function applyEdits() { for (const k in edits) world[+k] = edits[k]; calcAllTop(); }
 function setBlock(x, y, z, id, fromNet) {
   if (!inB(x, y, z)) return false; const i = idx(x, y, z); if (world[i] === id) return false;
-  world[i] = id; if (!mp.on) edits[i] = id; markDirty(x, z); if (!fromNet) { mp.sendEdit(x, y, z, id); scheduleSave(); } return true;
+  world[i] = id; if (!mp.on) edits[i] = id; calcTop(x, z); markDirty(x, z); if (x > 0) markDirty(x - 1, z); if (x < SX - 1) markDirty(x + 1, z); if (z > 0) markDirty(x, z - 1); if (z < SZ - 1) markDirty(x, z + 1); if (!fromNet) { mp.sendEdit(x, y, z, id); scheduleSave(); } return true;
 }
 
 // ---------------- save / load ----------------
 let saveT = 0;
 function scheduleSave() { saveT = 1.0; }
-function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod })); } catch (e) {} }
-function load() { if (Q.has("reset")) try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
-  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); if (s && s.v === 1) return s; } catch (e) {} return null; }
+function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qBase, hp: P.hp, set: { snd: sndOn, mus: musOn, slow: lookSlow } })); } catch (e) {} }
+function load() { if (Q.has("reset")) try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {}
+  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); if (s && s.v === 2) return s;
+    const o = JSON.parse(localStorage.getItem(OLD_KEY) || "null"); if (o && o.v === 1) return { migr: true, shards: o.shards | 0 }; } catch (e) {} return null; }
 
 // ---------------- renderer / scene ----------------
 const canvas = $("game");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_TOUCH && Q.get("aa") !== "0", powerPreference: "high-performance" });
 const DPR_CAP = Math.min(2, parseFloat(Q.get("dpr")) || 2);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, DPR_CAP));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, IS_TOUCH && !Q.has("dpr") ? 1.5 : DPR_CAP));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, 1, 0.05, 500);
@@ -39,9 +43,10 @@ scene.add(camera);
 scene.fog = new THREE.Fog(0x2a1040, IS_TOUCH ? 18 : 26, IS_TOUCH ? 52 : 72);
 const hemi = new THREE.HemisphereLight(0xb8a8ff, 0x201030, 1.0); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffd0e0, 1.0); scene.add(sun); scene.add(sun.target);
+const lamp = new THREE.PointLight(0xc8ecff, 0, 14, 1); camera.add(lamp); lamp.position.set(.2, .1, 0); let lampT = 0;
 
 // ---------------- procedural textures (original neon / beveled style) ----------------
-const TS = 64, ATL = 4;
+const TS = 64, ATL = 5;
 const atlasC = document.createElement("canvas"), glowC = document.createElement("canvas");
 atlasC.width = atlasC.height = glowC.width = glowC.height = TS * ATL;
 (function paintAtlas() {
@@ -93,6 +98,20 @@ atlasC.width = atlasC.height = glowC.width = glowC.height = TS * ATL;
   slot(15, (g, e) => { const gr = g.createLinearGradient(0, 0, TS, TS); gr.addColorStop(0, "#e8ecff"); gr.addColorStop(.5, "#8890b0"); gr.addColorStop(1, "#c8cce0"); g.fillStyle = gr; g.fillRect(0, 0, TS, TS); bevel(g, "rgba(0,0,0,0)", "rgba(255,255,255,.45)", "rgba(0,0,0,.35)", 5);
     g.strokeStyle = "rgba(255,255,255,.18)"; for (let i = 0; i < TS; i += 3) { g.beginPath(); g.moveTo(0, i); g.lineTo(TS, i + 2); g.stroke(); } g.fillStyle = "#5a6080"; for (const [x, y] of [[11, 11], [53, 11], [11, 53], [53, 53]]) { g.beginPath(); g.arc(x, y, 2.5, 0, 7); g.fill(); }
     neonRect([g, e], "rgba(40,220,255,.6)", 17, 1.2, 3); });
+  const sideBand = (s, top, band) => slot(s, (g, e) => { rockBase(g, e); g.fillStyle = top; g.fillRect(0, 0, TS, 14); for (const c of [g, e]) { c.fillStyle = band; c.fillRect(0, 12, TS, 3); } });
+  // 16/17 DUNE GLASS: pink-sand ripples
+  slot(16, (g, e) => { bevel(g, "#4a1838", "#6a2650", "#2a0a20", 3); for (const c of [g, e]) { c.strokeStyle = c === g ? "rgba(255,122,184,.6)" : "rgba(255,122,184,.35)"; c.lineWidth = 2; for (let i = 8; i < TS; i += 12) { c.beginPath(); c.moveTo(2, i); c.bezierCurveTo(20, i - 6, 40, i + 6, 62, i); c.stroke(); } } speck(g, "#ffd0e8", 18, .6); });
+  sideBand(17, "#4a1838", "#ff7ab8");
+  // 18/19 FROST CIRCUIT: icy panel with circuit traces
+  slot(18, (g, e) => { bevel(g, "#1c3a52", "#2e5878", "#0c1c2c", 4); for (const c of [g, e]) { c.strokeStyle = c === g ? "rgba(168,232,255,.8)" : "rgba(168,232,255,.45)"; c.lineWidth = 1.6; c.beginPath(); c.moveTo(8, 20); c.lineTo(26, 20); c.lineTo(34, 30); c.lineTo(56, 30); c.moveTo(14, 48); c.lineTo(30, 48); c.lineTo(38, 40); c.moveTo(46, 8); c.lineTo(46, 22); c.stroke(); c.fillStyle = "#e8f8ff"; for (const [x, y] of [[8, 20], [56, 30], [14, 48], [38, 40], [46, 8]]) { c.beginPath(); c.arc(x, y, 2.4, 0, 7); c.fill(); } } });
+  sideBand(19, "#1c3a52", "#a8e8ff");
+  // 20/21 HOLO MOSS: dark green with glowing hex dots
+  slot(20, (g, e) => { bevel(g, "#06301e", "#0b4a30", "#031a10", 3); for (const c of [g, e]) { c.fillStyle = c === g ? "rgba(125,255,176,.75)" : "rgba(125,255,176,.6)"; for (let y = 8; y < TS; y += 14) for (let x = (y / 14 & 1) ? 14 : 7; x < TS; x += 14) { c.beginPath(); c.arc(x, y, 2.2, 0, 7); c.fill(); } } });
+  sideBand(21, "#06301e", "#7dffb0");
+  // 22 HOLO FROND: glowing crystal fronds
+  slot(22, (g, e) => { g.fillStyle = "#04261e"; g.fillRect(0, 0, TS, TS); for (const c of [g, e]) { for (let i = 0; i < 9; i++) { const x = R() * TS, y = R() * TS, l = 10 + R() * 14, a = -.8 + R() * 1.6; c.strokeStyle = i % 3 ? "#3cffc8" : "#9df7ff"; c.globalAlpha = c === e ? .55 : .9; c.lineWidth = 3; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.sin(a) * l, y - Math.cos(a) * l); c.stroke(); } c.globalAlpha = 1; } neonRect([g], "rgba(60,255,200,.35)", 2, 1.5, 4); });
+  // 23 BOSS GOLD VEIN: rock with gold nuggets
+  slot(23, (g, e) => { rockBase(g, e); for (let i = 0; i < 6; i++) { const x = 8 + R() * 48, y = 8 + R() * 48, r = 3 + R() * 4; for (const c of [g, e]) { const gr = c.createRadialGradient(x - 1, y - 1, 0, x, y, r); gr.addColorStop(0, "#fff6c8"); gr.addColorStop(.5, "#ffd24a"); gr.addColorStop(1, "rgba(200,140,20,.0)"); c.globalAlpha = c === e ? .8 : 1; c.fillStyle = gr; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.globalAlpha = 1; } } g.font = "900 13px Orbitron,Verdana"; g.fillStyle = "#fff2b8"; g.fillText("$", 26, 38); });
 })();
 const atlasTex = new THREE.CanvasTexture(atlasC), glowTex = new THREE.CanvasTexture(glowC);
 for (const t of [atlasTex, glowTex]) { t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.anisotropy = 4; }
@@ -122,6 +141,7 @@ function buildChunk(ci) {
       const nx = x + f.n[0], ny = y + f.n[1], nz = z + f.n[2];
       if (ny < 0) continue; if (ny < SY && solid(nx, ny, nz)) continue;
       const s = bd.tex[f.t], su = (s % ATL) / ATL, sv = Math.floor(s / ATL); const base = pos.length / 3; const ao = [];
+      let skyL = 1; if (nx >= 0 && nz >= 0 && nx < SX && nz < SZ) { const tt = topH[nx + nz * SX]; if (ny <= tt) skyL = Math.max(.36, .82 - (tt - ny) * .08); }
       // tangent axes for AO
       const ax = f.n[0] ? 0 : f.n[1] ? 1 : 2, ua = (ax + 1) % 3, va = (ax + 2) % 3;
       for (const c of f.c) {
@@ -132,7 +152,7 @@ function buildChunk(ci) {
         const du = cc[ua] ? 1 : -1, dv = cc[va] ? 1 : -1;
         const p1 = o.slice(), p2 = o.slice(), p3 = o.slice(); p1[ua] += du; p2[va] += dv; p3[ua] += du; p3[va] += dv;
         const s1 = solid(...p1), s2 = solid(...p2), s3 = solid(...p3); const a = s1 && s2 ? 0 : 3 - (s1 + s2 + s3); ao.push(a);
-        const l = AO[a] * f.sh; col.push(l, l, l);
+        const l = AO[a] * f.sh * skyL; col.push(l, l, l);
       }
       if (ao[1] + ao[2] < ao[0] + ao[3]) ind.push(base, base + 1, base + 3, base, base + 3, base + 2);
       else ind.push(base, base + 1, base + 2, base + 2, base + 1, base + 3);
@@ -146,7 +166,7 @@ function buildChunk(ci) {
   if (mesh) { mesh.geometry.dispose(); mesh.geometry = geo; } else { mesh = new THREE.Mesh(geo, blockMat); mesh.matrixAutoUpdate = false; scene.add(mesh); chunks[ci] = mesh; }
   return ind.length / 3;
 }
-function buildAll() { let tris = 0; for (let i = 0; i < NCX * NCZ; i++) tris += buildChunk(i); dirty.clear(); return tris; }
+function buildAll() { calcAllTop(); let tris = 0; for (let i = 0; i < NCX * NCZ; i++) tris += buildChunk(i); dirty.clear(); return tris; }
 
 // ---------------- sky (synthwave sun, stars, day/night) + neon grid floor ----------------
 const skyU = { uTop: { value: new THREE.Color() }, uHor: { value: new THREE.Color() }, uSun: { value: new THREE.Vector3() }, uNight: { value: 0 } };
@@ -182,7 +202,8 @@ new THREE.TextureLoader().load("../assets/logo.webp", t => { t.colorSpace = THRE
   logoBoard.position.set(plaza.x, plaza.y + 4.4, plaza.z - 5); scene.add(logoBoard); }, undefined, () => {});
 
 // ---------------- player ----------------
-const P = { x: 40, y: 30, z: 40, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, ground: false, r: .3, h: 1.75, eye: 1.6, hurtCD: 0 };
+const P = { x: 40, y: 30, z: 40, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, ground: false, r: .3, h: 1.75, eye: 1.6, hurtCD: 0, hp: 10, regenT: 0, dbl: true };
+let spaceWas = false;
 const input = { f: 0, s: 0, jump: false, sprint: false, mine: false, keys: {} };
 function collides(x, y, z) {
   const x0 = Math.floor(x - P.r), x1 = Math.floor(x + P.r), y0 = Math.floor(y), y1 = Math.floor(y + P.h - .001), z0 = Math.floor(z - P.r), z1 = Math.floor(z + P.r);
@@ -209,7 +230,10 @@ function updPlayer(dt) {
   const sy = Math.sin(P.yaw), cy = Math.cos(P.yaw);
   const tx = (-sy * f + cy * s) * sp, tz = (-cy * f - sy * s) * sp;
   const acc = P.ground ? 14 : 5; P.vx += (tx - P.vx) * Math.min(1, acc * dt); P.vz += (tz - P.vz) * Math.min(1, acc * dt);
+  const jumpEdge = input.jump || (k.Space && !spaceWas); spaceWas = !!k.Space;
+  if (P.ground) P.dbl = true;
   if ((input.jump || k.Space) && P.ground) { P.vy = 8.3; P.ground = false; sfx.jump(); }
+  else if (jumpEdge && !P.ground && upg.boots && P.dbl) { P.dbl = false; P.vy = 8; sfx.boost(); burst(P.x, P.y, P.z, [0x28dcff, 0xff4fd8, 0xffffff], 18, 3); trauma = Math.max(trauma, .15); stats.dj = (stats.dj || 0) + 1; }
   input.jump = false;
   P.vy = Math.max(-40, P.vy - 24 * dt);
   P.ground = false;
@@ -217,6 +241,7 @@ function updPlayer(dt) {
   P.x = Math.max(P.r + .01, Math.min(SX - P.r - .01, P.x)); P.z = Math.max(P.r + .01, Math.min(SZ - P.r - .01, P.z));
   if (P.y < -20) respawn();
   P.hurtCD = Math.max(0, P.hurtCD - dt);
+  P.regenT -= dt; if (P.regenT <= 0 && P.hp < maxHp()) { P.hp++; P.regenT = 1.4; updHP(); }
 }
 function respawn() { P.x = plaza.x; P.y = plaza.y + .1; P.z = plaza.z; P.vx = P.vy = P.vz = 0; P.yaw = 0; P.pitch = -.08; while (collides(P.x, P.y, P.z) && P.y < SY) P.y += 1; }
 
@@ -275,35 +300,43 @@ const fuds = []; let fudTimer = 2;
 function spawnFud() { const a = Math.random() * 6.28, d = 16 + Math.random() * 8; const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: fudTex, transparent: true, fog: false }));
   s.scale.set(1.6, 1.6, 1); s.position.set(P.x + Math.cos(a) * d, P.y + 3 + Math.random() * 3, P.z + Math.sin(a) * d); scene.add(s); fuds.push({ s, hp: .7, t: Math.random() * 6 }); }
 function updFuds(dt, night) {
-  const want = night > .6 && !Q.has("nofud") ? 3 : 0;
+  const want = Q.has("nofud") ? 0 : Math.max(night > .6 ? 3 : 0, boss.on && boss.phase === 2 ? 2 : 0);
   fudTimer -= dt; if (want === 0) fudTimer = 2; else if (fuds.length < want && fudTimer <= 0) { spawnFud(); fudTimer = 6 + Math.random() * 6; }
   for (let i = fuds.length - 1; i >= 0; i--) { const f = fuds[i], s = f.s; f.t += dt;
     const dx = P.x - s.position.x, dy = P.y + 1.2 - s.position.y, dz = P.z - s.position.z, d = Math.hypot(dx, dy, dz);
     const gone = want === 0; s.material.opacity = Math.max(0, Math.min(1, s.material.opacity + (gone ? -dt : dt)));
     if (gone && s.material.opacity <= 0) { scene.remove(s); fuds.splice(i, 1); continue; }
     if (d < 26 && !gone) { const sp = 1.9 / Math.max(d, .01); s.position.x += dx * sp * dt; s.position.y += dy * sp * dt + Math.sin(f.t * 2) * .01; s.position.z += dz * sp * dt; }
-    if (d < 1.1 && P.hurtCD <= 0 && !gone) { P.hurtCD = 1.6; P.vx -= dx / d * 9; P.vz -= dz / d * 9; P.vy = 5; const lost = Math.min(1, shards); shards -= lost; updShards();
-      pop(lost ? "FUD! −1 SHARD" : "FUD!", "#ff6a8a"); $("hurt").style.opacity = 1; setTimeout(() => $("hurt").style.opacity = 0, 250); sfx.hurt(); }
+    if (d < 1.1 && P.hurtCD <= 0 && !gone) { P.hurtCD = 1.6; P.vx -= dx / d * 9; P.vz -= dz / d * 9; P.vy = 5; const lost = upg.shield ? 0 : Math.min(1, shards); shards -= lost; updShards();
+      pop(lost ? "FUD! −1 SHARD" : "FUD!", "#ff6a8a"); hurt(1); }
   }
 }
 
 // ---------------- mining / building ----------------
-let mineT = 0, mineKey = "", hit = null, fudHit = null;
+let mineT = 0, mineKey = "", hit = null, fudHit = null, bossHit = false;
 const tmpV = new THREE.Vector3(), tmpD = new THREE.Vector3();
 function aim() {
   camera.getWorldPosition(tmpV); camera.getWorldDirection(tmpD);
-  hit = raycast(tmpV, tmpD, 6);
-  fudHit = null; let best = hit ? hit.t : 8;
+  hit = raycast(tmpV, tmpD, REACH[upg.drill]);
+  fudHit = null; bossHit = false; let best = hit ? hit.t : 9;
+  if (boss.on) { const o = boss.g.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z; if (t > 0 && t < 30) { const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < 1.9 * 1.9 && (!hit || t < hit.t + 1)) { bossHit = true; hit = null; best = t; } } }
   for (const f of fuds) { const o = f.s.position, lx = o.x - tmpV.x, ly = o.y - tmpV.y, lz = o.z - tmpV.z, t = lx * tmpD.x + ly * tmpD.y + lz * tmpD.z;
     if (t < 0 || t > best) continue; const px = lx - tmpD.x * t, py = ly - tmpD.y * t, pz = lz - tmpD.z * t; if (px * px + py * py + pz * pz < .8 * .8) { best = t; fudHit = f; } }
 }
 let mineGrace = 0; // keeps mining briefly if the thumb wobbles off the button
-function breakBlock(x, y, z, id) {
+function breakBlock(x, y, z, id, chained) {
   setBlock(x, y, z, 0); const c = B[id];
-  burst(x + .5, y + .5, z + .5, [c.col, 0xffffff, c.drop ? 0x14f195 : c.col], IS_TOUCH ? (c.drop ? 36 : 18) : (c.drop ? 70 : 35), c.drop ? 6 : 4);
-  const gain = (c.drop || 0) + (c.cost || 0);
-  if (gain) { shards += gain; updShards(); pop(`◆ +${gain} ${c.drop ? c.name.replace(" VEIN", "") : "REFUND"}`, c.drop >= 10 ? "#fff2b0" : c.drop >= 3 ? "#14f195" : "#c69bff"); sfx.shard(c.drop || 1); }
-  else sfx.brk();
+  burst(x + .5, y + .5, z + .5, [c.col, 0xffffff, c.drop ? 0x14f195 : c.col], IS_TOUCH ? (c.drop ? 30 : 12) : (c.drop ? 60 : 28), c.drop ? 6 : 4);
+  debris(x + .5, y + .5, z + .5, c.col, c.drop ? 8 : 5);
+  stats.mined++; comboHit();
+  if (c.drop) { stats.veins++; if (id === 9) stats.prisms++; if (id === 10) stats.cores++; if (id === 18) stats.golds++;
+    spawnOrbs(x + .5, y + .5, z + .5, c.drop, c.col); pop(`◆ +${c.drop} ${c.name.replace(" VEIN", "")}`, c.drop >= 10 ? "#fff2b0" : c.drop >= 5 ? "#ffd24a" : c.drop >= 3 ? "#14f195" : "#c69bff");
+    sfx.vein(c.drop); trauma = Math.max(trauma, c.drop >= 10 ? .55 : .3); buzz(c.drop >= 5 ? 30 : 15);
+    if (upg.drill >= 4 && !chained) { const seen = new Set([x + "," + y + "," + z]), q = [[x, y, z]], out = [];
+      while (q.length && out.length < 10) { const [a, b2, d] = q.shift(); for (const [u, v, w] of [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]) { const X = a + u, Y = b2 + v, Z = d + w, k = X + "," + Y + "," + Z; if (seen.has(k)) continue; seen.add(k); if (get(X, Y, Z) === id) { out.push([X, Y, Z]); q.push([X, Y, Z]); } } }
+      out.forEach(([X, Y, Z], i) => setTimeout(() => { if (get(X, Y, Z) === id) breakBlock(X, Y, Z, id, true); }, 80 + i * 70)); if (out.length) pop(`CHAIN ×${out.length + 1}`, "#ff4fd8"); }
+  } else if (c.cost) { shards += c.cost; updShards(); pop(`◆ +${c.cost} REFUND`, "#c69bff"); sfx.brk(id); trauma = Math.max(trauma, .12); }
+  else { sfx.brk(id); trauma = Math.max(trauma, .12); buzz(8); }
   mineKey = ""; mineT = 0;
 }
 function trySoftTapMine() {
@@ -311,21 +344,23 @@ function trySoftTapMine() {
   if (fudHit) return false;
   if (!hit || B[hit.id].hard === Infinity) return false;
   // one-tap mine for soft pieces (hard <= 0.45) on phone
-  if (B[hit.id].hard > 0.45) return false;
+  if (B[hit.id].hard / SPEED[upg.drill] > 0.45) return false;
   breakBlock(hit.x, hit.y, hit.z, hit.id); return true;
 }
 function updMining(dt, time) {
   aim();
   const tgt = $("target");
-  if (hit && !fudHit) { outline.visible = true; outline.position.set(hit.x + .5, hit.y + .5, hit.z + .5); const bd = B[hit.id]; tgt.textContent = bd.name + (bd.drop ? `  ◆+${bd.drop}` : bd.hard === Infinity ? "  (unbreakable)" : ""); }
+  if (bossHit) { outline.visible = false; tgt.textContent = "THE RUG PULLER · HOLD MINE TO BLAST"; }
+  else if (hit && !fudHit) { outline.visible = true; outline.position.set(hit.x + .5, hit.y + .5, hit.z + .5); const bd = B[hit.id]; tgt.textContent = bd.name + (bd.drop ? `  ◆+${bd.drop}` : bd.hard === Infinity ? "  (unbreakable)" : ""); }
   else { outline.visible = false; tgt.textContent = fudHit ? "FUD CLOUD · HOLD TO ZAP" : ""; }
   if (input.mine) mineGrace = IS_TOUCH ? 0.28 : 0; else if (mineGrace > 0) mineGrace -= dt;
   const mining = input.mine || mineGrace > 0;
   let prog = 0;
-  if (mining && fudHit) { fudHit.hp -= dt; prog = 1 - fudHit.hp / .7; if (fudHit.hp <= 0) { const p = fudHit.s.position; burst(p.x, p.y, p.z, ["#ff6a8a", "#ff3250", "#ffd0d8"], IS_TOUCH ? 30 : 60, 6); scene.remove(fudHit.s); fuds.splice(fuds.indexOf(fudHit), 1); shards += 2; updShards(); pop("FUD CLEARED ◆+2", "#14f195"); sfx.zap(); } mineKey = ""; mineT = 0; }
+  if (mining && bossHit) { bossDamage(DMG[upg.drill] * dt); mineKey = ""; mineT = 0; prog = 1 - boss.hp / boss.max; }
+  else if (mining && fudHit) { fudHit.hp -= dt; prog = 1 - fudHit.hp / .7; if (fudHit.hp <= 0) { const p = fudHit.s.position; burst(p.x, p.y, p.z, ["#ff6a8a", "#ff3250", "#ffd0d8"], IS_TOUCH ? 30 : 60, 6); scene.remove(fudHit.s); fuds.splice(fuds.indexOf(fudHit), 1); spawnOrbs(p.x, p.y, p.z, 2, 0xff6a8a); stats.fud++; pop("FUD CLEARED ◆+2", "#14f195"); sfx.zap(); trauma = Math.max(trauma, .3); } mineKey = ""; mineT = 0; }
   else if (mining && hit && B[hit.id].hard !== Infinity) {
     const key = hit.x + "," + hit.y + "," + hit.z; if (key !== mineKey) { mineKey = key; mineT = 0; }
-    mineT += dt; const bd = B[hit.id]; const need = Math.max(0.18, bd.hard * (IS_TOUCH ? 0.85 : 1)); // slightly faster on phone
+    mineT += dt; const bd = B[hit.id]; const need = Math.max(0.12, bd.hard * (IS_TOUCH ? 0.85 : 1) / SPEED[upg.drill]); minePitch = mineT / need; // slightly faster on phone
     prog = Math.min(1, mineT / need);
     const s = 1.004 - prog * .12 + Math.sin(time * 60) * .01 * prog; outline.scale.setScalar(s);
     coreGlow.material.color.setHex(bd.col); coreGlow.material.opacity = prog * .55;
@@ -334,9 +369,9 @@ function updMining(dt, time) {
   } else if (!mining) { mineT = 0; mineKey = ""; outline.scale.setScalar(1); coreGlow.material.opacity = 0; }
   if (!mining) { outline.scale.setScalar(1); coreGlow.material.opacity = 0; }
   $("ring").setAttribute("stroke-dashoffset", (94.25 * (1 - prog)).toFixed(2));
-  const firing = mining && (fudHit || (hit && B[hit.id].hard !== Infinity));
-  laser.visible = !!firing; dTip.material.color.setHex(firing ? (Math.sin(time * 40) > 0 ? 0x14f195 : 0xffffff) : 0x9945ff); dRing.rotation.z += dt * (firing ? 30 : 2);
-  if (firing) { dTip.getWorldPosition(tmpV); const end = fudHit ? fudHit.s.position.clone() : new THREE.Vector3(hit.x + .5 + hit.n[0] * .5, hit.y + .5 + hit.n[1] * .5, hit.z + .5 + hit.n[2] * .5);
+  const firing = mining && (bossHit || fudHit || (hit && B[hit.id].hard !== Infinity)); isFiring = !!firing; if (!firing) minePitch = 0;
+  laser.visible = !!firing; laser.material.color.setHex(LASER[upg.drill]); dTip.material.color.setHex(firing ? (Math.sin(time * 40) > 0 ? 0x14f195 : 0xffffff) : 0x9945ff); dRing.rotation.z += dt * (firing ? 30 : 2);
+  if (firing) { dTip.getWorldPosition(tmpV); const end = bossHit ? boss.eye.getWorldPosition(new THREE.Vector3()) : fudHit ? fudHit.s.position.clone() : new THREE.Vector3(hit.x + .5 + hit.n[0] * .5, hit.y + .5 + hit.n[1] * .5, hit.z + .5 + hit.n[2] * .5);
     laser.position.copy(tmpV); laser.lookAt(end); laser.scale.set(1, 1, tmpV.distanceTo(end)); laser.material.opacity = .6 + Math.random() * .4; }
 }
 function place() {
@@ -345,7 +380,7 @@ function place() {
   if (!inB(x, y, z) || get(x, y, z)) return;
   if (x + 1 > P.x - P.r && x < P.x + P.r && z + 1 > P.z - P.r && z < P.z + P.r && y + 1 > P.y && y < P.y + P.h) return;
   if (bd.cost) { if (shards < bd.cost) { pop(`NEED ◆${bd.cost} SOL SHARDS`, "#ff6a8a"); return; } shards -= bd.cost; updShards(); }
-  setBlock(x, y, z, id); burst(x + .5, y + .5, z + .5, [bd.col, 0xffffff], 14, 2); sfx.place(); drillKick = 1;
+  setBlock(x, y, z, id); burst(x + .5, y + .5, z + .5, [bd.col, 0xffffff], 14, 2); sfx.place(); drillKick = 1; stats.placed++; buzz(6);
 }
 
 // ---------------- HUD ----------------
@@ -364,12 +399,57 @@ let nameT = null;
 function select(i, quiet) { sel = (i + PALETTE.length) % PALETTE.length; [...$("palette").children].forEach((c, j) => c.classList.toggle("sel", j === sel));
   const m = $("matName"); const bd = B[PALETTE[sel]]; m.textContent = bd.name + (bd.cost ? ` · costs ◆${bd.cost}` : ""); m.style.opacity = 1; clearTimeout(nameT); nameT = setTimeout(() => m.style.opacity = 0, 1600); if (!quiet) sfx.click(); }
 
-// ---------------- audio (tiny WebAudio blips) ----------------
-let AC = null;
-function tone(f, d, type = "square", v = .08, slide = 0) { if (!AC) return; const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g).connect(AC.destination); o.start(t); o.stop(t + d); }
-const sfx = { jump: () => tone(300, .12, "square", .04, 200), brk: () => tone(160, .1, "triangle", .1, -80), place: () => tone(520, .06, "square", .05), click: () => tone(880, .03, "square", .03),
-  shard: n => { tone(n >= 10 ? 1046 : n >= 3 ? 880 : 740, .12, "triangle", .1); setTimeout(() => tone(n >= 10 ? 1568 : 1175, .18, "triangle", .08), 70); }, hurt: () => tone(140, .25, "sawtooth", .08, -60), zap: () => tone(1200, .2, "sawtooth", .05, -900) };
-function initAudio() { if (AC) { if (AC.state === "suspended") AC.resume(); return; } try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+// ---------------- audio (WebAudio synth: sfx + generative synthwave music, no files) ----------------
+let AC = null, master = null, sfxG = null, musG = null, noiseBuf = null, hum = null, humF = null, humG = null;
+let sndOn = true, musOn = true, minePitch = 0, isFiring = false;
+function note(f, d, type = "square", v = .08, slide = 0, at = 0, dest = null, lp = 0) { if (!AC) return; const t = at || AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + d); let n = o.connect(g);
+  if (lp) { const fl = AC.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = lp; n = g.connect(fl); } n.connect(dest || sfxG); o.start(t); o.stop(t + d + .02); }
+function tone(f, d, type, v, slide) { note(f, d, type, v, slide); }
+function noise(d, f = 1200, v = .15, q = 1, at = 0, dest = null, type = "bandpass") { if (!AC) return; const t = at || AC.currentTime, s = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain(); s.buffer = noiseBuf; fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); s.connect(fl).connect(g).connect(dest || sfxG); s.start(t, Math.random() * .5); s.stop(t + d + .02); }
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const BRK_F = { 2: 500, 3: 900, 14: 1800, 15: 2400, 16: 900, 17: 3200, 7: 3000, 13: 2600, 6: 1400 };
+const sfx = {
+  jump: () => note(300, .12, "square", .035, 200),
+  boost: () => { note(420, .18, "sawtooth", .04, 600, 0, null, 2400); noise(.18, 3000, .06); },
+  brk: id => { const f = BRK_F[id] || 1200; noise(.13, f, .22, 1.2); note(f / 8, .1, "triangle", .12, -60); },
+  place: () => { note(520, .05, "square", .04); noise(.05, 4000, .05); },
+  click: () => note(880, .03, "square", .025),
+  vein: n => { noise(.2, 2500, .2, .8); const b = n >= 10 ? 84 : n >= 5 ? 79 : n >= 3 ? 76 : 72; [0, 4, 7].forEach((s, i) => note(mtof(b + s), .22, "triangle", .07, 0, AC ? AC.currentTime + i * .05 : 0)); },
+  pick: c => { const m = 76 + Math.min(14, c); note(mtof(m), .09, "sine", .06); note(mtof(m + 12), .07, "triangle", .025); },
+  hurt: () => { note(140, .25, "sawtooth", .08, -60, 0, null, 900); noise(.15, 400, .15); },
+  zap: () => { note(1200, .2, "sawtooth", .045, -900, 0, null, 3000); noise(.25, 1800, .1); },
+  quest: () => { if (!AC) return; const t = AC.currentTime; [72, 76, 79, 84, 88].forEach((m, i) => note(mtof(m), .3, "triangle", .07, 0, t + i * .07)); note(mtof(60), .6, "sawtooth", .03, 0, t, null, 1200); },
+  buy: () => { if (!AC) return; const t = AC.currentTime; [67, 74, 79, 86].forEach((m, i) => note(mtof(m), .2, "square", .04, 0, t + i * .05, null, 3000)); },
+  roar: () => { note(220, 1.2, "sawtooth", .12, -170, 0, null, 900); note(110, 1.4, "square", .08, -70, 0, null, 500); noise(1.2, 300, .2, .7); },
+  bshot: () => note(660, .25, "square", .035, -420, 0, null, 1800),
+  bhit: () => noise(.06, 3500, .05, 2),
+  win: () => { if (!AC) return; const t = AC.currentTime; [60, 64, 67, 72, 67, 72, 76, 79, 84].forEach((m, i) => note(mtof(m), .35, "square", .05, 0, t + i * .09, null, 2600)); noise(1.5, 600, .25, .5); },
+  combo: c => note(mtof(84 + Math.min(12, c / 5)), .15, "square", .04, 0, 0, null, 3500),
+};
+function initAudio() { if (AC) { if (AC.state === "suspended") AC.resume(); return; }
+  try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  master = AC.createGain(); master.gain.value = .9; master.connect(AC.destination);
+  sfxG = AC.createGain(); sfxG.gain.value = sndOn ? 1 : 0; sfxG.connect(master); musG = AC.createGain(); musG.gain.value = musOn ? .55 : 0; musG.connect(master);
+  noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  hum = AC.createOscillator(); hum.type = "sawtooth"; hum.frequency.value = 90; humF = AC.createBiquadFilter(); humF.type = "lowpass"; humF.frequency.value = 700; humG = AC.createGain(); humG.gain.value = 0;
+  hum.connect(humF).connect(humG).connect(sfxG); hum.start(); musNext = AC.currentTime + .1; }
+// music: 4-chord synthwave loop, arps soften at night, drums kick in during the boss fight
+const PROG = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];
+let musStep = 0, musNext = 0;
+function audioTick() { if (!AC) return; const t = AC.currentTime;
+  humG.gain.setTargetAtTime(isFiring && running ? .028 : 0, t, .03); hum.frequency.setTargetAtTime(70 + minePitch * 170 + upg.drill * 14, t, .05); humF.frequency.setTargetAtTime(500 + minePitch * 1800, t, .05);
+  if (!musOn || !running) { musNext = t + .1; return; } if (musNext < t - .5) musNext = t + .05;
+  while (musNext < t + .25) { const at = musNext, bar = Math.floor(musStep / 16) % 4, st = musStep % 16, ch = PROG[bar], fight = boss.on;
+    if (st % 4 === 0) note(mtof(ch[0] - 24), .32, "sawtooth", .05, 0, at, musG, 420);
+    if (st % 2 === 0) note(mtof(ch[(st / 2) % 3] + (bar % 2 ? 12 : 0)), .14, "triangle", .022, 0, at, musG);
+    if (st === 0) note(mtof(ch[2] + 12), 1.6, "sine", .02, 0, at, musG);
+    if (fight) { if (st % 4 === 0) note(130, .14, "sine", .14, -90, at, musG); if (st % 8 === 4) noise(.12, 1800, .06, .8, at, musG); if (st % 2 === 1) noise(.03, 7000, .02, 1, at, musG, "highpass"); }
+    musNext += fight ? .11 : .15; musStep++; } }
+function updSetBtns() { const a = $("sndBtn"), b = $("musBtn"); if (a) a.textContent = "SFX: " + (sndOn ? "ON" : "OFF"); if (b) b.textContent = "MUSIC: " + (musOn ? "ON" : "OFF");
+  if (sfxG) sfxG.gain.value = sndOn ? 1 : 0; if (musG) musG.gain.value = musOn ? .55 : 0; }
+function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 
 // ---------------- controls: desktop ----------------
 let running = false, locked = false;
@@ -378,19 +458,19 @@ function maybeShowTip() {
   try { if (localStorage.getItem(TIP_KEY) === "1") return; } catch (e) {}
   $("tip").classList.add("show");
 }
-function startGame() { initAudio(); $("menu").classList.add("hide"); running = true; last = performance.now();
+function startGame() { initAudio(); $("menu").classList.add("hide"); closeLab(true); running = true; last = performance.now();
   maybeShowTip();
   if (!IS_TOUCH && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
 function pause() { running = false; input.mine = false; $("menu").classList.remove("hide"); $("playBtn").textContent = "RESUME"; save(); if (document.pointerLockElement) document.exitPointerLock(); }
-document.addEventListener("pointerlockchange", () => { locked = document.pointerLockElement === canvas; if (!locked && running && !IS_TOUCH && !window.__SB_TEST) pause(); });
-canvas.addEventListener("mousedown", e => { if (IS_TOUCH) return; if (!running) return; if (!locked && canvas.requestPointerLock && !window.__SB_TEST) { startGame(); return; }
+document.addEventListener("pointerlockchange", () => { locked = document.pointerLockElement === canvas; if (!locked && running && !IS_TOUCH && !window.__SB_TEST && !labOpen) pause(); });
+canvas.addEventListener("mousedown", e => { if (IS_TOUCH) return; if (!running || labOpen) return; if (!locked && canvas.requestPointerLock && !window.__SB_TEST) { startGame(); return; }
   if (e.button === 0) input.mine = true; else if (e.button === 2) place(); });
 window.addEventListener("mouseup", e => { if (e.button === 0) input.mine = false; });
 canvas.addEventListener("contextmenu", e => e.preventDefault());
 document.addEventListener("mousemove", e => { if (!locked) return; if (Math.abs(e.movementX) > 250 || Math.abs(e.movementY) > 250) return; /* ignore pointer-lock spike */ look(e.movementX * .0022, e.movementY * .0022); });
 window.addEventListener("wheel", e => { if (running) select(sel + (e.deltaY > 0 ? 1 : -1)); }, { passive: true });
 window.addEventListener("keydown", e => { input.keys[e.code] = true; if (e.code === "Space") e.preventDefault();
-  if (/^Digit[1-8]$/.test(e.code)) select(+e.code[5] - 1); if (e.code === "KeyQ") select(sel - 1); if (e.code === "KeyE") select(sel + 1);
+  if (/^Digit[0-9]$/.test(e.code)) select((+e.code[5] + 9) % 10); if ((e.code === "KeyU" || e.code === "Tab") && running) { e.preventDefault(); labOpen ? closeLab() : openLab(); } if (e.code === "KeyQ") select(sel - 1); if (e.code === "KeyE") select(sel + 1);
   if (e.code === "KeyR" && running) respawn(); if (e.code === "KeyG" && mp.on && mp.ws) mp.ws.send(JSON.stringify({ t: "emote", k: 0 })); if ((e.code === "KeyP") && running) pause(); });
 window.addEventListener("keyup", e => { input.keys[e.code] = false; });
 window.addEventListener("blur", () => { input.keys = {}; input.mine = false; });
@@ -406,7 +486,7 @@ function overUI(x, y) {
   // Don't start look/joystick on HUD buttons, palette, tip, or pause.
   const el = document.elementFromPoint(x, y);
   if (!el || el === $("touch") || el === $("game") || el === $("lookPad") || el === document.body) return false;
-  return !!(el.closest && el.closest(".tbtn, #palette, #pauseBtn, #lookSlow, #tip, #menu, .chip, #badge, #shards"));
+  return !!(el.closest && el.closest(".tbtn, #palette, #pauseBtn, #labBtn, #lab, #lookSlow, #tip, #menu, .chip, #shards"));
 }
 function inLookZone(x, y) {
   // Right side of the screen, above the action buttons, so look doesn't fight MINE/BUILD/JUMP.
@@ -451,6 +531,7 @@ if (IS_TOUCH) {
   const st = $("stick"), knob = st.firstElementChild;
   // First-run tip overlay (shown when PLAY is tapped — see maybeShowTip)
   $("tipGot").addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY, "1"); } catch (_) {} initAudio(); });
+  T.addEventListener("touchstart", () => initAudio(), { passive: true, once: true });
   const toggleLookSlow = () => { lookSlow = !lookSlow; $("lookSlow").classList.toggle("on", lookSlow); $("lookSlow").textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; };
   $("lookSlow").addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); toggleLookSlow(); });
 
@@ -492,31 +573,34 @@ if (IS_TOUCH) {
     const up = e => { b.classList.remove("on"); onUp && onUp(e); };
     b.addEventListener("pointerup", up); b.addEventListener("pointercancel", up); b.addEventListener("lostpointercapture", up);
   };
-  hold("bMine", () => { input.mine = true; mineDownAt = performance.now(); mineGrace = 0.28; },
-    () => { const held = performance.now() - mineDownAt; input.mine = false;
-      if (held < 220) trySoftTapMine(); // short tap = soft-block one-shot
+  // MINE doubles as a look pad: slide your thumb while holding to aim and dig at the same time.
+  const mineLook = { on: false, x: 0, y: 0, moved: 0 };
+  $("bMine").addEventListener("pointermove", e => { if (!mineLook.on) return; const dx = e.clientX - mineLook.x, dy = e.clientY - mineLook.y; mineLook.x = e.clientX; mineLook.y = e.clientY; mineLook.moved += Math.abs(dx) + Math.abs(dy); look(dx * LOOK_SENS() * 1.15, dy * LOOK_SENS() * 1.15); });
+  hold("bMine", e => { input.mine = true; mineDownAt = performance.now(); mineGrace = 0.28; mineLook.on = true; mineLook.x = e.clientX; mineLook.y = e.clientY; mineLook.moved = 0; },
+    () => { const held = performance.now() - mineDownAt; input.mine = false; mineLook.on = false;
+      if (held < 220 && mineLook.moved < 12) trySoftTapMine(); // short tap = soft-block one-shot
       else mineGrace = 0.28; // brief grace after a hold so wobble doesn't cancel
     });
   hold("bBuild", () => { aim(); place(); }, null);
   hold("bJump", () => { input.jump = true; }, null);
   document.addEventListener("gesturestart", e => e.preventDefault());
   // Prevent iOS double-tap zoom stealing inputs
-  let lastTouchEnd = 0; document.addEventListener("touchend", e => { const now = Date.now(); if (now - lastTouchEnd < 320) e.preventDefault(); lastTouchEnd = now; }, { passive: false });
+  let lastTouchEnd = 0; document.addEventListener("touchend", e => { if (e.target.closest && e.target.closest("#lab,#menu,#tip")) return; const now = Date.now(); if (now - lastTouchEnd < 320) e.preventDefault(); lastTouchEnd = now; }, { passive: false });
 }
 $("pauseBtn").addEventListener("click", () => { if (running) pause(); else startGame(); });
 $("playBtn").addEventListener("click", startGame);
-$("resetBtn").addEventListener("click", () => { if (!confirm("Start a fresh world? Your builds and SOL shards on this device will be cleared.")) return; try { localStorage.removeItem(SAVE_KEY); } catch (e) {} seed = (Math.random() * 1e9) | 0; edits = {}; shards = 0; generate(seed); buildAll(); respawn(); updShards(); save(); });
+$("resetBtn").addEventListener("click", () => { if (!confirm("Start a fresh world? Your builds, upgrades, quests and SOL shards on this device will be cleared.")) return; try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {} seed = (Math.random() * 1e9) | 0; edits = {}; shards = 0; Object.assign(upg, { drill: 1, boots: 0, shield: 0, hp: 0 }); for (const k in stats) stats[k] = 0; Qi = 0; qStart(); if (boss.on) bossEnd(false, true); P.hp = maxHp(); updHP(); generate(seed); buildAll(); respawn(); updShards(); save(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden) { save(); if (running && IS_TOUCH) pause(); } });
 window.addEventListener("pagehide", save);
 
 // ---------------- resize ----------------
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
   const a = w / h; camera.fov = a >= 1 ? 72 : Math.min(100, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(38)) / a)));
-  camera.updateProjectionMatrix(); drillBase.set(a >= 1 ? .3 : .17, a >= 1 ? -.27 : -.25, -.6); }
+  baseFov = camera.fov; camera.updateProjectionMatrix(); drillBase.set(a >= 1 ? .3 : .17, a >= 1 ? -.27 : -.25, -.6); }
 window.addEventListener("resize", resize);
 
 // ---------------- day / night ----------------
-let tod = .62;   // 0 midnight, .25 sunrise, .5 noon, .75 sunset
+let tod = .62, baseFov = 72;   // 0 midnight, .25 sunrise, .5 noon, .75 sunset
 const C = (h) => new THREE.Color(h);
 const SKY = [ // [tod, top, horizon]
   [0, C(0x05020f), C(0x2a0c3a)], [.22, C(0x0a0420), C(0x6a1a5a)], [.3, C(0x2a2a8a), C(0xff7a6a)], [.42, C(0x3050c0), C(0xd08ad8)],
@@ -528,10 +612,11 @@ function updSky(dt) {
   const ang = (tod - .25) * Math.PI * 2; skyU.uSun.value.set(Math.cos(ang) * .9, Math.sin(ang), -.35).normalize();
   const day = Math.max(0, Math.min(1, Math.sin(ang) * 3 + .3)); skyU.uNight.value = 1 - day;
   scene.fog.color.copy(skyU.uHor.value).multiplyScalar(.75); gridU.uFog.value.copy(scene.fog.color);
-  hemi.intensity = .35 + day * .95; hemi.color.copy(skyU.uTop.value).lerp(C(0xffffff), .5); sun.intensity = .15 + day * 1.1;
+  hemi.intensity = .62 + day * .7; hemi.color.copy(skyU.uTop.value).lerp(C(0xffffff), .5); sun.intensity = .15 + day * 1.1;
   sun.position.set(P.x + skyU.uSun.value.x * 50, P.y + Math.abs(skyU.uSun.value.y) * 50 + 5, P.z + skyU.uSun.value.z * 50); sun.target.position.set(P.x, P.y, P.z);
   sun.color.copy(day > .2 ? C(0xffe0f0) : C(0x8a9aff));
   blockMat.emissiveIntensity = .55 + (1 - day) * .65;
+  lamp.intensity += (Math.max(lampT * 6, (1 - day) * 2.2) - lamp.intensity) * Math.min(1, dt * 3 + .02);
   const hrs = Math.floor(tod * 24), mins = Math.floor((tod * 24 - hrs) * 60); $("clock").textContent = `${day > .5 ? "☀" : "☾"} ${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
   return 1 - day;
 }
@@ -566,16 +651,168 @@ function updMP(dt) { if (!mp.on) return; mp.sendT -= dt;
   if (mp.sendT <= 0 && mp.ws && mp.ws.readyState === 1) { mp.sendT = .1; mp.ws.send(JSON.stringify({ t: "p", x: +P.x.toFixed(2), y: +P.y.toFixed(2), z: +P.z.toFixed(2), yaw: +P.yaw.toFixed(2) })); }
   for (const o of mp.others.values()) { const g = o.g; g.position.x += (o.p.x - g.position.x) * Math.min(1, dt * 12); g.position.y += (o.p.y - g.position.y) * Math.min(1, dt * 12); g.position.z += (o.p.z - g.position.z) * Math.min(1, dt * 12); g.rotation.y = o.p.yaw || 0; } }
 
+// ---------------- progression: drill tiers, upgrades, stats ----------------
+const SPEED = [0, 1, 1.6, 2.4, 3.5], REACH = [0, 5, 6, 7, 8], DMG = [0, 9, 15, 24, 38], LASER = [0, 0x14f195, 0x28dcff, 0xffd24a, 0xff4fd8];
+const upg = { drill: 1, boots: 0, shield: 0, hp: 0 };
+const stats = { mined: 0, veins: 0, placed: 0, prisms: 0, golds: 0, cores: 0, fud: 0, kills: 0, combos: 0, dj: 0 };
+const maxHp = () => 10 + upg.hp * 4;
+let trauma = 0;
+const UPG = [
+  { id: "drill2", name: "DRILL MK II", desc: "Mines 1.6× faster · reach 6", cost: 25, have: () => upg.drill >= 2, can: () => upg.drill === 1, need: "", buy: () => upg.drill = 2 },
+  { id: "boots", name: "JET BOOTS", desc: "Double-jump in mid-air", cost: 40, have: () => upg.boots, can: () => true, buy: () => upg.boots = 1 },
+  { id: "drill3", name: "DRILL MK III", desc: "2.4× faster · reach 7 · gold laser", cost: 90, have: () => upg.drill >= 3, can: () => upg.drill === 2, need: "needs MK II", buy: () => upg.drill = 3 },
+  { id: "shield", name: "FUD SHIELD", desc: "FUD can't steal shards", cost: 60, have: () => upg.shield, can: () => true, buy: () => upg.shield = 1 },
+  { id: "heart", name: "VIBE CORE", desc: "+4 max health (up to 3)", cost: 50, cst: () => 50 + upg.hp * 30, have: () => upg.hp >= 3, can: () => true, buy: () => { upg.hp++; P.hp = maxHp(); updHP(); } },
+  { id: "drill4", name: "BOSS DRILL MK IV", desc: "3.5× · reach 8 · chain-mines whole SOL veins", cost: 220, have: () => upg.drill >= 4, can: () => upg.drill === 3, need: "needs MK III", buy: () => upg.drill = 4 },
+];
+let labOpen = false;
+function costOf(u) { return u.cst ? u.cst() : u.cost; }
+function renderLab() { const L = $("labList"); L.innerHTML = "";
+  for (const u of UPG) { const have = u.have(), can = u.can(), c = costOf(u), d = document.createElement("div"); d.className = "upg" + (have ? " own" : !can ? " lock" : shards >= c ? " ok" : "");
+    d.innerHTML = `<div><b>${u.name}</b><span>${u.desc}</span></div><button type="button" data-id="${u.id}">${have ? "OWNED" : !can ? (u.need || "LOCKED") : "◆" + c}</button>`; L.appendChild(d); }
+  const sb = $("summonBtn"); sb.disabled = boss.on || upg.drill < 2; sb.textContent = boss.on ? "THE RUG PULLER IS HERE" : upg.drill < 2 ? "SUMMON BOSS · needs Drill MK II" : `SUMMON THE RUG PULLER${stats.kills ? " · LV " + (stats.kills + 1) : ""}`;
+  $("labShards").textContent = shards; $("labStats").textContent = `Tiles mined ${stats.mined} · Veins ${stats.veins} · Bosses busted ${stats.kills}`; }
+function buyUpg(id) { const u = UPG.find(q => q.id === id); if (!u || u.have() || !u.can()) return false; const c = costOf(u);
+  if (shards < c) { pop(`NEED ◆${c}`, "#ff6a8a"); sfx.hurt(); return false; } shards -= c; u.buy(); updShards(); sfx.buy(); buzz(20); banner(u.name, "UNLOCKED"); renderLab(); save(); qTick(); return true; }
+function openLab() { labOpen = true; input.mine = false; input.f = input.s = 0; renderLab(); $("lab").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
+function closeLab(quiet) { if (!labOpen) return; labOpen = false; $("lab").classList.remove("show"); if (!quiet && !IS_TOUCH && running && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
+$("labList").addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if (b) buyUpg(b.dataset.id); });
+$("labClose").addEventListener("click", () => closeLab());
+$("labBtn").addEventListener("click", e => { e.stopPropagation(); if (!running) return; labOpen ? closeLab() : openLab(); });
+$("summonBtn").addEventListener("click", () => { if (summonBoss()) closeLab(); });
+$("sndBtn").addEventListener("click", () => { sndOn = !sndOn; initAudio(); updSetBtns(); save(); });
+$("musBtn").addEventListener("click", () => { musOn = !musOn; initAudio(); updSetBtns(); save(); });
+function syncLookBtn() { const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }
+
+// ---------------- quests (also the tutorial) ----------------
+const QUESTS = [
+  { t: "Mine 5 tiles", h: IS_TOUCH ? "Aim at a tile, hold MINE" : "Aim at a tile, hold left click", k: "mined", n: 5, r: 3 },
+  { t: "Mine a SOL Shard vein", h: "Purple crystals near the plaza", k: "veins", n: 1, r: 3 },
+  { t: "Build 5 pieces", h: IS_TOUCH ? "Pick a piece bottom-left, tap BUILD" : "Right click to place", k: "placed", n: 5, r: 4 },
+  { t: "Upgrade to Drill MK II", h: "Open the ⚡ LAB (top right)", k: "drill", n: 2, r: 5, abs: 1 },
+  { t: "Find a SOL Prism vein", h: "Green crystals, dig deep or explore caves", k: "prisms", n: 1, r: 6 },
+  { t: "Mine 3 BOSS Gold veins", h: "Gold flecks in mid-depth rock", k: "golds", n: 3, r: 8 },
+  { t: "Buy Jet Boots", h: "⚡ LAB · then double-jump", k: "boots", n: 1, r: 5, abs: 1 },
+  { t: "Zap 3 FUD clouds", h: "They drift in at night. Hold MINE on them", k: "fud", n: 3, r: 8 },
+  { t: "Mine a SOL Core vein", h: "Rarest. Down near the Genesis floor", k: "cores", n: 1, r: 15 },
+  { t: "Bust THE RUG PULLER", h: "Summon it from the ⚡ LAB, blast its eye", k: "kills", n: 1, r: 40 },
+  { t: "Build the BOSS DRILL", h: "The final ⚡ LAB upgrade", k: "drill", n: 4, r: 25, abs: 1 },
+];
+let Qi = 0, qBase = {}, qT = 0;
+function qDef(i) { if (i < QUESTS.length) return QUESTS[i]; const j = i - QUESTS.length, lv = 1 + Math.floor(j / 4);
+  return [{ t: `Mine ${25 * lv} tiles`, h: "Any tiles count", k: "mined", n: 25 * lv, r: 6 * lv }, { t: `Mine ${5 * lv} SOL veins`, h: "Shard, Prism, Gold or Core", k: "veins", n: 5 * lv, r: 10 * lv },
+    { t: "Hit a ×10 combo", h: "Mine tiles fast, no pauses", k: "combos", n: 1, r: 8 * lv }, { t: `Bust THE RUG PULLER (LV ${stats.kills + 1})`, h: "It gets tougher every time", k: "kills", n: 1, r: 30 + 10 * lv }][j % 4]; }
+function qVal(q) { const v = q.abs ? (q.k === "drill" ? upg.drill : upg[q.k] ? 1 : 0) : stats[q.k] - (qBase[q.k] || 0); return Math.max(0, Math.min(q.n, v)); }
+function qStart() { qBase = {}; for (const k in stats) qBase[k] = stats[k]; updQuest(); }
+function qTick() { const q = qDef(Qi); if (qVal(q) >= q.n) { shards += q.r; updShards(); banner("QUEST COMPLETE", `${q.t} · ◆+${q.r}`); sfx.quest(); buzz(40); burst(P.x, P.y + 1.2, P.z, [0xffd24a, 0x14f195, 0xff4fd8], 40, 5); Qi++; qStart(); save(); } else updQuest(); }
+let lastQ = "";
+function updQuest() { const q = qDef(Qi), v = qVal(q), key = Qi + ":" + v; if (key === lastQ) return; lastQ = key;
+  $("qN").textContent = Qi < QUESTS.length ? `QUEST ${Qi + 1}/${QUESTS.length}` : "BONUS QUEST"; $("qT").textContent = q.t; $("qH").textContent = q.h; $("qR").textContent = `◆+${q.r}`;
+  $("qBar").style.width = (100 * v / q.n).toFixed(0) + "%"; $("qC").textContent = q.n > 1 ? `${v}/${q.n}` : ""; }
+
+// ---------------- banner, HP ----------------
+let banT = null;
+function banner(a, b) { const el = $("banner"); el.querySelector("h2").textContent = a; el.querySelector("p").textContent = b || ""; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); clearTimeout(banT); banT = setTimeout(() => el.classList.remove("show"), 2600); }
+let hpKey = "";
+function updHP() { const m = maxHp(), k = P.hp + "/" + m; if (k === hpKey) return; hpKey = k; const el = $("hp"); let h = ""; for (let i = 0; i < m; i++) h += `<i class="${i < P.hp ? "on" : ""}"></i>`; el.innerHTML = h; el.classList.toggle("low", P.hp <= 3); }
+function hurt(n) { P.hp -= n; P.regenT = 5; updHP(); trauma = Math.max(trauma, .5); buzz(60); sfx.hurt(); $("hurt").style.opacity = 1; setTimeout(() => $("hurt").style.opacity = 0, 250);
+  if (P.hp <= 0) { banner("REKT", "Back to the plaza. Your shards are safe."); if (boss.on) bossEnd(false); P.hp = maxHp(); updHP(); respawn(); } }
+
+// ---------------- shard orbs that fly to you ----------------
+const orbGeo = new THREE.OctahedronGeometry(.12), orbMats = {}, orbs = [];
+function spawnOrbs(x, y, z, val, col) { const n = Math.min(8, val), per = Math.floor(val / n); let rem = val - per * n;
+  const m = orbMats[col] || (orbMats[col] = new THREE.MeshBasicMaterial({ color: col, fog: false }));
+  for (let i = 0; i < n; i++) { const o = new THREE.Mesh(orbGeo, m); o.position.set(x, y, z); scene.add(o); orbs.push({ o, v: per + (rem-- > 0 ? 1 : 0), vx: (Math.random() - .5) * 4, vy: 2 + Math.random() * 3, vz: (Math.random() - .5) * 4, t: 0 }); } }
+let pickN = 0;
+function updOrbs(dt) { for (let i = orbs.length - 1; i >= 0; i--) { const b = orbs[i], o = b.o; b.t += dt; o.rotation.y += dt * 8; o.rotation.x += dt * 5;
+  if (b.t < .35) { b.vy -= 9 * dt; o.position.x += b.vx * dt; o.position.y += b.vy * dt; o.position.z += b.vz * dt; continue; }
+  const tx = P.x - o.position.x, ty = P.y + 1.1 - o.position.y, tz = P.z - o.position.z, d = Math.hypot(tx, ty, tz), sp = Math.min(40, 6 + b.t * 30);
+  if (d < .5 || b.t > 4) { scene.remove(o); orbs.splice(i, 1); shards += b.v; updShards(); pickN++; sfx.pick(pickN % 15); const n = $("shards"); n.classList.remove("bump"); void n.offsetWidth; n.classList.add("bump"); continue; }
+  o.position.x += tx / d * sp * dt; o.position.y += ty / d * sp * dt; o.position.z += tz / d * sp * dt; } if (!orbs.length) pickN = 0; }
+
+// ---------------- debris cubes ----------------
+const DN = IS_TOUCH ? 48 : 96, dMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(.16, .16, .16), new THREE.MeshLambertMaterial({ emissive: 0x222222 }), DN);
+dMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); dMesh.frustumCulled = false; scene.add(dMesh);
+const dd = Array.from({ length: DN }, () => ({ l: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, r: 0 })); let dHead = 0; const dObj = new THREE.Object3D(), dCol = new THREE.Color();
+for (let i = 0; i < DN; i++) { dObj.scale.setScalar(0); dObj.updateMatrix(); dMesh.setMatrixAt(i, dObj.matrix); dMesh.setColorAt(i, dCol.set(0xffffff)); }
+function debris(x, y, z, col, n) { for (let k = 0; k < n; k++) { const i = dHead; dHead = (dHead + 1) % DN; const q = dd[i]; q.l = .8 + Math.random() * .6; q.x = x + (Math.random() - .5) * .5; q.y = y + (Math.random() - .5) * .5; q.z = z + (Math.random() - .5) * .5;
+  q.vx = (Math.random() - .5) * 5; q.vy = 1.5 + Math.random() * 4; q.vz = (Math.random() - .5) * 5; q.r = Math.random() * 6; dMesh.setColorAt(i, dCol.set(col)); } dMesh.instanceColor.needsUpdate = true; }
+function updDebris(dt) { let any = false; for (let i = 0; i < DN; i++) { const q = dd[i]; if (q.l <= 0) continue; any = true; q.l -= dt; q.vy -= 18 * dt;
+  let nx = q.x + q.vx * dt, ny = q.y + q.vy * dt, nz = q.z + q.vz * dt; if (get(Math.floor(nx), Math.floor(ny), Math.floor(nz))) { if (q.vy < 0 && !get(Math.floor(q.x), Math.floor(ny), Math.floor(q.z))) { q.vy = 0; } else { q.vy *= -.3; } q.vx *= .5; q.vz *= .5; ny = q.y; if (get(Math.floor(nx), Math.floor(q.y), Math.floor(nz))) { nx = q.x; nz = q.z; } }
+  q.x = nx; q.y = ny; q.z = nz; q.r += dt * 8; dObj.position.set(q.x, q.y, q.z); dObj.rotation.set(q.r, q.r * .7, 0); dObj.scale.setScalar(q.l > 0 ? Math.min(1, q.l * 2) : 0); dObj.updateMatrix(); dMesh.setMatrixAt(i, dObj.matrix); }
+  if (any) dMesh.instanceMatrix.needsUpdate = true; }
+
+// ---------------- combo ----------------
+let comboN = 0, comboT = 0;
+function comboHit() { comboN++; comboT = 2.2; if (comboN >= 3) { const c = $("combo"); c.textContent = `×${comboN} COMBO`; c.classList.remove("hit"); void c.offsetWidth; c.classList.add("hit", "show"); }
+  if (comboN % 10 === 0) { stats.combos++; spawnOrbs(P.x + Math.sin(-P.yaw) * 1.5, P.y + 1.4, P.z - Math.cos(P.yaw) * 1.5, 2, 0xff4fd8); pop(`COMBO ×${comboN} ◆+2`, "#ff4fd8"); sfx.combo(comboN); } }
+function updCombo(dt) { if (comboT > 0) { comboT -= dt; if (comboT <= 0) { comboN = 0; $("combo").classList.remove("show"); } } }
+
+// ---------------- THE RUG PULLER (boss) ----------------
+const boss = { on: false, g: null, eye: null, rug: null, hp: 0, max: 0, t: 0, shotT: 2, phase: 1, shots: [], flash: 0 };
+const rugTex = (() => { const c = document.createElement("canvas"); c.width = 256; c.height = 168; const g = c.getContext("2d");
+  const gr = g.createLinearGradient(0, 0, 0, 168); gr.addColorStop(0, "#3a0838"); gr.addColorStop(.5, "#6a1050"); gr.addColorStop(1, "#2a0628"); g.fillStyle = gr; g.fillRect(0, 12, 256, 144);
+  g.strokeStyle = "#ffd24a"; g.lineWidth = 4; g.strokeRect(10, 20, 236, 128); g.lineWidth = 2; g.strokeStyle = "#ff4fd8";
+  for (let x = 24; x < 240; x += 32) for (const y of [40, 128]) { g.beginPath(); g.moveTo(x, y - 10); g.lineTo(x + 10, y); g.lineTo(x, y + 10); g.lineTo(x - 10, y); g.closePath(); g.stroke(); }
+  g.strokeStyle = "rgba(255,210,74,.5)"; for (let x = 4; x < 256; x += 8) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 14); g.moveTo(x, 154); g.lineTo(x, 168); g.stroke(); }
+  g.font = "900 22px Orbitron,Verdana"; g.textAlign = "center"; g.fillStyle = "#ffd24a"; g.fillText("RUG", 50, 92); g.fillText("PULL", 206, 92);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const shotTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d"); const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, "#fff"); r.addColorStop(.25, "#ff6a8a"); r.addColorStop(.6, "rgba(255,50,80,.5)"); r.addColorStop(1, "rgba(255,50,80,0)"); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+function makeBoss() { const g = new THREE.Group();
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 2.9, 16, 10), new THREE.MeshBasicMaterial({ map: rugTex, side: THREE.DoubleSide, transparent: true }));
+  rug.userData.base = rug.geometry.attributes.position.array.slice(); g.add(rug);
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(.55, 20, 14), new THREE.MeshBasicMaterial({ color: 0xff3250 })); eye.position.z = .35; g.add(eye);
+  const pupil = new THREE.Mesh(new THREE.SphereGeometry(.24, 12, 10), new THREE.MeshBasicMaterial({ color: 0x110010 })); pupil.position.z = .42; eye.add(pupil);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.8, .07, 8, 32), new THREE.MeshBasicMaterial({ color: 0xffd24a })); ring.position.z = .3; g.add(ring);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: shotTex, color: 0xff4fd8, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.set(6, 6, 1); halo.position.z = -.2; g.add(halo);
+  boss.g = g; boss.eye = eye; boss.rug = rug; boss.ring = ring; }
+function summonBoss() { if (boss.on || upg.drill < 2) return false; if (!boss.g) makeBoss(); boss.on = true; boss.phase = 1; boss.t = 0; boss.shotT = 3.5; boss.max = Math.round(260 * (1 + .6 * stats.kills)); boss.hp = boss.max;
+  boss.g.position.set(P.x + Math.sin(-P.yaw) * 14, P.y + 14, P.z - Math.cos(P.yaw) * 14); scene.add(boss.g); $("bossbar").classList.add("show"); updBossBar();
+  banner("THE RUG PULLER", "Blast its eye with your drill!"); sfx.roar(); trauma = .8; buzz(120); return true; }
+function updBossBar() { $("bossFill").style.width = (100 * Math.max(0, boss.hp) / boss.max).toFixed(1) + "%"; $("bossLv").textContent = `THE RUG PULLER · LV ${stats.kills + 1}`; }
+function bossDamage(n) { if (!boss.on) return; boss.hp -= n; boss.flash = .08; updBossBar(); if (Math.random() < .25) { const p = boss.eye.getWorldPosition(tmpV); burst(p.x, p.y, p.z, [0xffd24a, 0xff4fd8, 0xffffff], 2, 5); sfx.bhit(); } trauma = Math.max(trauma, .12);
+  if (boss.phase === 1 && boss.hp < boss.max / 2) { boss.phase = 2; banner("IT'S PULLING THE RUG!", "Phase 2: FUD minions incoming"); sfx.roar(); trauma = .6; fudTimer = 0; }
+  if (boss.hp <= 0) bossEnd(true); }
+function bossEnd(won, silent) { if (!boss.on) return; boss.on = false; const p = boss.g.position.clone(); scene.remove(boss.g); $("bossbar").classList.remove("show");
+  for (const s of boss.shots) scene.remove(s.s); boss.shots.length = 0;
+  if (won) { stats.kills++; const prize = 40 + 10 * stats.kills; for (let i = 0; i < 6; i++) setTimeout(() => { burst(p.x + (Math.random() - .5) * 3, p.y + (Math.random() - .5) * 2, p.z + (Math.random() - .5) * 3, [0xffd24a, 0xff4fd8, 0x14f195, 0xffffff], IS_TOUCH ? 30 : 60, 8); debris(p.x, p.y, p.z, [0xff4fd8, 0xffd24a, 0x6a1050][i % 3], 6); trauma = 1; }, i * 120);
+    spawnOrbs(p.x, p.y, p.z, prize, 0xffd24a); banner("RUG BUSTED!", `◆+${prize} SOL shards · next one is tougher`); sfx.win(); buzz(200); save(); }
+  else if (!silent) banner("IT GOT AWAY…", "Summon it again from the ⚡ LAB"); }
+function updBoss(dt, time) { if (!boss.on) return; const g = boss.g; boss.t += dt; const a = boss.t * .35;
+  let tx = P.x + Math.cos(a) * 8, tz = P.z + Math.sin(a) * 8; tx = Math.max(2, Math.min(SX - 2, tx)); tz = Math.max(2, Math.min(SZ - 2, tz));
+  const gy = Math.max(topH[Math.floor(tx) + Math.floor(tz) * SX] + 4, P.y + 4 + Math.sin(boss.t * .8) * 1.5);
+  const k = Math.min(1, dt * 1.3); g.position.x += (tx - g.position.x) * k; g.position.y += (gy - g.position.y) * k; g.position.z += (tz - g.position.z) * k;
+  g.lookAt(P.x, P.y + P.eye, P.z); boss.ring.rotation.z += dt * (boss.phase === 2 ? 5 : 2);
+  const pa = boss.rug.geometry.attributes.position, b = boss.rug.userData.base; for (let i = 0; i < pa.count; i++) { const x = b[i * 3], y = b[i * 3 + 1]; pa.array[i * 3 + 2] = Math.sin(x * 1.5 + boss.t * 4) * .28 + Math.sin(y * 2 + boss.t * 3) * .12 - Math.abs(x) * .1; } pa.needsUpdate = true;
+  boss.flash -= dt; boss.eye.material.color.setHex(boss.flash > 0 ? 0xffffff : boss.phase === 2 ? 0xff8a00 : 0xff3250); boss.eye.scale.setScalar(1 + Math.sin(time * 6) * .06 + (boss.flash > 0 ? .15 : 0));
+  boss.shotT -= dt; if (boss.shotT <= 0) { boss.shotT = boss.phase === 2 ? 1.5 : 2.3; const n = boss.phase === 2 ? 3 : 1, o = boss.eye.getWorldPosition(new THREE.Vector3());
+    for (let i = 0; i < n; i++) { const d = new THREE.Vector3(P.x - o.x, P.y + 1.2 - o.y, P.z - o.z).normalize(); d.applyAxisAngle(new THREE.Vector3(0, 1, 0), (i - (n - 1) / 2) * .28);
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: shotTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); s.scale.set(.9, .9, 1); s.position.copy(o); scene.add(s); boss.shots.push({ s, v: d.multiplyScalar(boss.phase === 2 ? 8 : 6.5), l: 5 }); } sfx.bshot(); }
+  for (let i = boss.shots.length - 1; i >= 0; i--) { const q = boss.shots[i], s = q.s; q.l -= dt; s.position.addScaledVector(q.v, dt);
+    const dx = P.x - s.position.x, dy = P.y + 1 - s.position.y, dz = P.z - s.position.z;
+    if (dx * dx + dy * dy + dz * dz < .55) { scene.remove(s); boss.shots.splice(i, 1); P.vx -= q.v.x * .8; P.vz -= q.v.z * .8; P.vy = 4; pop("RUGGED! −2", "#ff6a8a"); hurt(2); continue; }
+    if (q.l <= 0 || get(Math.floor(s.position.x), Math.floor(s.position.y), Math.floor(s.position.z))) { burst(s.position.x, s.position.y, s.position.z, [0xff3250, 0xff6a8a], 8, 3); scene.remove(s); boss.shots.splice(i, 1); } }
+  if (Math.hypot(g.position.x - P.x, g.position.z - P.z) > 45) bossEnd(false); }
+
+// ---------------- biome toast + adaptive resolution ----------------
+let biomeNow = "", bT = 0;
+function bTick(dt) { bT -= dt; if (bT > 0) return; bT = .5; const b = topH[Math.floor(P.x) + Math.floor(P.z) * SX] > P.y + 3 ? "UNDERGROUND" : biomeName(P.x, P.z); if (b && b !== biomeNow) { biomeNow = b; lampT = b === "UNDERGROUND" ? 1 : 0; const el = $("biome"); el.textContent = b; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); } updHP(); }
+let resT = 0, resN = 0, resLow = 0, resHigh = 0;
+function adaptRes(dt) { if (Q.has("dpr") || !running) return; resT += dt; resN++; if (resT < 2) return; const f = resN / resT; resT = 0; resN = 0; const pr = renderer.getPixelRatio(), cap = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+  if (f < 48) { resHigh = 0; if (++resLow >= 1 && pr > .75) { renderer.setPixelRatio(Math.max(.75, pr - .25)); resize(); } } else if (f > 58) { resLow = 0; if (++resHigh >= 4 && pr < cap) { renderer.setPixelRatio(Math.min(cap, pr + .25)); resize(); resHigh = 0; } } }
+
 // ---------------- main loop ----------------
 let last = performance.now(), fpsN = 0, fpsT = 0, fps = 0, bob = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; const time = now / 1000;
   const night = updSky(running ? dt : 0);
-  if (running) { updPlayer(dt); updMining(dt, time); updFuds(dt, night); }
-  updMP(dt); updParts(dt);
+  if (running) { updPlayer(dt); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); }
+  updMP(dt); updParts(dt); updDebris(dt); audioTick(); adaptRes(dt);
   let n = 0; for (const ci of dirty) { buildChunk(ci); dirty.delete(ci); if (++n >= 3) break; }
-  camera.position.set(P.x, P.y + P.eye, P.z); camera.rotation.set(P.pitch, P.yaw, 0);
+  trauma = Math.max(0, trauma - dt * 1.8); const sh = trauma * trauma;
+  camera.position.set(P.x + (Math.random() - .5) * sh * .25, P.y + P.eye + (Math.random() - .5) * sh * .25, P.z + (Math.random() - .5) * sh * .25); camera.rotation.set(P.pitch + (Math.random() - .5) * sh * .04, P.yaw + (Math.random() - .5) * sh * .04, (Math.random() - .5) * sh * .06);
+  const spd = Math.hypot(P.vx, P.vz), fovT = baseFov + (spd > 5.5 ? 6 : 0); if (Math.abs(camera.fov - fovT) > .05) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   const moving = Math.hypot(P.vx, P.vz); bob += dt * moving * 2.2; drillKick = Math.max(0, drillKick - dt * 6);
   drill.position.set(drillBase.x + Math.cos(bob * .5) * .006 * Math.min(1, moving / 4), drillBase.y + Math.sin(bob) * .01 * Math.min(1, moving / 4) - drillKick * .025, drillBase.z + drillKick * .05);
   sky.position.copy(camera.position);
@@ -587,11 +824,14 @@ function frame(now) {
 
 // ---------------- boot ----------------
 const saved = load();
-if (saved) { seed = saved.seed; edits = saved.edits || {}; shards = saved.shards | 0; sel = saved.sel | 0; tod = saved.tod ?? tod; }
-else seed = parseInt(Q.get("seed")) || 1337;
+let migrated = false;
+if (saved && !saved.migr) { seed = saved.seed; edits = saved.edits || {}; shards = saved.shards | 0; sel = saved.sel | 0; tod = saved.tod ?? tod;
+  if (saved.upg) Object.assign(upg, saved.upg); if (saved.stats) Object.assign(stats, saved.stats); Qi = saved.Qi | 0; qBase = saved.qBase || {}; P.hp = saved.hp || maxHp();
+  if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; } }
+else { seed = parseInt(Q.get("seed")) || 1337; if (saved && saved.migr) { shards = saved.shards; migrated = true; } qStart(); }
 generate(seed); applyEdits(); const tris = buildAll();
 respawn(); if (saved && saved.p) { [P.x, P.y, P.z, P.yaw, P.pitch] = saved.p; if (collides(P.x, P.y, P.z)) respawn(); }
-buildPalette(); updShards(); resize();
+buildPalette(); updShards(); resize(); updQuest(); updHP(); updSetBtns(); syncLookBtn(); if (migrated) setTimeout(() => banner("BIGGER WORLD!", "Your SOL shards carried over to the new map"), 600);
 // Phase-2 hook is for LOCAL testing only: only localhost servers are accepted.
 if (Q.get("mp")) { try { const u = new URL(Q.get("mp")); if (/^wss?:$/.test(u.protocol) && ["localhost", "127.0.0.1"].includes(u.hostname)) mpConnect(u.href); } catch (e) {} }
 $("load").remove();
@@ -601,4 +841,4 @@ requestAnimationFrame(frame);
 // test / debug hooks (harmless; used by automated checks)
 window.__SB = { P, input, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
   state: () => ({ x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, ground: P.ground, shards, sel, running, tris, fps: Math.round(fps), fuds: fuds.length, tod, mp: mp.on ? { id: mp.id, rejects: mp.rejects || 0, lastEmote: mp.lastEmote || null, others: [...mp.others.values()].map(o => ({ name: o.p.name, x: o.p.x, y: o.p.y, z: o.p.z })) } : null, info: renderer.info.render }),
-  select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };
+  select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, upg, stats, quest: () => ({ i: Qi, ...qDef(Qi), v: qVal(qDef(Qi)) }), boss: () => ({ on: boss.on, hp: boss.hp, max: boss.max, phase: boss.phase }), summon: () => summonBoss(), lookAtBoss: () => { if (!boss.on) return; const o = boss.g.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); }, bossDamage: n => bossDamage(n), openLab, closeLab, buy: id => buyUpg(id), hp: () => P.hp, biome: () => biomeName(P.x, P.z), give: n => { shards += n; updShards(); }, setTod: t => { tod = t; }, dpr: () => renderer.getPixelRatio(), combo: () => comboN, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };
