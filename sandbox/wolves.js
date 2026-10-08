@@ -29,15 +29,16 @@ export function createWolves(THREE, C) {
     let glyph = null; if (fud) { glyph = new THREE.Sprite(new THREE.SpriteMaterial({ map: fudTex, transparent: true, depthWrite: false, fog: false, blending: THREE.AdditiveBlending })); glyph.scale.set(.62, .27, 1); glyph.position.set(0, 1.28, 0); root.add(glyph); }
     const portal = new THREE.Mesh(G.ring, new THREE.MeshBasicMaterial({ color: 0x9945ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false })); portal.position.y = .04; root.add(portal);
     return { root, body, head, jaw, tail, legs, eg, glyph, portal }; }
-  const pool = []; const getModel = () => pool.pop() || makeModel(true);
+  const pool = [], wildPool = []; const getModel = wild => (wild ? wildPool.pop() : pool.pop()) || makeModel(!wild);
   // ---- helpers ----
   const dist2 = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
   let howlCd = 0;
-  function spawn(x, y, z, o = {}) { if (list.length >= MAX) return false; const gy = C.groundAt(x, y + 2, z); if (gy == null) return false; const m = getModel();
-    m.root.position.set(x, gy, z); m.root.scale.setScalar(.01); m.root.rotation.y = Math.atan2(P.x - x, P.z - z); m.root.visible = true; scene.add(m.root);
-    const w = { m, s: m.root, x, y: gy, z, vy: 0, st: "rise", t: 0, hp: 1.1, cd: 1.5 + Math.random() * 1.5, orbit: Math.random() * 6.28, dir: Math.random() < .5 ? 1 : -1, ph: Math.random() * 6, spd: 0, hitT: 0, howlT: 8 + Math.random() * 8, bit: false, c: new THREE.Vector3(), boss: !!o.boss };
-    list.push(w); if (C.burst) C.burst(x, gy + .3, z, [0x9945ff, 0xff3a5a, 0x28dcff], IS_TOUCH ? 12 : 22, 3); return w; }
-  function free(w) { scene.remove(w.m.root); w.m.portal.material.opacity = 0; pool.push(w.m); const i = list.indexOf(w); if (i >= 0) list.splice(i, 1); }
+  function spawn(x, y, z, o = {}) { if (list.length >= MAX && !o.wild) return false; const gy = C.groundAt(x, y + 2, z); if (gy == null) return false; const m = getModel(o.wild);
+    m.root.position.set(x, gy, z); m.root.scale.setScalar(o.wild ? 1 : .01); m.root.rotation.y = o.yaw ?? Math.atan2(P.x - x, P.z - z); m.root.visible = true; scene.add(m.root);
+    const w = { m, s: m.root, x, y: gy, z, vy: 0, st: "rise", t: 0, hp: 1.1, cd: 1.5 + Math.random() * 1.5, orbit: Math.random() * 6.28, dir: Math.random() < .5 ? 1 : -1, ph: Math.random() * 6, spd: 0, hitT: 0, howlT: 8 + Math.random() * 8, bit: false, c: new THREE.Vector3(), boss: !!o.boss, wild: !!o.wild };
+    if (o.wild) { w.st = "prowl"; w.cd = .7; w.hp = 1.3; C.sfx.snarl && C.sfx.snarl(x, gy, z, 1); }
+    list.push(w); if (C.burst && !o.wild) C.burst(x, gy + .3, z, [0x9945ff, 0xff3a5a, 0x28dcff], IS_TOUCH ? 12 : 22, 3); return w; }
+  function free(w) { scene.remove(w.m.root); w.m.portal.material.opacity = 0; (w.wild ? wildPool : pool).push(w.m); const i = list.indexOf(w); if (i >= 0) list.splice(i, 1); }
   function step(w, dx, dz, dt) { const nx = w.x + dx * dt, nz = w.z + dz * dt; let ok = false;
     const gx = C.groundAt(nx, w.y + 1.1, w.z); if (gx != null && gx - w.y < 1.15 && w.y - gx < 3.5 && C.inArena(nx, w.z)) { w.x = nx; ok = true; }
     const gz = C.groundAt(w.x, w.y + 1.1, nz); if (gz != null && gz - w.y < 1.15 && w.y - gz < 3.5 && C.inArena(w.x, nz)) { w.z = nz; ok = true; }
@@ -57,8 +58,8 @@ export function createWolves(THREE, C) {
   function update(dt, time, o = {}) { howlCd -= dt; const cx = P.x, cz = P.z, py = P.y;
     for (let i = list.length - 1; i >= 0; i--) { const w = list[i], m = w.m; w.t += dt; w.cd -= dt; w.hitT -= dt; w.howlT -= dt;
       const dx = cx - w.x, dz = cz - w.z, d = Math.hypot(dx, dz), dy = py - w.y;
-      if (o.leave && w.st !== "leave" && w.st !== "rise") { w.st = "leave"; w.t = 0; }
-      if (d > 50 && w.st !== "rise") { free(w); continue; }
+      if (o.leave && !w.wild && w.st !== "leave" && w.st !== "rise") { w.st = "leave"; w.t = 0; }
+      if ((d > 50 || (w.wild && d > 34)) && w.st !== "rise") { free(w); continue; }
       if (w.st === "rise") { const u = Math.min(1, w.t / .7); m.root.scale.setScalar(.01 + .99 * (1 - (1 - u) ** 3)); m.portal.material.opacity = .85 * (1 - u * .6); face(w, cx, cz, dt);
         if (u >= 1) { w.st = "howl"; w.t = 0; if (howlCd <= 0) { howlCd = 3.5; C.sfx.howl && C.sfx.howl(w.x, w.y, w.z); } } }
       else if (w.st === "howl") { m.portal.material.opacity = Math.max(0, m.portal.material.opacity - dt); face(w, cx, cz, dt, 4); if (w.t > 1.5) { w.st = "prowl"; w.t = 0; } }
