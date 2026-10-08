@@ -178,6 +178,9 @@ body.photo #photoBar{display:block;touch-action:manipulation;position:fixed;z-in
 .btn.pk{border-color:var(--pink)}
 .nv2{font-size:10px;color:#cfc2ff;margin-top:10px;opacity:.85}
 .legal{font-size:9px;opacity:.5;margin-top:8px}
+#lairNav{left:50%;transform:translateX(-50%);top:calc(max(10px,env(safe-area-inset-top)) + 46px);display:none;align-items:center;gap:7px;padding:4px 11px 4px 7px;border-radius:14px;background:rgba(12,6,24,.72);border:1px solid #8cdc3c;box-shadow:0 0 12px rgba(140,220,60,.4);font:900 10px Orbitron,sans-serif;letter-spacing:1px;color:#e8ffd0;white-space:nowrap}
+#lairNav.show{display:flex}#lairAr{display:inline-block;font-size:15px;color:#b8ff6a;text-shadow:0 0 8px #8cdc3c;transition:transform .12s linear}#lairD{color:#ffd24a;min-width:34px;text-align:right}
+body.touch #lairNav{top:calc(max(8px,env(safe-area-inset-top)) + 4px);font-size:9px;padding:3px 9px 3px 6px}
 #load{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:var(--ink);font-size:12px;letter-spacing:3px;color:var(--cyan)}
 #err{position:fixed;left:8px;right:8px;bottom:8px;z-index:30;display:none;font:11px monospace;color:#ffb0c0;background:rgba(40,0,10,.85);padding:8px;border-radius:8px}
 </style>
@@ -194,6 +197,7 @@ body.photo #photoBar{display:block;touch-action:manipulation;position:fixed;z-in
 <div class="hud" id="banner"><h2></h2><p></p></div>
 <div class="hud" id="biome"></div>
 <div class="hud" id="evChip"></div>
+<div class="hud" id="lairNav"><span id="lairAr">▲</span><span class="ln">🧀 FUDDER'S LAIR</span><b id="lairD">--</b></div>
 <div class="hud" id="ach"><b>🏆 ACHIEVEMENT</b><span id="achN"></span><small id="achD"></small></div>
 <div class="hud" id="scan" style="display:none"><div id="scanAr">▲</div><div id="scanTx"></div></div>
 <button id="labBtn" aria-label="Upgrade lab">⚡<small>LAB</small></button>
@@ -250,7 +254,7 @@ body.photo #photoBar{display:block;touch-action:manipulation;position:fixed;z-in
    <span class="lk">LOOK <button class="btn sm" id="lookDn" type="button">−</button><b id="lookV">100%</b><button class="btn sm" id="lookUp" type="button">+</button></span></div>
   <button class="btn sm" id="howBtn" type="button">HOW TO PLAY ▾</button>
   <div id="how">
-  <p>Explore four neon zones and dig into glowing caves for <b style="color:#c69bff">SOL shard</b>, Prism, Gold and Core veins with your <b style="color:#14f195">Rug-Buster</b> drill. Build toys (<b style="color:#14f195">Bounce Pads</b>, Boost Strips, Synth Keys, Firework Crates), hunt 5 secret caches, Fish the glowing <b style="color:#28dcff">neon pools</b>, catch falling <b style="color:#fff2b0">SOL meteors</b>, zap <b style="color:#28dcff">Paper Hands</b>, survive <b style="color:#ff6a8a">FUD clouds</b> at night, upgrade in the <b style="color:#ffd24a">⚡ LAB</b>, then bust <b style="color:#ff4fd8">THE RUG PULLER</b> and <b style="color:#b46aff">THE FUD KING</b>.</p>
+  <p>Explore four neon zones and dig into glowing caves for <b style="color:#c69bff">SOL shard</b>, Prism, Gold and Core veins with your <b style="color:#14f195">Rug-Buster</b> drill. Build toys (<b style="color:#14f195">Bounce Pads</b>, Boost Strips, Synth Keys, Firework Crates), hunt 5 secret caches, Fish the glowing <b style="color:#28dcff">neon pools</b>, catch falling <b style="color:#fff2b0">SOL meteors</b>, zap <b style="color:#28dcff">Paper Hands</b>, dodge prowling <b style="color:#ff6a8a">FUD wolves</b> at night, upgrade in the <b style="color:#ffd24a">⚡ LAB</b>, then bust <b style="color:#ff4fd8">THE RUG PULLER</b> and <b style="color:#b46aff">THE FUD KING</b>.</p>
   <div class="ctl" id="ctlDesk">
    <div><b>WASD</b> move · <b>SHIFT</b> sprint</div><div><b>MOUSE</b> look · <b>SPACE</b> jump</div>
    <div><b>HOLD LEFT CLICK</b> mine / zap</div><div><b>RIGHT CLICK</b> build</div>
@@ -271,6 +275,6 @@ body.photo #photoBar{display:block;touch-action:manipulation;position:fixed;z-in
 <script>
 window.addEventListener("error",e=>{const d=document.getElementById("err");d.style.display="block";d.textContent="Error: "+(e.message||e);});
 </script>
-<script type="module" src="./sandbox.js"></script>
+<script type="module" src="./sandbox.js?v=0.9.2"></script>
 </body>
 </html>

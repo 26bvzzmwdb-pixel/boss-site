@@ -180,9 +180,9 @@ export function createBosses(THREE, C) {
       const wd = 1 * W; st.wind = Math.min(1, a.t / wd); if (a.s === 0) { a.s = 1; C.pop("📢 FUD RANT INCOMING! JUMP THE WORDS", "#b8ff6a"); C.sfx.warn && C.sfx.warn(); }
       const n = ph === 1 ? 1 : 2; if (a.s >= 1 && a.s <= n && a.t > wd + (a.s - 1) * 1.1) { a.s++; const g2 = st.g.position; rantWave(g2.x, g2.z, 6.5, 17); C.roar(); }
       if (a.t > wd + n * 1.1 + .6) { st.wind = 0; if (ph < 3 && Math.random() < .5) { st.expose = 2 * W; C.pop("SNACK BREAK! HIT THE BAG", "#ffd24a"); } return true; } }
-    else if (a.n === "clouds") { // summons FUD clouds from the screens, then munches (bag exposed)
-      const wd = .8 * W; st.wind = Math.min(1, a.t / wd); if (a.s === 0 && a.t > wd) { a.s = 1; st.wind = 0; const A = st.arena || { x: st.g.position.x, z: st.g.position.z, floorY: P.y }; for (let i = 0; i < 3; i++) { const an = Math.random() * 6.283; C.spawnFud && C.spawnFud(A.x + Math.cos(an) * 6, (A.floorY || P.y) + 3 + Math.random() * 2, A.z + Math.sin(an) * 6); }
-        C.pop("☁ FUD CLOUDS SUMMONED! ZAP THEM", "#c8b0ff"); st.expose = 2.4 * W; }
+    else if (a.n === "clouds") { // v0.9.2: summons a pack of FUD WOLVES out of glitch portals (was FUD clouds), then munches (bag exposed)
+      const wd = .8 * W; st.wind = Math.min(1, a.t / wd); if (a.s === 0 && a.t > wd) { a.s = 1; st.wind = 0; const A = st.arena || { x: st.g.position.x, z: st.g.position.z, floorY: P.y }; const nW = IS_TOUCH ? 2 : 3, a0 = Math.random() * 6.283; for (let i = 0; i < nW; i++) { const an = a0 + i * 6.283 / nW; C.spawnFud && C.spawnFud(A.x + Math.cos(an) * 6, (A.floorY || P.y) + 2, A.z + Math.sin(an) * 6); }
+        C.pop("🐺 FUD WOLVES SUMMONED! ZAP THEM", "#c8b0ff"); st.expose = 2.4 * W; }
       if (a.t > wd + 2.4 * W) return true; }
     else if (a.n === "slam") { // rage: slams the floor, rocks fall from the ceiling on marked spots, then a snack break
       const wd = .9 * W; if (a.s === 0) { a.s = 1; a.x = st.g.position.x; a.z = st.g.position.z; marker(a.x, a.z, 3.4, 0xff5030, wd); C.pop("👊 GROUND SLAM! BACK OFF", "#ff8060"); C.sfx.warn && C.sfx.warn(); }
