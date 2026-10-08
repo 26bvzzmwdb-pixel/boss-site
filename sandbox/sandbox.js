@@ -4,14 +4,15 @@
 import * as THREE from "./three.module.min.js";
 import { createCharKit } from "./chars3d.js";
 import { createGems } from "./gems.js";
+import { createTerrain } from "./terrain.js";
 
 const Q = new URLSearchParams(location.search);
 const $ = id => document.getElementById(id);
 const IS_TOUCH = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
 if (IS_TOUCH) document.body.classList.add("touch");
 
-import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools, caches } from "./world.js";
-const SAVE_KEY = "boss_sandbox_v2", OLD_KEY = "boss_sandbox_v1";
+import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools, caches, trees } from "./world.js";
+const SAVE_KEY = "boss_sandbox_v2", OLD_KEY = "boss_sandbox_v1", WORLD_V = 3;   // v0.9: WORLD_V 3 = bigger natural world (older saves keep progress, get the new map)
 const DAY_LEN = 480;                               // seconds per full day/night cycle
 let seed = 1337, edits = {}, shards = 0, plaza = { x: 40, y: 20, z: 40 };
 const topH = new Int16Array(SX * SZ);
@@ -27,7 +28,7 @@ function setBlock(x, y, z, id, fromNet) {
 // ---------------- save / load ----------------
 let saveT = 0;
 function scheduleSave() { saveT = 1.0; }
-function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qv: 2, qBase, hp: P.hp, daily, intro: introDone, dex: fish.dex, ach, bc, char: charId, view, tp: 1, set: { snd: sndOn, mus: musOn, slow: lookSlow, look: lookMul } })); } catch (e) {} }
+function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, wv: WORLD_V, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qv: 2, qBase, hp: P.hp, daily, intro: introDone, dex: fish.dex, ach, bc, char: charId, view, tp: 1, set: { snd: sndOn, mus: musOn, slow: lookSlow, look: lookMul } })); } catch (e) {} }
 function load() { if (Q.has("reset")) try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {}
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); if (s && s.v === 2) return s;
     const o = JSON.parse(localStorage.getItem(OLD_KEY) || "null"); if (o && o.v === 1) return { migr: true, shards: o.shards | 0 }; } catch (e) {} return null; }
@@ -145,14 +146,17 @@ const FACES = [
 const AO = [.45, .65, .82, 1];
 const solid = (x, y, z) => { if (x < 0 || z < 0 || x >= SX || z >= SZ) return 0; return get(x, y, z) ? 1 : 0; };
 const chunks = []; const dirty = new Set();
-function markDirty(x, z) { const cx = Math.floor(x / CS), cz = Math.floor(z / CS); dirty.add(cx + cz * NCX);
-  if (x % CS === 0 && cx > 0) dirty.add(cx - 1 + cz * NCX); if (x % CS === CS - 1 && cx < NCX - 1) dirty.add(cx + 1 + cz * NCX);
-  if (z % CS === 0 && cz > 0) dirty.add(cx + (cz - 1) * NCX); if (z % CS === CS - 1 && cz < NCZ - 1) dirty.add(cx + (cz + 1) * NCX); }
+// v0.9: natural tiles are drawn as one smooth organic surface (terrain.js); this cube mesher only draws built pieces, lamps, toys, plaza
+const T = createTerrain(THREE, { world, SX, SY, SZ, CS, getTop: (x, z) => topH[x + z * SX], lite: IS_TOUCH }), SMOOTH = !Q.has("cubes");
+const sm = Array.from({ length: NCX * NCZ }, () => ({ m0: null, m1: null, s0: true, s1: true, lod: 1, pr: null, d: 0, vis: true }));
+const LOD0_IN = IS_TOUCH ? 34 : 40, LOD0_OUT = LOD0_IN + 8;
+function markDirty(x, z) { // smooth chunks are meshed with a 4-tile apron, so edits near a border touch the neighbours too
+  const A = SMOOTH ? 5 : 1; for (const dz of [-A, 0, A]) for (const dx of [-A, 0, A]) { const X = x + dx, Z = z + dz; if (X < 0 || Z < 0 || X >= SX || Z >= SZ) continue; dirty.add(Math.floor(X / CS) + Math.floor(Z / CS) * NCX); } }
 function buildChunk(ci) {
   const cx = ci % NCX, cz = Math.floor(ci / NCX), pos = [], nor = [], uv = [], col = [], ind = [];
   const ins = 0.6 / TS;
   for (let y = 0; y < SY; y++) for (let z = cz * CS; z < cz * CS + CS; z++) for (let x = cx * CS; x < cx * CS + CS; x++) {
-    const id = world[idx(x, y, z)]; if (!id) continue; const bd = B[id];
+    const id = world[idx(x, y, z)]; if (!id || id === 27 || (SMOOTH && T.NAT[id])) continue; const bd = B[id];
     for (const f of FACES) {
       const nx = x + f.n[0], ny = y + f.n[1], nz = z + f.n[2];
       if (ny < 0) continue; if (ny < SY && solid(nx, ny, nz)) continue;
@@ -181,13 +185,32 @@ function buildChunk(ci) {
   geo.computeBoundingSphere();
   if (mesh) { mesh.geometry.dispose(); mesh.geometry = geo; } else { mesh = new THREE.Mesh(geo, blockMat); mesh.matrixAutoUpdate = false; scene.add(mesh); chunks[ci] = mesh; }
   try { buildGems(ci); } catch (e) {}
+  if (SMOOTH) { const q = sm[ci]; q.s1 = true; if (q.m0 || q.lod === 0) { q.s0 = true; buildSmooth(ci, 0); } else q.s0 = true; buildProps(ci); }
   return ind.length / 3;
 }
+function smMesh(g, old, mat, ord) { if (old) { old.geometry.dispose(); if (g) { old.geometry = g; return old; } scene.remove(old); return null; } if (!g) return null; const m = new THREE.Mesh(g, mat); m.matrixAutoUpdate = false; if (ord) m.renderOrder = ord; scene.add(m); return m; }
+function buildSmooth(ci, lod) { const q = sm[ci], cx = ci % NCX, cz = Math.floor(ci / NCX); const g = T.buildChunk(cx, cz, lod);
+  if (lod === 0) { q.m0 = smMesh(g, q.m0, T.mat); q.s0 = false; } else { q.m1 = smMesh(g, q.m1, T.mat); q.s1 = false; } lodVis(ci); }
+function buildProps(ci) { const q = sm[ci], cx = ci % NCX, cz = Math.floor(ci / NCX); const list = trees.filter(t => !t.dead && Math.floor(t.x / CS) === cx && Math.floor(t.z / CS) === cz); q.pr = smMesh(list.length ? T.buildProps(list) : null, q.pr, T.pmat); }
+function lodVis(ci) { const q = sm[ci]; const use0 = q.lod === 0 && q.m0 && !q.s0 || (!q.m1 && q.m0); if (q.m0) q.m0.visible = q.vis && !!use0; if (q.m1) q.m1.visible = q.vis && !use0;
+  if (chunks[ci]) chunks[ci].visible = q.vis; if (q.pr) q.pr.visible = q.vis && q.d < scene.fog.far - 4; const gm = gemL[ci]; if (gm) { gm.m.visible = q.vis && q.d < 52; gm.pt.visible = q.vis && q.d < 46; } }
+// chunked LOD: near chunks use the full-res surface, far ones the half-res one; everything past the fog is hidden. Builds are spread over frames.
+let lodT = 0; const lodQ = [];
+function lodTick(dt) { if (!SMOOTH) return; lodT -= dt; if (lodT <= 0) { lodT = .2; const ox = running ? P.x : camera.position.x, oz = running ? P.z : camera.position.z, far = scene.fog.far + 18; lodQ.length = 0;
+    for (let ci = 0; ci < sm.length; ci++) { const q = sm[ci], cx = (ci % NCX + .5) * CS, cz = (Math.floor(ci / NCX) + .5) * CS; const d = Math.max(0, Math.hypot(cx - ox, cz - oz) - CS * .7); q.d = d;
+      const want = d < LOD0_IN ? 0 : d > LOD0_OUT ? 1 : q.lod; q.lod = want; q.vis = d < far; if ((want === 0 && (!q.m0 || q.s0)) || (want === 1 && q.s1 && q.vis)) lodQ.push([d, ci, want]); lodVis(ci); }
+    lodQ.sort((a, b) => a[0] - b[0]); }
+  let n = 0; while (lodQ.length && n < (IS_TOUCH ? 1 : 2)) { const [, ci, want] = lodQ.shift(); const q = sm[ci]; if (want === 0 && (!q.m0 || q.s0)) { buildSmooth(ci, 0); n++; } else if (want === 1 && q.s1) { buildSmooth(ci, 1); n++; } } }
+// where the smooth surface really is under a point (so feet stand on it instead of on the hidden tile edge)
+function visGround(x, y, z) { if (!SMOOTH) return null; const ci = Math.floor(x / CS) + Math.floor(z / CS) * NCX, q = sm[ci]; if (!q || !q.m0 || !q.m0.visible) return null; return T.groundAt([q.m0], x, y, z); }
 // v0.9: faceted crystal clusters grow out of every open face of a gem tile (gems.js). One mesh + one glow/sparkle Points per chunk.
 const GEM = createGems(THREE, { lite: IS_TOUCH }), gemL = [];
 function buildGems(ci) { const cx = ci % NCX, cz = Math.floor(ci / NCX), old = gemL[ci]; if (old) { scene.remove(old.m, old.pt); old.m.geometry.dispose(); old.pt.geometry.dispose(); gemL[ci] = null; }
   const r = GEM.buildChunk(cx * CS, cz * CS, CS, SY, get); if (!r) return 0; const m = new THREE.Mesh(r.geo, GEM.mat), pt = new THREE.Points(r.pgeo, GEM.pmat); m.matrixAutoUpdate = pt.matrixAutoUpdate = false; pt.renderOrder = 3; scene.add(m, pt); gemL[ci] = { m, pt, faces: r.faces, tris: r.tris }; return r.tris; }
-function buildAll() { calcAllTop(); let tris = 0; for (let i = 0; i < NCX * NCZ; i++) tris += buildChunk(i); dirty.clear(); return tris; }
+function buildAll() { calcAllTop(); let tris = 0; for (const q of sm) { q.s0 = q.s1 = true; q.lod = 1; }
+  for (let i = 0; i < NCX * NCZ; i++) tris += buildChunk(i);
+  if (SMOOTH) { const ox = plaza.x, oz = plaza.z; for (let ci = 0; ci < sm.length; ci++) { const q = sm[ci], d = Math.max(0, Math.hypot((ci % NCX + .5) * CS - ox, (Math.floor(ci / NCX) + .5) * CS - oz) - CS * .7); q.d = d; buildSmooth(ci, 1); if (d < LOD0_IN) { q.lod = 0; buildSmooth(ci, 0); } } }
+  dirty.clear(); return tris; }
 
 // ---------------- sky (synthwave sun, stars, day/night) + neon grid floor ----------------
 const skyU = { uAur: { value: 0 }, uTime: { value: 0 }, uTop: { value: new THREE.Color() }, uHor: { value: new THREE.Color() }, uSun: { value: new THREE.Vector3() }, uNight: { value: 0 } };
@@ -386,8 +409,11 @@ function aim() {
   if (!critHit && !bossHit && !fudHit) aimPool(); else poolHit = null;
 }
 let mineGrace = 0; // keeps mining briefly if the thumb wobbles off the button
+function fellTree(t) { if (t.dead) return; t.dead = true; for (let y = t.y + 1; y <= t.y + t.h; y++) if (get(t.x, y, t.z) === 27) setBlock(t.x, y, t.z, 0); const K = [0xff7ad0, 0x5affb0, 0x3cffc8, 0xe8f8ff][[0, 3, 2, 3][t.kind] ?? 0];
+  burst(t.x + .5, t.y + t.h + 1, t.z + .5, [K, 0xffffff, 0x14f195], IS_TOUCH ? 30 : 60, 5); debris(t.x + .5, t.y + t.h, t.z + .5, K, 8); sfx.brk(17); spawnOrbs(t.x + .5, t.y + t.h + 1, t.z + .5, 1, 0x14f195); stats.trees = (stats.trees | 0) + 1; }
 function breakBlock(x, y, z, id, chained) {
-  setBlock(x, y, z, 0); const c = B[id]; if (id === 22) fireworks(x + .5, y + .5, z + .5);
+  setBlock(x, y, z, 0); const c = B[id]; if (id === 27) { const t = trees.find(t => t.x === x && t.z === z && !t.dead); if (t) fellTree(t); }
+  else { const t = trees.find(t => t.x === x && t.z === z && t.y === y && !t.dead); if (t) fellTree(t); } if (id === 22) fireworks(x + .5, y + .5, z + .5);
   if (id === 23) { stats.caches = (stats.caches | 0) + 1; setTimeout(() => banner("SECRET CACHE FOUND!", `◆+25 SOL shards (in-game) · ${Math.min(5, cachesFound())}/5 in this world`), 50); sfx.cache(); charJoy = 1; }
   burst(x + .5, y + .5, z + .5, [c.col, 0xffffff, c.drop ? 0x14f195 : c.col], IS_TOUCH ? (c.drop ? 30 : 12) : (c.drop ? 60 : 28), c.drop ? 6 : 4);
   debris(x + .5, y + .5, z + .5, c.col, c.drop ? 8 : 5);
@@ -795,6 +821,9 @@ const C = (h) => new THREE.Color(h);
 const SKY = [ // [tod, top, horizon]
   [0, C(0x05020f), C(0x2a0c3a)], [.22, C(0x0a0420), C(0x6a1a5a)], [.3, C(0x2a2a8a), C(0xff7a6a)], [.42, C(0x3050c0), C(0xd08ad8)],
   [.58, C(0x3050c0), C(0xd08ad8)], [.7, C(0x3a1a7a), C(0xff6a8a)], [.78, C(0x12062a), C(0x8a1a6a)], [1, C(0x05020f), C(0x2a0c3a)]];
+const _tc = { sun: new THREE.Vector3(), sunC: new THREE.Color(), sky: new THREE.Color(), gnd: new THREE.Color(), lampP: new THREE.Vector3(), fog: null, lamp: 0, night: 0, t: 0 };
+function terrTick(day) { _tc.sun.copy(skyU.uSun.value); if (_tc.sun.y < .05) _tc.sun.y = .05; _tc.sun.normalize(); _tc.sunC.copy(sun.color).multiplyScalar(sun.intensity * .8); _tc.sky.copy(hemi.color).multiplyScalar(hemi.intensity * .55); _tc.gnd.copy(hemi.groundColor).multiplyScalar(hemi.intensity * .5).add(_tc.sky.clone().multiplyScalar(.25));
+  _tc.fog = scene.fog; camera.getWorldPosition(_tc.lampP); _tc.lamp = lamp.intensity * .32; _tc.night = 1 - day; _tc.t = performance.now() / 1000; T.tick(_tc); }
 function updSky(dt) {
   if (!Q.has("tod")) tod = (tod + dt / DAY_LEN) % 1; else tod = parseFloat(Q.get("tod"));
   let i = 0; while (i < SKY.length - 2 && tod > SKY[i + 1][0]) i++; const a = SKY[i], b = SKY[i + 1], k = (tod - a[0]) / (b[0] - a[0]);
@@ -805,7 +834,7 @@ function updSky(dt) {
   hemi.intensity = .62 + day * .7; hemi.color.copy(skyU.uTop.value).lerp(C(0xffffff), .5); sun.intensity = .15 + day * 1.1;
   sun.position.set(P.x + skyU.uSun.value.x * 50, P.y + Math.abs(skyU.uSun.value.y) * 50 + 5, P.z + skyU.uSun.value.z * 50); sun.target.position.set(P.x, P.y, P.z);
   sun.color.copy(day > .2 ? C(0xffe0f0) : C(0x8a9aff));
-  blockMat.emissiveIntensity = .55 + (1 - day) * .65; GEM.tick(performance.now() / 1000, skyU.uSun.value, day, scene.fog, renderer.domElement.height);
+  blockMat.emissiveIntensity = .55 + (1 - day) * .65; terrTick(day); GEM.tick(performance.now() / 1000, skyU.uSun.value, day, scene.fog, renderer.domElement.height);
   lamp.intensity += (Math.max(lampT * 9, (1 - day) * 2.6) - lamp.intensity) * Math.min(1, dt * 3 + .02);
   const hrs = Math.floor(tod * 24), mins = Math.floor((tod * 24 - hrs) * 60); $("clock").textContent = `${day > .5 ? "☀" : "☾"} ${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
   return 1 - day;
@@ -932,7 +961,7 @@ function updOrbs(dt) { for (let i = orbs.length - 1; i >= 0; i--) { const b = or
   o.position.x += tx / d * sp * dt; o.position.y += ty / d * sp * dt; o.position.z += tz / d * sp * dt; } if (!orbs.length) pickN = 0; }
 
 // ---------------- debris cubes ----------------
-const DN = IS_TOUCH ? 48 : 96, dMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(.16, .16, .16), new THREE.MeshLambertMaterial({ emissive: 0x222222 }), DN);
+const DN = IS_TOUCH ? 48 : 96, dMesh = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(.1, 0), new THREE.MeshLambertMaterial({ emissive: 0x222222 }), DN);
 dMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); dMesh.frustumCulled = false; scene.add(dMesh);
 const dd = Array.from({ length: DN }, () => ({ l: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, r: 0 })); let dHead = 0; const dObj = new THREE.Object3D(), dCol = new THREE.Color();
 for (let i = 0; i < DN; i++) { dObj.scale.setScalar(0); dObj.updateMatrix(); dMesh.setMatrixAt(i, dObj.matrix); dMesh.setColorAt(i, dCol.set(0xffffff)); }
@@ -1155,15 +1184,25 @@ $("lookUp").addEventListener("click", () => { lookMul = Math.min(2.2, +(lookMul 
 $("howBtn").addEventListener("click", () => $("how").classList.toggle("open"));
 
 // ---------------- NEON POOLS + FISHING (cast, bite timing, hold-to-reel minigame) ----------------
-const waterU = { uT: { value: 0 }, uNight: { value: 0 } };
+// v0.9 water: layered ripples (normal-mapped from moving waves + rings around a swimmer), fresnel sky reflection, sun glint,
+// deep-to-shallow tint, soft foam at the shore, fog. Still one plane per pool.
+const waterU = { uT: { value: 0 }, uNight: { value: 0 }, uSun: { value: new THREE.Vector3(0, 1, 0) }, uTop: skyU.uTop, uHor: skyU.uHor, uFogC: { value: new THREE.Color() }, uFogN: { value: 20 }, uFogF: { value: 60 }, uRip: { value: new THREE.Vector4(0, 0, -99, 0) } };
 const waterMat = new THREE.ShaderMaterial({ uniforms: waterU, transparent: true, depthWrite: false, side: THREE.DoubleSide,
-  vertexShader: `varying vec2 vU; varying vec3 vW; void main(){ vU = uv; vec4 w = modelMatrix*vec4(position,1.0); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
-  fragmentShader: `uniform float uT, uNight; varying vec2 vU; varying vec3 vW; void main(){ vec2 c = vU*2.0-1.0; float r = length(c); if (r > 1.0) discard;
-    float w = sin(vW.x*2.3+uT*1.7)*sin(vW.z*2.1-uT*1.3) + sin((vW.x+vW.z)*3.1+uT*2.4)*.5; float ring = smoothstep(.06,.0,abs(fract(r*3.0-uT*.25)-.5)-.44);
-    vec3 col = mix(vec3(.05,.25,.55), vec3(.1,.85,.95), .5+.25*w); col = mix(col, vec3(1.0,.35,.85), ring*.35) + vec3(smoothstep(.95,1.0,r))*.6;
-    gl_FragColor = vec4(col*(1.0+uNight*.3), .72 + .1*w);
-    #include <colorspace_fragment>
-  }` });
+  vertexShader: `varying vec2 vU; varying vec3 vW; varying float vD; void main(){ vU = uv; vec4 w = modelMatrix*vec4(position,1.0); vW = w.xyz; vec4 mv = viewMatrix*w; vD = -mv.z; gl_Position = projectionMatrix*mv; }`,
+  fragmentShader: `uniform float uT, uNight, uFogN, uFogF; uniform vec3 uSun, uTop, uHor, uFogC; uniform vec4 uRip; varying vec2 vU; varying vec3 vW; varying float vD;
+    vec2 wave(vec2 p, vec2 d, float f, float s, float a){ float ph = dot(p, d) * f + uT * s; return d * cos(ph) * f * a; }
+    void main(){ vec2 c = vU*2.0-1.0; float r = length(c); if (r > 1.0) discard; vec2 p = vW.xz;
+      vec2 g = wave(p, normalize(vec2(1., .3)), 2.3, 1.7, .05) + wave(p, normalize(vec2(-.4, 1.)), 3.1, -1.3, .035) + wave(p, normalize(vec2(.7, -.7)), 5.3, 2.6, .018) + wave(p, normalize(vec2(-.9, -.2)), 8.7, 3.4, .008);
+      float age = uT - uRip.z; if (age > 0. && age < 4.) { vec2 dv = p - uRip.xy; float dd = length(dv) + 1e-3; float ring = sin(dd * 9. - age * 7.) * exp(-dd * 1.1) * exp(-age * .9) * uRip.w; g += dv / dd * ring * .5; }
+      vec3 N = normalize(vec3(-g.x, 1., -g.y)); vec3 V = normalize(cameraPosition - vW); float fr = .04 + .96 * pow(1. - max(dot(N, V), 0.), 4.);
+      vec3 R = reflect(-V, N); vec3 sky = mix(uHor, uTop, smoothstep(0., .6, R.y)); vec3 L = normalize(uSun); float spec = pow(max(dot(R, L), 0.), 120.) * smoothstep(-.05, .15, L.y) * 2.2;
+      vec3 deep = vec3(.03, .2, .4), shallow = vec3(.12, .75, .85);
+      vec3 col = mix(shallow, deep, smoothstep(.85, .2, r)); col = mix(col, sky, fr * .8) + vec3(1., .95, .85) * spec;
+      float foam = smoothstep(.86, .99, r + (sin(atan(c.y, c.x) * 9. + uT * 1.5) * .02 + sin(p.x * 7. + uT * 2.) * .015)); col = mix(col, vec3(.85, .97, 1.), foam * .55);
+      col += vec3(.1, .6, .9) * uNight * .25 * (1. - r) + vec3(1., .35, .85) * smoothstep(.06, .0, abs(fract(r * 3.0 - uT * .25) - .5) - .44) * .12;
+      float a = mix(.62, .92, fr) + foam * .25; col = mix(col, uFogC, smoothstep(uFogN, uFogF, vD)); gl_FragColor = vec4(col, min(1., a));
+      #include <colorspace_fragment>
+    }` });
 const poolMeshes = [];
 function buildPools() { for (const m of poolMeshes) { scene.remove(m); m.geometry.dispose(); } poolMeshes.length = 0;
   for (const q of pools) { const m = new THREE.Mesh(new THREE.PlaneGeometry(q.rx * 2, q.rz * 2), waterMat); m.rotation.x = -Math.PI / 2; m.position.set(q.x, q.y, q.z); m.renderOrder = 2; scene.add(m); poolMeshes.push(m); } }
@@ -1209,7 +1248,8 @@ function updFishing(dt, night, time) { const down = input.mine, press = down && 
       burst(b.x, b.y + .3, b.z, [parseInt(sp.c.slice(1), 16), 0xffffff, 0x28dcff], IS_TOUCH ? 30 : 60, 6); sfx.catchFish(sp.v, b.x, b.y, b.z); trauma = Math.max(trauma, sp.v >= 12 ? .6 : .25); buzz(60); fishEnd(); save(); }
     else if (fish.prog <= 0) fishEnd(`${sp.n} GOT AWAY`, "#ff6a8a"); return true; }
   return false; }
-function updWater(dt, time, night) { waterU.uT.value = time; waterU.uNight.value = night; }
+function updWater(dt, time, night) { waterU.uT.value = time; waterU.uNight.value = night; waterU.uSun.value.copy(skyU.uSun.value); waterU.uFogC.value.copy(scene.fog.color); waterU.uFogN.value = scene.fog.near; waterU.uFogF.value = scene.fog.far;
+  if (P.wet && running && (Math.hypot(P.vx, P.vz) > .5 || Math.abs(P.vy) > 1) && time - waterU.uRip.value.z > .55) waterU.uRip.value.set(P.x, P.z, time, 1); }
 
 // ---------------- characters ($BOSS runner + holder skins) and camera views ----------------
 const CHARS = [
@@ -1280,7 +1320,7 @@ function updRig(time, mv, air) { dressRig(); const J = CM; if (!J) return; const
   let ex = "neutral"; if (photo) { const po = POSES[poseI]; ex = po === "WAVE" || po === "CHEER" ? "happy" : po === "FLEX" || po === "MINE" ? "focus" : po === "JUMP" ? "surprised" : "neutral"; }
   else if (hurtT > 0) ex = "hurt"; else if (charJoy > 0) ex = "happy"; else if (mining) ex = "focus"; else if (!P.ground && P.vy > 3.5) ex = "surprised";
   if (ex === "neutral" && blinkT < 0) ex = "blink"; J.setExpr(ex);
-  const sq = chSq; rig.scale.set(1 - air * .5 + sq * .35, 1 + air - sq * .4, 1 - air * .5 + sq * .35); rig.position.set(P.x, P.y + Math.sin(charJoy * Math.PI) * .7 + (photo && POSES[poseI] === "JUMP" ? .45 : 0), P.z);
+  const sq = chSq; rig.scale.set(1 - air * .5 + sq * .35, 1 + air - sq * .4, 1 - air * .5 + sq * .35); rig.position.set(P.x, visY + Math.sin(charJoy * Math.PI) * .7 + (photo && POSES[poseI] === "JUMP" ? .45 : 0), P.z);
   KIT.rim.uRimK.value = .2 + (curNight || 0) * .3; }
 function applyView(time) { const third = view > 0; drill.visible = !third; charSpr.visible = rimSpr.visible = shadowM.visible = third && !RIG; shadowM.visible = third; rig.visible = third && RIG; applyView.dt = Math.min(.05, time - (applyView.lt2 || time)); applyView.lt2 = time;
   if (!third) return; const moving = Math.hypot(P.vx, P.vz), mv = Math.min(1, moving / 3);
@@ -1291,7 +1331,7 @@ function applyView(time) { const third = view > 0; drill.visible = !third; charS
   charSpr.scale.set(sx * chFace * spin, shY, 1); const by = P.y + .2 + shY / 2 + Math.abs(Math.sin(bob)) * .08 * mv + Math.sin(charJoy * Math.PI) * .7; charSpr.position.set(P.x, by, P.z); charMat.rotation = Math.sin(bob) * .05 * mv - side * .02; if (RIG) updRig(time, mv, air);
   const tod2 = 1 - (curNight || 0) * .35; charMat.color.setScalar(tod2); rimSpr.scale.set(sx * chFace * spin * 1.07, shY * 1.05, 1); rimMat.rotation = charMat.rotation; rimMat.opacity = .35 + (curNight || 0) * .35 + Math.sin(time * 3) * .05;
   const cdx = camera.position.x - P.x, cdz = camera.position.z - P.z, cl = Math.hypot(cdx, cdz) || 1; rimSpr.position.set(P.x - cdx / cl * .06, by, P.z - cdz / cl * .06);
-  const gyS = topH[Math.floor(P.x) + Math.floor(P.z) * SX] + 1.02; shadowM.position.set(P.x, Math.min(P.y + .03, Math.max(gyS, P.y - 4)), P.z); const hgt = Math.max(0, P.y - gyS); shadowM.scale.setScalar(Math.max(.4, 1 - hgt * .12)); shadowM.material.opacity = Math.max(.2, 1 - hgt * .15);
+  const gyS = topH[Math.floor(P.x) + Math.floor(P.z) * SX] + 1.02; shadowM.position.set(P.x, Math.min(visY + .03, Math.max(gyS, P.y - 4)), P.z); const hgt = Math.max(0, P.y - gyS); shadowM.scale.setScalar(Math.max(.4, 1 - hgt * .12)); shadowM.material.opacity = Math.max(.2, 1 - hgt * .15);
   if (view === 1) { tpCamera(); return; }
   const dir = -1, dist = 2.6 * (photo ? photoZoom : 1), sy = Math.sin(P.yaw), cy = Math.cos(P.yaw), up = .2;
   let d = dist; for (let k = .4; k <= dist; k += .2) { const x = P.x + sy * k * dir, z = P.z + cy * k * dir, y = P.y + P.eye + up * k / dist; if (get(Math.floor(x), Math.floor(y), Math.floor(z))) { d = Math.max(.6, k - .3); break; } }
@@ -1303,7 +1343,7 @@ function camFree(x, y, z) { const r = .22; return !get(Math.floor(x), Math.floor
 function tpCamera() { const dt = applyView.dt || .016, sy = Math.sin(P.yaw), cy = Math.cos(P.yaw), pc = Math.cos(P.pitch), ps = Math.sin(P.pitch);
   const fx = -sy * pc, fy = ps, fz = -cy * pc, rx = cy, rz = -sy; // forward + right
   const want = (photo ? 3.6 * photoZoom : 3.4) + Math.max(0, -P.pitch) * .5, shWant = photo ? 0 : .3 + .32 * Math.min(1, camera.aspect); // narrower shoulder on portrait phones
-  const hy = P.y + P.eye + .22; tpCam.py = tpCam.ok ? tpCam.py + (hy - tpCam.py) * Math.min(1, dt * 14) : hy; if (Math.abs(tpCam.py - hy) > 1.2) tpCam.py = hy;
+  const hy = visY + P.eye + .22; tpCam.py = tpCam.ok ? tpCam.py + (hy - tpCam.py) * Math.min(1, dt * 14) : hy; if (Math.abs(tpCam.py - hy) > 1.2) tpCam.py = hy;
   // shoulder offset shrinks if a wall is right beside you
   let sh = shWant; for (; sh > .05; sh -= .1) if (camFree(P.x + rx * sh, tpCam.py, P.z + rz * sh)) break; tpCam.sh += (Math.max(0, sh) - tpCam.sh) * Math.min(1, dt * 10);
   const px = P.x + rx * tpCam.sh, py = tpCam.py, pz = P.z + rz * tpCam.sh; let free = want;
@@ -1313,6 +1353,10 @@ function tpCamera() { const dt = applyView.dt || .016, sy = Math.sin(P.yaw), cy 
   tpCam.pos.copy(camera.position); tpCam.dir.set(fx, fy, fz); tpCam.ok = true; if (RIG) rig.visible = d > 1.0 || photo; }
 $("viewBtn").addEventListener("click", e => { e.stopPropagation(); if (running) cycleView(); });
 
+// v0.9: the body + camera follow the smooth surface (within half a tile of the real tile you stand on), so slopes feel like slopes
+let visY = 0, visT = 0, visG = null;
+function updVisY(dt) { if (Math.abs(visY - P.y) > 1.6) visY = P.y; let tgt = P.y; if (P.ground && !P.swim) { if ((visT -= dt) <= 0) { visT = 1 / 30; visG = visGround(P.x, P.y, P.z); } if (visG != null) tgt = P.y + Math.max(-.55, Math.min(.45, visG - P.y)); } else visT = 0;
+  visY += (tgt - visY) * Math.min(1, dt * (P.ground ? 10 : 22)); }
 // ---------------- main loop ----------------
 let curNight = 0, last = performance.now(), fpsN = 0, fpsT = 0, fps = 0, bob = 0;
 function frame(now) {
@@ -1322,9 +1366,9 @@ function frame(now) {
   if (running && !photo) { updPlayer(dt); landCheck(); updMining(dt, time); updFuds(dt, night); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); updMeteor(dt, time); updCritters(dt, night); toyTick(dt); updEvents(dt, night); updRain(dt); updPet(dt, time); }
   else menuCam(dt);
   updMotes(dt, time, night); skyU.uTime.value = time; skyU.uAur.value += ((ev.k === "aurora" ? 1 : night > .6 ? .3 : 0) - skyU.uAur.value) * Math.min(1, dt * .8); updMP(dt); updParts(dt); updDebris(dt); audioTick(); adaptRes(dt);
-  let n = 0; for (const ci of dirty) { buildChunk(ci); dirty.delete(ci); if (++n >= (IS_TOUCH ? 2 : 3)) break; }
+  let n = 0; for (const ci of dirty) { buildChunk(ci); dirty.delete(ci); if (++n >= (IS_TOUCH ? 2 : 3)) break; } lodTick(dt); if (running) updVisY(dt);
   trauma = Math.max(0, trauma - dt * 1.8); const sh = trauma * trauma;
-  camera.position.set(P.x + (Math.random() - .5) * sh * .25, P.y + P.eye + (Math.random() - .5) * sh * .25, P.z + (Math.random() - .5) * sh * .25); camera.rotation.set(P.pitch + (Math.random() - .5) * sh * .04, P.yaw + (Math.random() - .5) * sh * .04, (Math.random() - .5) * sh * .06);
+  camera.position.set(P.x + (Math.random() - .5) * sh * .25, visY + P.eye + (Math.random() - .5) * sh * .25, P.z + (Math.random() - .5) * sh * .25); camera.rotation.set(P.pitch + (Math.random() - .5) * sh * .04, P.yaw + (Math.random() - .5) * sh * .04, (Math.random() - .5) * sh * .06);
   if (!running) camera.rotation.set(-.1, P.yaw + menuA, 0);
   if (running) applyView(time);
   const spd = Math.hypot(P.vx, P.vz), fovT = baseFov + (spd > 5.5 ? 6 : 0); if (Math.abs(camera.fov - fovT) > .05) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
@@ -1468,13 +1512,14 @@ function bcTick() { if (mp.on) return; bcEnsure(); if (bc.done) return; const v 
 // ---------------- boot ----------------
 const saved = load();
 let migrated = false;
+let newWorld = false; if (saved && !saved.migr && (saved.wv | 0) !== WORLD_V) { newWorld = true; saved.edits = {}; saved.p = null; }
 if (saved && !saved.migr) { seed = saved.seed; edits = saved.edits || {}; shards = saved.shards | 0; sel = saved.sel | 0; tod = saved.tod ?? tod;
   if (saved.upg) Object.assign(upg, saved.upg); if (saved.stats) Object.assign(stats, saved.stats); Qi = saved.Qi | 0; if (!saved.qv && Qi >= 7) Qi++; qBase = saved.qBase || {}; P.hp = saved.hp || maxHp();
   view = saved.tp ? (saved.view ?? 1) : 1; if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; lookMul = saved.set.look || 1; } if (saved.daily) Object.assign(daily, saved.daily); if (saved.bc) Object.assign(bc, saved.bc); if (saved.dex) fish.dex = saved.dex; if (saved.ach) ach = saved.ach; if (saved.char) charId = saved.char; introDone = saved.intro !== false; if (introDone) met.t = 150 + Math.random() * 120; }
 else { seed = parseInt(Q.get("seed")) || 1337; if (saved && saved.migr) { shards = saved.shards; migrated = true; } qStart(); }
-generate(seed); applyEdits(); const tris = buildAll();
+generate(seed); applyEdits(); for (const t of trees) if (get(t.x, t.y + 1, t.z) !== 27 || !get(t.x, t.y, t.z)) { t.dead = true; for (let y = t.y + 1; y <= t.y + t.h; y++) if (get(t.x, y, t.z) === 27) world[idx(t.x, y, t.z)] = 0; } const tris = buildAll(); visY = P.y;
 respawn(); if (saved && saved.p) { [P.x, P.y, P.z, P.yaw, P.pitch] = saved.p; if (collides(P.x, P.y, P.z)) respawn(); }
-if (Q.has("fp")) view = 0; buildPools(); buildCharPicker(); if (upg.pet) setPet(upg.pet); setChar(Q.get("char") || charId, true); buildPalette(); updShards(); resize(); updQuest(); dailyEnsure(); updDaily(); menuStats(); updHP(); updSetBtns(); syncLookBtn(); if (migrated) setTimeout(() => banner("BIGGER WORLD!", "Your SOL shards carried over to the new map"), 600);
+if (Q.has("fp")) view = 0; buildPools(); buildCharPicker(); if (upg.pet) setPet(upg.pet); setChar(Q.get("char") || charId, true); buildPalette(); updShards(); resize(); updQuest(); dailyEnsure(); updDaily(); menuStats(); updHP(); updSetBtns(); syncLookBtn(); if (migrated) setTimeout(() => banner("BIGGER WORLD!", "Your SOL shards carried over to the new map"), 600); if (newWorld) setTimeout(() => banner("A BIGGER, WILDER WORLD!", "Rolling hills, rock arches, glowing trees · your shards, upgrades + skins carried over"), 900);
 // Phase-2 hook is for LOCAL testing only: only localhost servers are accepted.
 if (Q.get("mp")) { try { const u = new URL(Q.get("mp")); if (/^wss?:$/.test(u.protocol) && ["localhost", "127.0.0.1"].includes(u.hostname)) mpConnect(u.href); } catch (e) {} }
 $("load").remove();
@@ -1482,6 +1527,6 @@ setInterval(save, 5000);
 requestAnimationFrame(frame);
 
 // test / debug hooks (harmless; used by automated checks)
-window.__SB = { SX: () => SX, SZ: () => SZ, gemInfo: () => ({ cut: Object.fromEntries(Object.entries(GEM.SPEC).map(([k, v]) => [k, v.cut])), glow: GEM.mat.fragmentShader.includes("inner"), sparkle: GEM.pmat.vertexShader.includes("aK") }), gems: () => { let n = 0, f = 0, t = 0; for (const g of gemL) if (g) { n++; f += g.faces; t += g.tris; } return { chunks: n, faces: f, tris: t }; }, pools: () => pools.map(q => ({ x: q.x, y: q.y, z: q.z, rx: q.rx, rz: q.rz })), stuck: () => ({ ...stuck, swim: !!P.swim, wet: !!P.wet }), dryLand, audio: () => ({ state: AC ? AC.state : "none", snd: sndOn, mus: musOn, n: { ...sfxN }, unlock: unlockN, lvl: audioLevel(), hud: $("sndHud").textContent, amb: amb.wind ? { wind: +amb.wind.gain.value.toFixed(3), water: +amb.water.gain.value.toFixed(3), cave: +amb.cave.gain.value.toFixed(3), poolD: +amb.poolD.toFixed(1) } : null }), sfx: (k, ...a) => sfx[k](...a), toggleSound, ambMute: v => { if (ambG) ambG.gain.value = v ? 0 : AMB_V; }, setSnd: (a, b) => { sndOn = a; musOn = b; updSetBtns(); }, audioSuspend: () => AC && AC.suspend(), bc: () => ({ ...bc, def: bcDef(), v: bcVal(), line: bcLine() }), bcForce: i => { bcForceI = i; }, setPhoto, photo: () => ({ on: photo, pose: POSES[poseI], filter: FILTERS[filtI][0], zoom: photoZoom }), setChar: id => setChar(id, true), thumbs: () => ({ left: thumbQ.length, n: Object.keys(charThumb).length, r3: document.querySelectorAll("#chars .ch.r3").length }), rig: () => ({ vis: rig.visible, yaw: rigYaw, legL: CM ? CM.legL.rotation.x : 0, armR: CM ? CM.armR.rotation.x : 0, kneeL: CM ? CM.kneeL.rotation.x : 0, elbowR: CM ? CM.elbowR.rotation.x : 0, expr: CM ? CM.expr : "", dressed: rigFor, info: rig.userData.info }), petClick, pet: () => ({ ...pet, id: upg.pet, vis: petSpr.visible, px: petSpr.position.x }), FISH: () => FISH.map(f => f.n), roll: (n, z) => rollFish(n, z).n, brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
+window.__SB = { world: () => { let t0 = 0, t1 = 0, c0 = 0, c1 = 0, pr = 0, vis = 0; for (const q of sm) { if (q.m0) { c0++; if (q.m0.visible) t0 += q.m0.geometry.index.count / 3; } if (q.m1) { c1++; if (q.m1.visible) t1 += q.m1.geometry.index.count / 3; } if (q.pr && q.pr.visible) pr += q.pr.geometry.index.count / 3; if (q.vis) vis++; } return { smooth: SMOOTH, lod0: c0, lod1: c1, tris0: t0, tris1: t1, props: pr, visChunks: vis, trees: trees.filter(t => !t.dead).length, SX, SZ }; }, chunkLod: (x, z) => { const q = sm[Math.floor(x / CS) + Math.floor(z / CS) * NCX]; return q && { lod: q.lod, m0: !!(q.m0 && q.m0.visible), m1: !!(q.m1 && q.m1.visible), d: q.d }; }, visY: () => visY, visGround: () => visGround(P.x, P.y, P.z), trees: () => trees.filter(t => !t.dead).map(t => ({ ...t })), fell: i => fellTree(trees.filter(t => !t.dead)[i]), SX: () => SX, SZ: () => SZ, gemInfo: () => ({ cut: Object.fromEntries(Object.entries(GEM.SPEC).map(([k, v]) => [k, v.cut])), glow: GEM.mat.fragmentShader.includes("inner"), sparkle: GEM.pmat.vertexShader.includes("aK") }), gems: () => { let n = 0, f = 0, t = 0; for (const g of gemL) if (g) { n++; f += g.faces; t += g.tris; } return { chunks: n, faces: f, tris: t }; }, pools: () => pools.map(q => ({ x: q.x, y: q.y, z: q.z, rx: q.rx, rz: q.rz })), stuck: () => ({ ...stuck, swim: !!P.swim, wet: !!P.wet }), dryLand, audio: () => ({ state: AC ? AC.state : "none", snd: sndOn, mus: musOn, n: { ...sfxN }, unlock: unlockN, lvl: audioLevel(), hud: $("sndHud").textContent, amb: amb.wind ? { wind: +amb.wind.gain.value.toFixed(3), water: +amb.water.gain.value.toFixed(3), cave: +amb.cave.gain.value.toFixed(3), poolD: +amb.poolD.toFixed(1) } : null }), sfx: (k, ...a) => sfx[k](...a), toggleSound, ambMute: v => { if (ambG) ambG.gain.value = v ? 0 : AMB_V; }, setSnd: (a, b) => { sndOn = a; musOn = b; updSetBtns(); }, audioSuspend: () => AC && AC.suspend(), bc: () => ({ ...bc, def: bcDef(), v: bcVal(), line: bcLine() }), bcForce: i => { bcForceI = i; }, setPhoto, photo: () => ({ on: photo, pose: POSES[poseI], filter: FILTERS[filtI][0], zoom: photoZoom }), setChar: id => setChar(id, true), thumbs: () => ({ left: thumbQ.length, n: Object.keys(charThumb).length, r3: document.querySelectorAll("#chars .ch.r3").length }), rig: () => ({ vis: rig.visible, yaw: rigYaw, legL: CM ? CM.legL.rotation.x : 0, armR: CM ? CM.armR.rotation.x : 0, kneeL: CM ? CM.kneeL.rotation.x : 0, elbowR: CM ? CM.elbowR.rotation.x : 0, expr: CM ? CM.expr : "", dressed: rigFor, info: rig.userData.info }), petClick, pet: () => ({ ...pet, id: upg.pet, vis: petSpr.visible, px: petSpr.position.x }), FISH: () => FISH.map(f => f.n), roll: (n, z) => rollFish(n, z).n, brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
   state: () => ({ x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, ground: P.ground, shards, sel, running, tris, fps: Math.round(fps), fuds: fuds.length, tod, mp: mp.on ? { id: mp.id, rejects: mp.rejects || 0, lastEmote: mp.lastEmote || null, others: [...mp.others.values()].map(o => ({ name: o.p.name, x: o.p.x, y: o.p.y, z: o.p.z })) } : null, info: renderer.info.render }),
   select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, upg, stats, quest: () => ({ i: Qi, ...qDef(Qi), v: qVal(qDef(Qi)) }), boss: () => ({ on: boss.on, hp: boss.hp, max: boss.max, phase: boss.phase }), summon: k => summonBoss(k), daily: () => ({ ...daily, line: dailyLine() }), meteor: () => { met.t = 0; }, met: () => ({ on: met.on, crater: met.crater }), critters: () => critters.map(c => ({ x: c.s.position.x, y: c.s.position.y, z: c.s.position.z })), spawnCritter: () => spawnCritter(true), lookAtCrit: () => { const c = critters.slice().sort((a, b) => a.s.position.distanceTo(camera.position) - b.s.position.distanceTo(camera.position))[0]; if (!c) return false; const o = c.s.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return true; }, shot: () => { wantShot = true; }, lastShot: () => lastShotInfo, lastShotUrl: () => lastShot && lastShot.url, touchLook: (dx, dy) => touchLook(dx, dy), setLookMul: v => { lookMul = v; }, mem: () => ({ geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures, heap: performance.memory ? performance.memory.usedJSHeapSize : 0, scene: scene.children.length, orbs: orbs.length, fuds: fuds.length, shots: boss.shots.length, crit: critters.length }), fishSt: () => ({ st: fish.st, prog: fish.prog, sp: fish.sp && fish.sp.n, dex: fish.dex, n: stats.fish || 0 }), pools: () => pools, setView: v => { view = v; }, rigObj: () => rig, rinfo: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles }), headPNG: id => { const J = KIT.build(id); const u = J.headCanvas.toDataURL(); J.dispose(); return u; }, charPNG: (id, size, yaw) => new Promise(res => { const go = () => { const u = renderRigPNG(id, size || 384, yaw ?? .42); if (u) res(u); else setTimeout(go, 50); }; go(); }), view: () => view, tpCam: () => ({ ok: tpCam.ok, d: tpCam.d, sh: tpCam.sh, pos: tpCam.pos.toArray(), dir: tpCam.dir.toArray() }), aimHit: () => hit && { x: hit.x, y: hit.y, z: hit.z }, setChar: id => setChar(id, true), charId: () => charId, chars: () => CHARS.map(c => c[0]), aimState: () => ({ pool: !!poolHit, boss: bossHit, crit: !!critHit, fud: !!fudHit }), lookAtBoss: () => { if (!boss.on) return; const o = boss.g.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); }, bossDamage: n => bossDamage(n), openLab, closeLab, buy: id => buyUpg(id), hp: () => P.hp, biome: () => biomeName(P.x, P.z), give: n => { shards += n; updShards(); }, setTod: t => { tod = t; }, dpr: () => renderer.getPixelRatio(), combo: () => comboN, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };
