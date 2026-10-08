@@ -233,30 +233,55 @@ function moveAxis(ax, d) {
     if (!collides(nx, ny, nz)) { P.x = nx; P.y = ny; P.z = nz; continue; }
     // auto step-up for 1-block ledges while walking (feels better on touch)
     if (ax !== 1 && P.ground && !collides(nx, P.y + 1.01, nz) && !collides(P.x, P.y + 1.01, P.z)) { P.y += 1.01; P.x = nx; P.z = nz; P.vy = Math.max(P.vy, 0); continue; }
-    if (ax === 1) { if (sd < 0) { P.ground = true; P.y = Math.floor(P.y + sd) + 1; } else P.y = Math.ceil(P.y + P.h) - P.h - .001; P.vy = 0; }
+    // swimming: climb out onto the bank (ledge up to ~1.9 tiles above your feet)
+    if (ax !== 1 && P.swim) { let done = false; for (let k = 1; k <= 2 && !done; k++) { const ty = Math.floor(P.y) + k + .001; if (ty - P.y > 1.95 || ty <= P.y) continue; if (!collides(nx, ty, nz) && !collides(P.x, ty, P.z)) { P.y = ty; P.x = nx; P.z = nz; P.vy = Math.max(P.vy, 0); done = true; climbFx(); } } if (done) continue; }
+    if (ax === 1) { if (sd < 0) { P.ground = true; P.y = Math.floor(P.y + sd) + 1; } else P.y = Math.min(P.y, Math.floor(P.y + sd + P.h - .001) - P.h); P.vy = 0; }   // head bump: never pushes you up through a ceiling
     else if (ax === 0) P.vx = 0; else P.vz = 0;
     return;
   }
 }
+let swimTipShown = false; const stuck = { t: 0, x: 0, z: 0, y: 0, emb: 0, n: 0, last: 0, why: "", clock: 0 };
+function climbFx() { const q = inPool(P.x, P.z) || pools.find(q => ((P.x - q.x) / (q.rx + 1.5)) ** 2 + ((P.z - q.z) / (q.rz + 1.5)) ** 2 < 1); if (q) burst(P.x, q.y + .05, P.z, [0x28dcff, 0xffffff], 10, 2); }
+// nearest dry, standable column (not inside a pool, 2 tiles of air above)
+function dryLand(px, pz) { let best = null, bd = 1e9; for (let r = 1; r <= 24 && !best; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+    const x = Math.floor(px) + dx, z = Math.floor(pz) + dz; if (x < 1 || z < 1 || x >= SX - 1 || z >= SZ - 1) continue; if (pools.some(q => ((x + .5 - q.x) / (q.rx + .6)) ** 2 + ((z + .5 - q.z) / (q.rz + .6)) ** 2 < 1)) continue;
+    const t = topH[x + z * SX]; if (t < 1 || t > SY - 4 || !get(x, t, z) || get(x, t + 1, z) || get(x, t + 2, z)) continue; const d = dx * dx + dz * dz; if (d < bd) { bd = d; best = [x, t, z]; } } return best; }
+function rescue(why) { const c = dryLand(P.x, P.z); if (!c) { respawn(); return; } P.x = c[0] + .5; P.y = c[1] + 1.01; P.z = c[2] + .5; stuck.last = why === "water" ? stuck.t : stuck.emb; stuck.why = why; P.vx = P.vy = P.vz = 0; P.swim = false; P.wet = false; stuck.t = 0; stuck.emb = 0; stuck.n++;
+  burst(P.x, P.y + .5, P.z, [0x28dcff, 0x14f195, 0xffffff], 24, 3); pop(why === "water" ? "🛟 PULLED YOU ONTO DRY LAND" : "🛟 UNSTUCK", "#14f195"); }
+// stuck-safety: trying to move in water for 3s without getting anywhere, or stuck inside a tile, puts you on the nearest dry land
+function stuckCheck(dt, wet, trying) { stuck.clock += dt; if (collides(P.x, P.y, P.z)) { if ((stuck.emb += dt) > .6) rescue("tile"); } else stuck.emb = 0;
+  if (!wet || !trying) { stuck.t = 0; stuck.x = P.x; stuck.z = P.z; stuck.y = P.y; return; }
+  if (Math.hypot(P.x - stuck.x, P.z - stuck.z) > .9 || P.y > stuck.y + 1) { stuck.t = 0; stuck.x = P.x; stuck.z = P.z; stuck.y = P.y; return; }
+  if ((stuck.t += dt) > 3) rescue("water"); }
 function updPlayer(dt) {
   let f = input.f, s = input.s; const k = input.keys;
   if (k.KeyW || k.ArrowUp) f += 1; if (k.KeyS || k.ArrowDown) f -= 1; if (k.KeyD || k.ArrowRight) s += 1; if (k.KeyA || k.ArrowLeft) s -= 1;
   const len = Math.hypot(f, s); if (len > 1) { f /= len; s /= len; }
-  const wet = inPool(P.x, P.z) && P.y < (inPool(P.x, P.z) || {}).y; if (wet && !P.wet && P.vy < -3) { burst(P.x, P.y + .5, P.z, [0x28dcff, 0xffffff], 24, 4); noise(.3, 900, .15); } P.wet = wet;
-  const sp = (boostT > 0 ? 2.1 : 1) * (wet ? .6 : 1) * ((input.sprint || k.ShiftLeft || k.ShiftRight || len > .95 && IS_TOUCH && joy.active && joy.mag > .95) ? 6.4 : 4.4);
+  const pq = inPool(P.x, P.z), wet = !!pq && P.y < pq.y; if (wet && !P.wet && P.vy < -3) { burst(P.x, P.y + .5, P.z, [0x28dcff, 0xffffff], 24, 4); noise(.3, 900, .15); } P.wet = wet;
+  if (wet && !swimTipShown) { swimTipShown = true; pop(IS_TOUCH ? "🏊 SWIMMING · hold JUMP to swim up" : "🏊 SWIMMING · hold SPACE to swim up", "#9df7ff"); }
+  P.leapT = Math.max(0, (P.leapT || 0) - dt); P.swim = wet && P.leapT <= 0;
+  const sp = (boostT > 0 ? 2.1 : 1) * (wet ? (P.ground ? .65 : .8) : 1) * ((input.sprint || k.ShiftLeft || k.ShiftRight || len > .95 && IS_TOUCH && joy.active && joy.mag > .95) ? 6.4 : 4.4);
   const sy = Math.sin(P.yaw), cy = Math.cos(P.yaw);
   const tx = (-sy * f + cy * s) * sp, tz = (-cy * f - sy * s) * sp;
   const acc = P.ground ? 14 : 5; P.vx += (tx - P.vx) * Math.min(1, acc * dt); P.vz += (tz - P.vz) * Math.min(1, acc * dt);
   const jumpEdge = input.jump || (k.Space && !spaceWas); spaceWas = !!k.Space;
   if (P.ground) P.dbl = true;
-  if ((input.jump || k.Space) && P.ground) { P.vy = 8.3; P.ground = false; sfx.jump(); }
+  const upHeld = input.jump || input.jumpHeld || k.Space;
+  if (P.swim) { // v0.9 hotfix: water is swimmable. Hold jump = swim up, otherwise you float with your head above water
+    P.dbl = true; const floatY = pq.y - 1.2;
+    if (input.jump && P.y > floatY - .45) { P.vy = 8.6; P.leapT = .45; P.swim = false; noise(.25, 1400, .12); burst(P.x, pq.y, P.z, [0x28dcff, 0xffffff], 14, 3); }   // hop out at the surface
+    else if (upHeld) P.vy += (4.4 - P.vy) * Math.min(1, dt * 7);
+    else P.vy += ((P.y < floatY ? 1.8 : -.5) - P.vy) * Math.min(1, dt * 3);
+    if (len > .2 && Math.random() < dt * 4) burst(P.x, pq.y + .02, P.z, [0x9df7ff, 0xffffff], 3, 1.2); }
+  else if ((input.jump || k.Space) && P.ground) { P.vy = 8.3; P.ground = false; sfx.jump(); }
   else if (jumpEdge && !P.ground && upg.boots && P.dbl) { P.dbl = false; P.vy = 8; sfx.boost(); burst(P.x, P.y, P.z, [0x28dcff, 0xff4fd8, 0xffffff], 18, 3); trauma = Math.max(trauma, .15); stats.dj = (stats.dj || 0) + 1; }
   input.jump = false;
-  P.vy = Math.max(-40, P.vy - 24 * (biomeNow === "MOON BASIN" ? .42 : 1) * dt);
+  if (!P.swim) P.vy = Math.max(-40, P.vy - 24 * (biomeNow === "MOON BASIN" ? .42 : 1) * dt);
   P.ground = false;
   moveAxis(1, P.vy * dt); moveAxis(0, P.vx * dt); moveAxis(2, P.vz * dt);
   P.x = Math.max(P.r + .01, Math.min(SX - P.r - .01, P.x)); P.z = Math.max(P.r + .01, Math.min(SZ - P.r - .01, P.z));
   if (P.y < -20) respawn();
+  stuckCheck(dt, wet, len > .2 || (upHeld && !!pq && P.y < pq.y - 1.6));
   P.hurtCD = Math.max(0, P.hurtCD - dt);
   P.regenT -= dt; if (P.regenT <= 0 && P.hp < maxHp()) { P.hp++; P.regenT = 1.4; updHP(); }
 }
@@ -509,7 +534,7 @@ function maybeShowTip() {
   try { if (localStorage.getItem(TIP_KEY) === "1") return; } catch (e) {}
   $("tip").classList.add("show");
 }
-function startGame() { initAudio(); $("menu").classList.add("hide"); document.body.classList.remove("inmenu"); closeLab(true); running = true; last = performance.now(); if (!introDone && !mp.on && !Q.has("nointro")) intro();
+function startGame() { try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (e) {} initAudio(); $("menu").classList.add("hide"); document.body.classList.remove("inmenu"); closeLab(true); running = true; last = performance.now(); if (!introDone && !mp.on && !Q.has("nointro")) intro();
   maybeShowTip();
   if (!IS_TOUCH && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
 function pause() { if (photo) setPhoto(false); running = false; document.body.classList.add("inmenu"); input.mine = false; $("menu").classList.remove("hide"); $("playBtn").textContent = "RESUME"; menuStats(); save(); if (document.pointerLockElement) document.exitPointerLock(); }
@@ -636,7 +661,7 @@ if (IS_TOUCH) {
       else mineGrace = 0.28; // brief grace after a hold so wobble doesn't cancel
     });
   hold("bBuild", () => { aim(); place(); }, null);
-  hold("bJump", () => { input.jump = true; }, null);
+  hold("bJump", () => { input.jump = true; input.jumpHeld = true; }, () => { input.jumpHeld = false; });
   document.addEventListener("gesturestart", e => e.preventDefault());
   // Prevent iOS double-tap zoom stealing inputs
   let lastTouchEnd = 0; document.addEventListener("touchend", e => { if (e.target.closest && e.target.closest("#lab,#menu,#tip")) return; const now = Date.now(); if (now - lastTouchEnd < 320) e.preventDefault(); lastTouchEnd = now; }, { passive: false });
@@ -1345,6 +1370,6 @@ setInterval(save, 5000);
 requestAnimationFrame(frame);
 
 // test / debug hooks (harmless; used by automated checks)
-window.__SB = { bc: () => ({ ...bc, def: bcDef(), v: bcVal(), line: bcLine() }), bcForce: i => { bcForceI = i; }, setPhoto, photo: () => ({ on: photo, pose: POSES[poseI], filter: FILTERS[filtI][0], zoom: photoZoom }), setChar: id => setChar(id, true), thumbs: () => ({ left: thumbQ.length, n: Object.keys(charThumb).length, r3: document.querySelectorAll("#chars .ch.r3").length }), rig: () => ({ vis: rig.visible, yaw: rigYaw, legL: CM ? CM.legL.rotation.x : 0, armR: CM ? CM.armR.rotation.x : 0, kneeL: CM ? CM.kneeL.rotation.x : 0, elbowR: CM ? CM.elbowR.rotation.x : 0, expr: CM ? CM.expr : "", dressed: rigFor, info: rig.userData.info }), petClick, pet: () => ({ ...pet, id: upg.pet, vis: petSpr.visible, px: petSpr.position.x }), FISH: () => FISH.map(f => f.n), roll: (n, z) => rollFish(n, z).n, brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
+window.__SB = { pools: () => pools.map(q => ({ x: q.x, y: q.y, z: q.z, rx: q.rx, rz: q.rz })), stuck: () => ({ ...stuck, swim: !!P.swim, wet: !!P.wet }), dryLand, bc: () => ({ ...bc, def: bcDef(), v: bcVal(), line: bcLine() }), bcForce: i => { bcForceI = i; }, setPhoto, photo: () => ({ on: photo, pose: POSES[poseI], filter: FILTERS[filtI][0], zoom: photoZoom }), setChar: id => setChar(id, true), thumbs: () => ({ left: thumbQ.length, n: Object.keys(charThumb).length, r3: document.querySelectorAll("#chars .ch.r3").length }), rig: () => ({ vis: rig.visible, yaw: rigYaw, legL: CM ? CM.legL.rotation.x : 0, armR: CM ? CM.armR.rotation.x : 0, kneeL: CM ? CM.kneeL.rotation.x : 0, elbowR: CM ? CM.elbowR.rotation.x : 0, expr: CM ? CM.expr : "", dressed: rigFor, info: rig.userData.info }), petClick, pet: () => ({ ...pet, id: upg.pet, vis: petSpr.visible, px: petSpr.position.x }), FISH: () => FISH.map(f => f.n), roll: (n, z) => rollFish(n, z).n, brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
   state: () => ({ x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, ground: P.ground, shards, sel, running, tris, fps: Math.round(fps), fuds: fuds.length, tod, mp: mp.on ? { id: mp.id, rejects: mp.rejects || 0, lastEmote: mp.lastEmote || null, others: [...mp.others.values()].map(o => ({ name: o.p.name, x: o.p.x, y: o.p.y, z: o.p.z })) } : null, info: renderer.info.render }),
   select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, upg, stats, quest: () => ({ i: Qi, ...qDef(Qi), v: qVal(qDef(Qi)) }), boss: () => ({ on: boss.on, hp: boss.hp, max: boss.max, phase: boss.phase }), summon: k => summonBoss(k), daily: () => ({ ...daily, line: dailyLine() }), meteor: () => { met.t = 0; }, met: () => ({ on: met.on, crater: met.crater }), critters: () => critters.map(c => ({ x: c.s.position.x, y: c.s.position.y, z: c.s.position.z })), spawnCritter: () => spawnCritter(true), lookAtCrit: () => { const c = critters.slice().sort((a, b) => a.s.position.distanceTo(camera.position) - b.s.position.distanceTo(camera.position))[0]; if (!c) return false; const o = c.s.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return true; }, shot: () => { wantShot = true; }, lastShot: () => lastShotInfo, lastShotUrl: () => lastShot && lastShot.url, touchLook: (dx, dy) => touchLook(dx, dy), setLookMul: v => { lookMul = v; }, mem: () => ({ geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures, heap: performance.memory ? performance.memory.usedJSHeapSize : 0, scene: scene.children.length, orbs: orbs.length, fuds: fuds.length, shots: boss.shots.length, crit: critters.length }), fishSt: () => ({ st: fish.st, prog: fish.prog, sp: fish.sp && fish.sp.n, dex: fish.dex, n: stats.fish || 0 }), pools: () => pools, setView: v => { view = v; }, rigObj: () => rig, rinfo: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles }), headPNG: id => { const J = KIT.build(id); const u = J.headCanvas.toDataURL(); J.dispose(); return u; }, charPNG: (id, size, yaw) => new Promise(res => { const go = () => { const u = renderRigPNG(id, size || 384, yaw ?? .42); if (u) res(u); else setTimeout(go, 50); }; go(); }), view: () => view, tpCam: () => ({ ok: tpCam.ok, d: tpCam.d, sh: tpCam.sh, pos: tpCam.pos.toArray(), dir: tpCam.dir.toArray() }), aimHit: () => hit && { x: hit.x, y: hit.y, z: hit.z }, setChar: id => setChar(id, true), charId: () => charId, chars: () => CHARS.map(c => c[0]), aimState: () => ({ pool: !!poolHit, boss: bossHit, crit: !!critHit, fud: !!fudHit }), lookAtBoss: () => { if (!boss.on) return; const o = boss.g.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); }, bossDamage: n => bossDamage(n), openLab, closeLab, buy: id => buyUpg(id), hp: () => P.hp, biome: () => biomeName(P.x, P.z), give: n => { shards += n; updShards(); }, setTod: t => { tod = t; }, dpr: () => renderer.getPixelRatio(), combo: () => comboN, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };

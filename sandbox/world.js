@@ -91,7 +91,9 @@ export function generate(sd) {
     for (let z = Math.floor(z0 - rz); z <= z0 + rz; z++) for (let x = Math.floor(x0 - rx); x <= x0 + rx; x++) { const h = H[x + z * SX]; lo = Math.min(lo, h); hi = Math.max(hi, h); }
     if (hi - lo > 2) continue; const wl = lo;
     for (let z = Math.floor(z0 - rz - 1); z <= z0 + rz + 1; z++) for (let x = Math.floor(x0 - rx - 1); x <= x0 + rx + 1; x++) { const q = ((x + .5 - x0) / rx) ** 2 + ((z + .5 - z0) / rz) ** 2; if (!inB(x, 1, z)) continue;
-      if (q < 1) { for (let y = wl - 1; y < Math.min(SY, wl + 4); y++) world[idx(x, y, z)] = 0; world[idx(x, wl - 2, z)] = 1; H[x + z * SX] = wl - 2; }
+      // v0.9 hotfix: stepped basin (deep middle, wading shelf, rim) so every level is a 1-tile step: you can always walk out
+      if (q < 1) { for (let y = wl - 1; y < Math.min(SY, wl + 4); y++) world[idx(x, y, z)] = 0; world[idx(x, wl - 2, z)] = 1; const qq = (X, Z) => ((X + .5 - x0) / rx) ** 2 + ((Z + .5 - z0) / rz) ** 2, deep = q < .4 && qq(x + 1, z) < 1 && qq(x - 1, z) < 1 && qq(x, z + 1) < 1 && qq(x, z - 1) < 1;
+        if (!deep) { world[idx(x, wl - 1, z)] = 1; H[x + z * SX] = wl - 1; } else H[x + z * SX] = wl - 2; }
       else if (q < 1.6) { for (let y = wl + 1; y < Math.min(SY, wl + 4); y++) world[idx(x, y, z)] = 0; world[idx(x, wl, z)] = 13; H[x + z * SX] = wl; } }
     pools.push({ x: x0, z: z0, rx, rz, y: wl + .55 }); }
   // worm tunnels
