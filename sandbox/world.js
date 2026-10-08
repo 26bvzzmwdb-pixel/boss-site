@@ -58,7 +58,7 @@ export const MOON = { x: 112, z: 74, r: 16 };
 function biomeAt(x, z, sd) { if (Math.hypot(x - MOON.x, z - MOON.z) < MOON.r + (fbm(x / 6, z / 6, sd + 77) - .5) * 5) return 4; if (fbm(x / 40, z / 40, sd + 1213) < .35 && Math.hypot(x - SX / 2, z - SZ / 2) > 40) return 5; const a = fbm(x / 56, z / 56, sd + 501), b = fbm(x / 46, z / 46, sd + 733);
   if (a > .58) return 3; if (a > .44 && a < .57 && fbm(x / 36, z / 36, sd + 911) > .62) return 4; if (a < .43) return b > .5 ? 2 : 1; return b > .64 ? 2 : b < .36 ? 1 : 0; }
 const biome = new Uint8Array(SX * SZ);
-export const pools = [], caches = [], trees = [];
+export const pools = [], caches = [], trees = [], lair = {};   // lair is carved in step 6
 export function generate(sd) {
   world.fill(0);
   const R = rng(sd), H = new Int16Array(SX * SZ);

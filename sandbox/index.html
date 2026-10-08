@@ -92,7 +92,9 @@ body.touch #target{font-size:9px;top:calc(50% + 22px)}
 #hp i{width:9px;height:9px;border-radius:3px;background:rgba(255,255,255,.12);border:1px solid rgba(255,106,138,.5)}#hp i.on{background:linear-gradient(180deg,#ff8aa8,#ff3250);box-shadow:0 0 6px #ff3250}
 #hp.low i.on{animation:blink .5s infinite alternate}@keyframes blink{to{opacity:.35}}
 #bossbar{left:50%;transform:translateX(-50%);top:calc(max(10px,env(safe-area-inset-top)) + 44px);width:min(420px,54vw);display:none;text-align:center;font-size:10px;letter-spacing:2px;color:#ffb0d8;text-shadow:0 0 8px #ff4fd8}
-#bossbar.show{display:block}#bossbar .b{height:10px;border-radius:6px;border:1px solid #ff4fd8;background:rgba(40,0,30,.7);margin-top:3px;overflow:hidden}#bossFill{height:100%;background:linear-gradient(90deg,#ff3250,#ff4fd8,#ffd24a);transition:width .15s}
+#bossbar.show{display:block}#bossbar .b{position:relative}#bossbar .b i{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.55)}#bossPh{margin-top:3px;font-size:10px;color:#ffd24a;letter-spacing:3px;min-height:12px}#bossbar.weak .b{box-shadow:0 0 12px #ffd24a}
+#cineT,#cineB{position:fixed;left:0;right:0;height:0;background:#05010a;z-index:40;transition:height .45s ease;pointer-events:none}#cineT{top:0}#cineB{bottom:0}body.cine #cineT,body.cine #cineB{height:11vh}body.cine .hud:not(#bossbar),body.cine #touch{opacity:0;transition:opacity .3s}
+#bossCard{position:fixed;left:6vw;bottom:14vh;z-index:41;pointer-events:none;opacity:0;transform:translateX(-30px);transition:all .5s ease}#bossCard.show{opacity:1;transform:none}#bossCard h3{margin:0;font:900 clamp(20px,4.6vw,40px) Orbitron,Verdana,sans-serif;color:#fff;letter-spacing:2px;text-shadow:0 0 18px #ff4fd8,0 3px 0 #6a1050}#bossCard p{margin:4px 0 0;font:700 clamp(10px,1.8vw,15px) Orbitron,Verdana,sans-serif;color:#ffd24a;letter-spacing:3px}#bossbar .b{height:10px;border-radius:6px;border:1px solid #ff4fd8;background:rgba(40,0,30,.7);margin-top:3px;overflow:hidden}#bossFill{height:100%;background:linear-gradient(90deg,#ff3250,#ff4fd8,#ffd24a);transition:width .15s}
 #combo{right:max(14px,env(safe-area-inset-right));top:40%;font-size:20px;font-weight:900;color:#ff4fd8;text-shadow:0 0 12px #ff4fd8;opacity:0;transition:opacity .4s}#combo.show{opacity:1}#combo.hit{animation:cb .25s ease-out}@keyframes cb{from{transform:scale(1.5)}to{transform:scale(1)}}
 #banner{left:50%;top:24%;transform:translateX(-50%);text-align:center;opacity:0;width:90vw}#banner.show{animation:ban 2.6s ease-out forwards}
 #banner h2{margin:0;font-size:26px;letter-spacing:3px;background:linear-gradient(90deg,#ffd24a,#ff4fd8,#28dcff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px rgba(255,79,216,.7))}#banner p{margin:4px 0 0;font-size:11px;letter-spacing:1px;color:#fff;text-shadow:0 0 6px #000}
@@ -186,7 +188,8 @@ body.photo #photoBar{display:block;touch-action:manipulation;position:fixed;z-in
 <div class="hud" id="hurt"></div>
 <div class="hud" id="hp"></div>
 <div class="hud" id="quest"><div class="hd"><span id="qN">QUEST</span><span id="qR"></span></div><div id="qT"></div><div id="qH"></div><div class="bar"><div id="qBar"></div></div><div id="qC"></div><div id="qD"></div></div>
-<div class="hud" id="bossbar"><span id="bossLv">THE RUG PULLER</span><div class="b"><div id="bossFill"></div></div></div>
+<div class="hud" id="bossbar"><span id="bossLv">THE RUG PULLER</span><div class="b"><div id="bossFill"></div><i style="left:33.3%"></i><i style="left:66.6%"></i></div><div id="bossPh"></div></div>
+<div id="cineT"></div><div id="cineB"></div><div id="bossCard"><h3></h3><p></p></div>
 <div class="hud" id="combo"></div>
 <div class="hud" id="banner"><h2></h2><p></p></div>
 <div class="hud" id="biome"></div>
