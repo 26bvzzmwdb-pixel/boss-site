@@ -168,12 +168,13 @@ export function generate(sd) {
     else if (bm === 5 && r2 < .05) { const y0 = h + 2 + Math.floor(R4() * 3); if (y0 < SY - 2) { world[idx(x, y0, z)] = 7; if (R4() < .4 && y0 + 1 < SY - 1) world[idx(x, y0 + 1, z)] = 26; } }
     else if (bm === 0 && r2 < .008) { const t = R4() < .55 ? 4 : 5, L = 2 + Math.floor(R4() * 4); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = t; }
   }
-  // plaza: neon floor, chrome rim, lamps
-  for (let z = cz - 5; z <= cz + 5; z++) for (let x = cx - 5; x <= cx + 5; x++) {
-    const edge = Math.max(Math.abs(x - cx), Math.abs(z - cz)) === 5; world[idx(x, ph, z)] = edge ? 13 : ((x + z) & 1 ? 1 : 13);
-    for (let y = ph + 1; y < SY; y++) world[idx(x, y, z)] = 0;
+  // plaza (v0.9 polish): a natural round glade instead of a square tile grid. Ground stays the biome's own smooth top,
+  // with a soft teal grid-turf disc at the centre; four SOL lamps stand on the grass in a ring; the area is kept clear.
+  for (let z = cz - 6; z <= cz + 6; z++) for (let x = cx - 6; x <= cx + 6; x++) { const d = Math.hypot(x - cx, z - cz); if (d > 6.2) continue;
+    world[idx(x, ph, z)] = d < 3.2 ? 3 : BIOME_TOP[biome[x + z * SX]]; if (world[idx(x, ph - 1, z)] === 0) world[idx(x, ph - 1, z)] = 2;
+    for (let y = ph + 1; y < SY; y++) world[idx(x, y, z)] = 0; H[x + z * SX] = ph;
   }
-  for (const [dx, dz] of [[-5, -5], [5, -5], [-5, 5], [5, 5]]) { world[idx(cx + dx, ph + 1, cz + dz)] = 13; world[idx(cx + dx, ph + 2, cz + dz)] = 12; }
+  for (const [dx, dz] of [[-4, -4], [4, -4], [-4, 4], [4, 4]]) world[idx(cx + dx, ph + 1, cz + dz)] = 12;
   for (let y = ph + 1; y <= ph + 3; y++) world[idx(cx, y, cz - 4)] = 13;    // monument base
   // secret caches: 5 hidden gold boxes on cave floors (own RNG so the rest of the world is unchanged)
   caches.length = 0; const R2 = rng(sd ^ 0x5ec2e7);
