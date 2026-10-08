@@ -255,6 +255,44 @@ body.can-lock #rotGo{display:inline-block}
 }
 #load{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:var(--ink);font-size:12px;letter-spacing:3px;color:var(--cyan)}
 #err{position:fixed;left:8px;right:8px;bottom:8px;z-index:30;display:none;font:11px monospace;color:#ffb0c0;background:rgba(40,0,10,.85);padding:8px;border-radius:8px}
+
+/* v0.9.5 rifts / combat / powers */
+#riftNav{left:50%;transform:translateX(-50%);top:calc(max(10px,env(safe-area-inset-top)) + 46px);display:none;align-items:center;gap:7px;padding:4px 11px 4px 7px;border-radius:14px;background:rgba(12,6,24,.78);border:1px solid var(--tc,#5affb0);box-shadow:0 0 14px var(--tc,#5affb0);font:900 10px Orbitron,sans-serif;letter-spacing:1px;color:#fff;white-space:nowrap}
+#riftNav.show{display:flex}#riftAr{display:inline-block;font-size:15px;color:var(--tc);text-shadow:0 0 8px var(--tc);transition:transform .12s linear}#riftL{color:var(--tc)}#riftD{color:#ffd24a;min-width:34px;text-align:right}
+body.touch #riftNav{top:calc(max(8px,env(safe-area-inset-top)) + 4px);font-size:9px;padding:3px 9px 3px 6px}
+#radar{right:calc(max(14px,env(safe-area-inset-right)) + 54px);top:calc(max(12px,env(safe-area-inset-top)) + 58px);width:120px;height:120px;display:none;border-radius:50%;filter:drop-shadow(0 0 8px rgba(0,0,0,.5))}
+#wpn{left:max(14px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));display:flex;flex-wrap:wrap;max-width:178px;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:14px;background:rgba(8,6,24,.72);border:1px solid rgba(40,220,255,.45);font:900 10px Orbitron,sans-serif;letter-spacing:1px;color:#fff}
+#wpn .wi{font-size:22px;line-height:1}#wpn .wt{display:flex;flex-direction:column;gap:3px;min-width:116px}#wpn .wk{opacity:.55;font-size:8px}
+#wpn .hb{display:none;height:5px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}#wpn[data-w=blaster] .hb{display:block}#heat{display:block;height:100%;width:0;background:linear-gradient(90deg,#28dcff,#9df7ff);transition:width .08s linear}#heat.hot{background:linear-gradient(90deg,#ffd24a,#ff8a3a)}#heat.over{background:#ff3a3a;animation:blink .3s infinite}
+#wpn .wp{flex-basis:100%;box-sizing:border-box;text-align:center;padding:4px 8px;border-radius:10px;border:1px solid currentColor;font-size:9px;white-space:nowrap}#wpn .wp::after{content:" · " attr(data-cd);opacity:.8}#wpn .wp.cool{opacity:.55}
+@keyframes blink{50%{opacity:.35}}
+#dmgs{inset:0;z-index:7;overflow:hidden}#dmgs .dn{position:absolute;left:0;top:0;font:900 16px Orbitron,Verdana,sans-serif;color:#fff;-webkit-text-stroke:1px rgba(10,4,20,.85);text-shadow:0 2px 0 rgba(0,0,0,.5);white-space:nowrap;will-change:transform}#dmgs .dn.wk{font-size:22px;color:#ffd24a!important}
+#flashW{inset:0;z-index:8;opacity:0;mix-blend-mode:screen}#flashW.go{animation:fw .9s ease-out}@keyframes fw{0%{opacity:.75}100%{opacity:0}}
+#bWpn{width:52px;height:52px;font-size:22px;right:calc(max(10px,env(safe-area-inset-right)) + 150px);bottom:calc(max(8px,env(safe-area-inset-bottom)) + 10px);border-color:rgba(40,220,255,.75)}
+#bPow{width:56px;height:56px;font-size:24px;right:calc(max(10px,env(safe-area-inset-right)) + 80px);bottom:calc(max(8px,env(safe-area-inset-bottom)) + 150px);border-color:var(--pc,#ffd24a);box-shadow:0 0 16px var(--pc,#ffd24a);overflow:hidden;padding:0}
+#bPow .i{position:relative;z-index:1}#bPow .c{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 15px Orbitron,sans-serif;color:#fff;z-index:2;text-shadow:0 0 4px #000}#bPow::before{content:"";position:absolute;inset:0;background:conic-gradient(rgba(0,0,0,.66) var(--cd,0deg),transparent 0);z-index:1}#bPow.fire{animation:pw .3s}@keyframes pw{50%{transform:scale(1.18);filter:brightness(1.8)}}
+#bMine[data-w=blaster]{border-color:#28dcff;color:#bff8ff}#bMine[data-w=melee]{border-color:#ffd24a;color:#ffe9a8}
+body.inmenu #bWpn,body.inmenu #bPow,body.photo #bWpn,body.photo #bPow,body.photo #wpn,body.photo #radar,body.photo #riftNav,body.inmenu #radar{visibility:hidden}
+#bossCard .tier{display:inline-block;margin-bottom:6px;padding:3px 10px;border-radius:10px;border:2px solid var(--tc);color:var(--tc);font:900 clamp(10px,1.6vw,14px) Orbitron,sans-serif;letter-spacing:3px;background:rgba(8,6,24,.6);box-shadow:0 0 18px var(--tc)}#bossCard[style*="--tc"] h3{text-shadow:0 0 18px var(--tc),0 3px 0 #2a0a3a}
+#banner[data-tier=rare] h2{background:linear-gradient(90deg,#59b4ff,#bff8ff,#59b4ff);-webkit-background-clip:text;background-clip:text}#banner[data-tier=epic] h2{background:linear-gradient(90deg,#c08aff,#ff7ad0,#c08aff);-webkit-background-clip:text;background-clip:text;font-size:30px}#banner[data-tier=legendary] h2{background:linear-gradient(90deg,#ffc040,#fff2b0,#ff8a3a,#ffc040);-webkit-background-clip:text;background-clip:text;font-size:34px;filter:drop-shadow(0 0 16px rgba(255,190,60,.9))}#banner[data-tier=common] h2{background:linear-gradient(90deg,#5affb0,#bff8ff);-webkit-background-clip:text;background-clip:text}
+.rmod{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(4,2,12,.66);padding:12px;touch-action:auto}.rmod.show{display:flex}
+.rmod .rc{max-width:min(460px,92vw);max-height:94vh;overflow:auto;padding:18px 20px 16px;border-radius:18px;background:linear-gradient(180deg,rgba(26,14,48,.97),rgba(10,6,22,.97));border:2px solid var(--tc,#ff4fd8);box-shadow:0 0 40px var(--tc,#ff4fd8);text-align:center;color:#fff;font:700 12px Orbitron,Verdana,sans-serif;letter-spacing:.5px}
+.rmod .tn{display:inline-block;padding:3px 10px;border-radius:10px;color:var(--tc,#ff4fd8);border:1px solid var(--tc,#ff4fd8);font-size:11px;letter-spacing:3px}.rmod h3{margin:10px 0 6px;font:900 20px Orbitron,sans-serif;letter-spacing:1px}.rmod .warn{margin:0 0 8px;color:#ffd0d8;line-height:1.45}.rmod .bn{margin:0;color:var(--tc);font-weight:900}.rmod .lt{margin:4px 0 8px;color:#ffd24a;font-size:11px}.rmod small{display:block;opacity:.65;font-size:9px;line-height:1.4}.rmod .rb{display:flex;gap:10px;justify-content:center;margin-top:12px}.rmod .rb .btn{min-width:120px}
+#riftGo{border-color:var(--tc);box-shadow:0 0 16px var(--tc)}#riftLost .rc{--tc:#ff3a5a}#riftLost h3{color:#ff8aa0}#riftLost .ll{list-style:none;margin:6px 0 10px;padding:0;font-size:11px;line-height:1.7;color:#ffd0d8}#riftLost .ll li{text-decoration:line-through;text-decoration-color:rgba(255,58,90,.8)}
+#powCard{position:fixed;left:50%;top:50%;z-index:46;width:min(420px,88vw);transform:translate(-50%,-50%) scale(.6);opacity:0;pointer-events:none;padding:18px 18px 14px;border-radius:20px;text-align:center;color:#fff;background:radial-gradient(circle at 50% 30%,rgba(60,30,100,.96),rgba(10,6,22,.96));border:2px solid var(--pc,#ffd24a);box-shadow:0 0 50px var(--pc,#ffd24a);font:700 11px Orbitron,Verdana,sans-serif;overflow:hidden}
+#powCard.show{animation:pc 6.5s ease forwards;pointer-events:auto}@keyframes pc{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-8deg)}8%{opacity:1;transform:translate(-50%,-50%) scale(1.08) rotate(1deg)}13%{transform:translate(-50%,-50%) scale(1)}90%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.95)}}
+#powCard .pr{position:absolute;inset:-50%;background:conic-gradient(from 0deg,transparent,var(--pc,#ffd24a),transparent 30%,transparent 50%,var(--pc,#ffd24a),transparent 80%);opacity:.22;animation:spin 3s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+#powCard>*:not(.pr){position:relative}#powCard .pi{display:block;font-size:46px;filter:drop-shadow(0 0 16px var(--pc))}#powCard h3{margin:6px 0;font:900 15px Orbitron,sans-serif;letter-spacing:1px}#powCard .pn{display:block;font-size:20px;color:var(--pc);letter-spacing:2px;text-shadow:0 0 12px var(--pc)}#powCard .pd{margin:6px 0;color:#e8e0ff;line-height:1.4}#powCard small{display:block;opacity:.8;font-size:9px;margin-top:4px}#powCard .pw{color:#ffb0c0;opacity:.75}
+#powL{margin:8px 0;font-size:10px}#powL .ph{color:#ffd24a;letter-spacing:1px;font-weight:900}#powL .ph small{opacity:.6;font-weight:700;margin-left:6px}#powL .row{display:flex;align-items:center;gap:8px;margin-top:5px;padding:5px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,210,74,.25)}#powL .row.lock{opacity:.5}#powL .pi{font-size:18px}#powL .pt{flex:1;display:flex;flex-direction:column;text-align:left}#powL .pt small{opacity:.7;font-size:8px}
+@media (orientation:landscape) and (max-height:540px){
+  body.touch #radar{right:auto;left:max(10px,env(safe-area-inset-left));top:calc(max(6px,env(safe-area-inset-top)) + 84px);width:76px;height:76px}
+  body.touch #wpn{left:auto;right:calc(max(10px,env(safe-area-inset-right)) + 152px);bottom:calc(max(8px,env(safe-area-inset-bottom)) + 70px);padding:3px 8px 3px 5px;gap:5px;font-size:8px;border-radius:10px;background:rgba(8,6,24,.55)}
+  body.touch #wpn .wi{font-size:15px}body.touch #wpn .wt{min-width:78px}body.touch #wpn .wk{display:none}body.touch #wpn .wp{display:none!important}
+  body.touch #bWpn{width:50px;height:50px;font-size:20px;right:calc(max(10px,env(safe-area-inset-right)) + 166px);bottom:calc(max(8px,env(safe-area-inset-bottom)) + 14px)}
+  body.touch #bPow{width:52px;height:52px;font-size:22px;right:calc(max(10px,env(safe-area-inset-right)) + 96px);bottom:calc(max(8px,env(safe-area-inset-bottom)) + 108px)}
+  body.touch .rmod .rc{padding:12px 16px 12px}body.touch .rmod h3{font-size:16px;margin:6px 0 4px}body.touch .rmod .warn{font-size:11px}
+  body.touch #powCard{padding:10px 14px}body.touch #powCard .pi{font-size:32px}body.touch #powCard .pn{font-size:16px}
+}
 </style>
 </head>
 <body class="inmenu">
@@ -264,11 +302,15 @@ body.can-lock #rotGo{display:inline-block}
 <div class="hud" id="hp"></div>
 <div class="hud" id="quest"><div class="hd"><span id="qN">QUEST</span><span id="qR"></span></div><div id="qT"></div><div id="qH"></div><div class="bar"><div id="qBar"></div></div><div id="qC"></div><div id="qD"></div></div>
 <div class="hud" id="bossbar"><span id="bossLv">THE RUG PULLER</span><div class="b"><div id="bossFill"></div><i style="left:33.3%"></i><i style="left:66.6%"></i></div><div id="bossPh"></div></div>
-<div id="cineT"></div><div id="cineB"></div><div id="bossCard"><h3></h3><p></p></div>
+<div id="cineT"></div><div id="cineB"></div><div id="bossCard"><b class="tier" style="display:none"></b><h3></h3><p></p></div>
 <div class="hud" id="combo"></div>
 <div class="hud" id="banner"><h2></h2><p></p></div>
 <div class="hud" id="biome"></div>
 <div class="hud" id="evChip"></div>
+<div class="hud" id="riftNav"><span id="riftAr">▲</span><span class="ln" id="riftL">✦ RIFT</span><b id="riftD">--</b></div>
+<canvas class="hud" id="radar" width="120" height="120" aria-label="Minimap"></canvas>
+<div class="hud" id="wpn" data-w="tool"><span class="wi">⛏</span><span class="wt"><b class="wn">DRILL</b><i class="hb"><i id="heat"></i></i><small class="wk">Z · X · C</small></span><span class="wp" style="display:none"></span></div>
+<div class="hud" id="dmgs"></div><div class="hud" id="flashW"></div>
 <div class="hud" id="lairNav"><span id="lairAr">▲</span><span class="ln">🧀 FUDDER'S LAIR</span><b id="lairD">--</b></div>
 <div class="hud" id="ach"><b>🏆 ACHIEVEMENT</b><span id="achN"></span><small id="achD"></small></div>
 <div class="hud" id="scan" style="display:none"><div id="scanAr">▲</div><div id="scanTx"></div></div>
@@ -283,7 +325,7 @@ body.can-lock #rotGo{display:inline-block}
 <div class="hud" id="reel"><div class="track"><div id="reelZone"></div><div id="reelFish"></div></div><div class="pb"><div id="reelProg"></div></div></div>
 <div id="flash"></div>
 <div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
-<div id="labList"></div><div id="dailyL" class="dl"></div><div id="buildL" class="dl bl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="petL"></div><div id="achL"></div><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
+<div id="labList"></div><div id="dailyL" class="dl"></div><div id="buildL" class="dl bl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="powL"></div><div id="petL"></div><div id="achL"></div><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
 <div class="hud" id="badge"><b>$BOSS SANDBOX</b> <span class="bt">BETA</span><br><span>third-person · practice only</span></div>
 <div class="hud" id="clock">--</div>
 <div class="hud" id="shards"><div class="n" id="shardN">0</div><div class="l">◆ SOL SHARDS</div><div class="nv">in-game items · no cash value</div></div>
@@ -298,6 +340,8 @@ body.can-lock #rotGo{display:inline-block}
 <button class="tbtn" id="bMine" aria-label="Hold to mine">MINE</button>
 <button class="tbtn" id="bBuild" aria-label="Place piece">BUILD</button>
 <button class="tbtn" id="bJump" aria-label="Jump">JUMP</button>
+<button class="tbtn" id="bWpn" aria-label="Switch weapon">⛏</button>
+<button class="tbtn" id="bPow" aria-label="Use boss power"><span class="i">⚡</span><span class="c"></span></button>
 <button id="lookSlow" aria-label="Slower look" type="button">LOOK: NORM</button>
 <div id="lookPad" aria-hidden="true"></div>
 <div id="tip">
@@ -349,6 +393,10 @@ body.can-lock #rotGo{display:inline-block}
 <script>
 window.addEventListener("error",e=>{const d=document.getElementById("err");d.style.display="block";d.textContent="Error: "+(e.message||e);});
 </script>
-<script type="module" src="./sandbox.js?v=0.9.4"></script>
+
+<div id="riftAsk" class="rmod" role="dialog" aria-modal="true" aria-labelledby="riftAskH"><div class="rc"><b class="tn">RIFT</b><h3 id="riftAskH">Enter the rift?</h3><p class="warn">You can't leave until the boss is defeated. If you die, you lose all carried loot and boss powers.</p><p class="bn"></p><p class="lt"></p><small>Safe no matter what: reward &amp; holder skins, achievements, your builds.</small><div class="rb"><button class="btn" id="riftGo" type="button">ENTER</button><button class="btn sm" id="riftNo" type="button">NOT NOW</button></div></div></div>
+<div id="riftLost" class="rmod" role="dialog" aria-modal="true" aria-labelledby="riftLostH"><div class="rc"><b class="tn">RIFT LOST</b><h3 id="riftLostH">YOUR LOOT WAS LOST TO THE RIFT</h3><p class="why"></p><ul class="ll"></ul><small>Safe: reward &amp; holder skins, achievements, your builds.</small><div class="rb"><button class="btn" id="lostOk" type="button">BACK TO SPAWN</button></div></div></div>
+<div id="powCard" role="status"><div class="pr"></div><span class="pi">⚡</span><h3>YOU ABSORBED THE POWER!</h3><b class="pn"></b><p class="pd"></p><small class="pk"></small><small class="pw">Boss powers are rift loot: dying in a rift wipes them.</small></div>
+<script type="module" src="./sandbox.js?v=0.9.5"></script>
 </body>
 </html>
