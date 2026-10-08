@@ -446,7 +446,7 @@ function updMining(dt, time) {
   const tgt = $("target");
   if (critHit) { outline.visible = false; tgt.textContent = "PAPER HANDS · HOLD TO ZAP"; }
   else if (bossHit) { outline.visible = false; tgt.textContent = BOSSES[boss.kind].name + (bossHit.weak ? (boss.expose > 0 ? " · WEAK POINT ×3!" : " · WEAK POINT") : " · HOLD MINE TO BLAST"); }
-  else if (hit && !fudHit) { outline.visible = true; outline.position.set(hit.x + .5, hit.y + .5, hit.z + .5); const bd = B[hit.id]; tgt.textContent = bd.name + (bd.drop ? `  ◆+${bd.drop}` : bd.hard === Infinity ? "  (unbreakable)" : ""); }
+  else if (hit && !fudHit) { outline.position.set(hit.x + .5, hit.y + .5, hit.z + .5); { const c = camera.position, o = outline.position; outline.visible = Math.max(Math.abs(c.x - o.x), Math.abs(c.y - o.y), Math.abs(c.z - o.z)) > .8; /* never draw the box from inside it (long stray lines) */ } const bd = B[hit.id]; tgt.textContent = bd.name + (bd.drop ? `  ◆+${bd.drop}` : bd.hard === Infinity ? "  (unbreakable)" : ""); }
   else { outline.visible = false; tgt.textContent = fudHit ? "FUD CLOUD · HOLD TO ZAP" : ""; }
   if (input.mine) mineGrace = IS_TOUCH ? 0.28 : 0; else if (mineGrace > 0) mineGrace -= dt;
   const mining = input.mine || mineGrace > 0;
