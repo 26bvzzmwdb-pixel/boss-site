@@ -253,11 +253,11 @@ function stuckCheck(dt, wet, trying) { stuck.clock += dt; if (collides(P.x, P.y,
   if (!wet || !trying) { stuck.t = 0; stuck.x = P.x; stuck.z = P.z; stuck.y = P.y; return; }
   if (Math.hypot(P.x - stuck.x, P.z - stuck.z) > .9 || P.y > stuck.y + 1) { stuck.t = 0; stuck.x = P.x; stuck.z = P.z; stuck.y = P.y; return; }
   if ((stuck.t += dt) > 3) rescue("water"); }
-function updPlayer(dt) {
+function updPlayer(dt) { const g0 = P.ground;
   let f = input.f, s = input.s; const k = input.keys;
   if (k.KeyW || k.ArrowUp) f += 1; if (k.KeyS || k.ArrowDown) f -= 1; if (k.KeyD || k.ArrowRight) s += 1; if (k.KeyA || k.ArrowLeft) s -= 1;
   const len = Math.hypot(f, s); if (len > 1) { f /= len; s /= len; }
-  const pq = inPool(P.x, P.z), wet = !!pq && P.y < pq.y; if (wet && !P.wet && P.vy < -3) { burst(P.x, P.y + .5, P.z, [0x28dcff, 0xffffff], 24, 4); noise(.3, 900, .15); } P.wet = wet;
+  const pq = inPool(P.x, P.z), wet = !!pq && P.y < pq.y; if (wet && !P.wet && P.vy < -3) { burst(P.x, P.y + .5, P.z, [0x28dcff, 0xffffff], 24, 4); sfx.splash(1); } P.wet = wet;
   if (wet && !swimTipShown) { swimTipShown = true; pop(IS_TOUCH ? "🏊 SWIMMING · hold JUMP to swim up" : "🏊 SWIMMING · hold SPACE to swim up", "#9df7ff"); }
   P.leapT = Math.max(0, (P.leapT || 0) - dt); P.swim = wet && P.leapT <= 0;
   const sp = (boostT > 0 ? 2.1 : 1) * (wet ? (P.ground ? .65 : .8) : 1) * ((input.sprint || k.ShiftLeft || k.ShiftRight || len > .95 && IS_TOUCH && joy.active && joy.mag > .95) ? 6.4 : 4.4);
@@ -278,7 +278,8 @@ function updPlayer(dt) {
   input.jump = false;
   if (!P.swim) P.vy = Math.max(-40, P.vy - 24 * (biomeNow === "MOON BASIN" ? .42 : 1) * dt);
   P.ground = false;
-  moveAxis(1, P.vy * dt); moveAxis(0, P.vx * dt); moveAxis(2, P.vz * dt);
+  const vy0 = P.vy; moveAxis(1, P.vy * dt); moveAxis(0, P.vx * dt); moveAxis(2, P.vz * dt);
+  if (!g0 && P.ground && vy0 < -5.5 && vy0 >= -14) sfx.land(-vy0, get(Math.floor(P.x), Math.floor(P.y - .05), Math.floor(P.z)));
   P.x = Math.max(P.r + .01, Math.min(SX - P.r - .01, P.x)); P.z = Math.max(P.r + .01, Math.min(SZ - P.r - .01, P.z));
   if (P.y < -20) respawn();
   stuckCheck(dt, wet, len > .2 || (upHeld && !!pq && P.y < pq.y - 1.6));
@@ -421,7 +422,7 @@ function updMining(dt, time) {
   else if (mining && hit && B[hit.id].hard !== Infinity) {
     const key = hit.x + "," + hit.y + "," + hit.z; if (key !== mineKey) { mineKey = key; mineT = 0; }
     mineT += dt; const bd = B[hit.id]; const need = Math.max(0.12, bd.hard * (IS_TOUCH ? 0.85 : 1) / SPEED[upg.drill]); minePitch = mineT / need; // slightly faster on phone
-    prog = Math.min(1, mineT / need);
+    prog = Math.min(1, mineT / need); if ((chipT -= dt) <= 0) { chipT = .09 + Math.random() * .04; sfx.chip(hit.id, prog); }
     const s = 1.004 - prog * .12 + Math.sin(time * 60) * .01 * prog; outline.scale.setScalar(s);
     coreGlow.material.color.setHex(bd.col); coreGlow.material.opacity = prog * .55;
     if (Math.random() < dt * (IS_TOUCH ? 14 : 30)) burst(hit.x + .5 + hit.n[0] * .55, hit.y + .5 + hit.n[1] * .55, hit.z + .5 + hit.n[2] * .55, [bd.col, 0xffffff], 1, 2);
@@ -460,59 +461,161 @@ function select(i, quiet) { sel = (i + PALETTE.length) % PALETTE.length; [...$("
   const m = $("matName"); const bd = B[PALETTE[sel]]; m.textContent = bd.name + (bd.cost ? ` · costs ◆${bd.cost}` : ""); m.style.opacity = 1; clearTimeout(nameT); nameT = setTimeout(() => m.style.opacity = 0, 1600); if (!quiet) sfx.click(); }
 
 // ---------------- audio (WebAudio synth: sfx + generative synthwave music, no files) ----------------
-let AC = null, master = null, sfxG = null, musG = null, noiseBuf = null, hum = null, humF = null, humG = null;
-let sndOn = true, musOn = true, minePitch = 0, isFiring = false;
-function note(f, d, type = "square", v = .08, slide = 0, at = 0, dest = null, lp = 0) { if (!AC) return; const t = at || AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
+// ---------------- audio (v0.9): all-synth WebAudio, no sample files. Buses: sfx / music / ambience -> compressor ----------------
+let AC = null, master = null, comp = null, sfxG = null, musG = null, ambG = null, rvSend = null, sfxRv = null, noiseBuf = null, brownBuf = null, hum = null, humF = null, humG = null, meter = null, meterBuf = null;
+let sndOn = true, musOn = true, minePitch = 0, isFiring = false, lastUi = 0, lastBHit = 0, chipT = 0, reelT = 0, stepLR = 1;
+const MUS_V = .42, AMB_V = .6, sfxN = {};
+const tNow = () => AC.currentTime + .012;   // tiny lookahead: a busy audio thread never skips a short envelope
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+function note(f, d, type = "square", v = .08, slide = 0, at = 0, dest = null, lp = 0) { if (!AC) return; const t = at || tNow(), o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + d); let n = o.connect(g);
   if (lp) { const fl = AC.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = lp; n = g.connect(fl); } n.connect(dest || sfxG); o.start(t); o.stop(t + d + .02); }
 function tone(f, d, type, v, slide) { note(f, d, type, v, slide); }
-function noise(d, f = 1200, v = .15, q = 1, at = 0, dest = null, type = "bandpass") { if (!AC) return; const t = at || AC.currentTime, s = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain(); s.buffer = noiseBuf; fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+function noise(d, f = 1200, v = .15, q = 1, at = 0, dest = null, type = "bandpass") { if (!AC) return; const t = at || tNow(), s = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain(); s.buffer = noiseBuf; s.loop = true; fl.type = type; fl.frequency.value = f; fl.Q.value = q;
   g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); s.connect(fl).connect(g).connect(dest || sfxG); s.start(t, Math.random() * .5); s.stop(t + d + .02); }
-const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
-const BRK_F = { 2: 500, 3: 900, 14: 1800, 15: 2400, 16: 900, 17: 3200, 7: 3000, 13: 2600, 6: 1400 };
+// richer building blocks
+function osc(t, type, f, d, v, dest, o = {}) { const n = AC.createOscillator(), g = AC.createGain(); n.type = type; n.frequency.setValueAtTime(f, t); if (o.slide) n.frequency.exponentialRampToValueAtTime(Math.max(20, f + o.slide), t + (o.sd || d)); if (o.det) n.detune.value = o.det;
+  const a = o.a || .004; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + d); let last = n.connect(g);
+  if (o.lp) { const fl = AC.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.setValueAtTime(o.lp, t); if (o.lp2) fl.frequency.exponentialRampToValueAtTime(o.lp2, t + d); fl.Q.value = o.lq || .7; last = g.connect(fl); }
+  if (o.vib) { const l = AC.createOscillator(), lg = AC.createGain(); l.frequency.value = o.vib[0]; lg.gain.value = o.vib[1]; l.connect(lg).connect(n.frequency); l.start(t); l.stop(t + d + .05); }
+  last.connect(dest || sfxG); n.start(t); n.stop(t + d + .05); return n; }
+function nz(t, d, v, dest, o = {}) { const s = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain(); s.buffer = o.brown ? brownBuf : noiseBuf; s.loop = true; fl.type = o.type || "bandpass"; fl.frequency.setValueAtTime(o.f || 1200, t); if (o.f2) fl.frequency.exponentialRampToValueAtTime(o.f2, t + d); fl.Q.value = o.q ?? 1;
+  const a = o.a || .002; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + d); s.connect(fl).connect(g).connect(dest || sfxG); s.start(t, Math.random() * 1.5); s.stop(t + d + .05); }
+function bell(t, f, d, v, dest) { for (const [r, a] of [[1, 1], [2.76, .42], [5.4, .2], [8.93, .08]]) osc(t, "sine", f * r, d / (1 + r * .3), v * a, dest); }
+function thump(t, f, d, v, dest) { osc(t, "sine", f, d, v, dest, { slide: -f * .55 }); }
+function bus(p = 0, v = 1, to) { const g = AC.createGain(); g.gain.value = v; if (AC.createStereoPanner) { const s = AC.createStereoPanner(); s.pan.value = Math.max(-1, Math.min(1, p)); g.connect(s).connect(to || sfxG); } else g.connect(to || sfxG); return g; }
+// positional: pans by angle to the camera, fades with distance. null = too far to hear
+function at3(x, y, z, maxD = 34, to) { const dx = x - P.x, dy = y - P.y, dz = z - P.z, d = Math.hypot(dx, dy, dz); if (d > maxD) return null; const sy = Math.sin(P.yaw), cy = Math.cos(P.yaw), r = (dx * cy - dz * sy) / Math.max(1, d); return bus(r * .85, Math.pow(1 - d / maxD, 1.6) * (d < 3 ? 1 : 1 / (1 + (d - 3) * .06)), to); }
+// surfaces: what every tile sounds like under foot / under the drill
+const SURF = {}; [3, 16, 17].forEach(i => SURF[i] = "soft"); [14, 24].forEach(i => SURF[i] = "sand"); [13, 6, 12, 19, 20, 22, 11].forEach(i => SURF[i] = "metal"); [7, 25, 4, 5, 21].forEach(i => SURF[i] = "glass"); SURF[15] = "frost"; SURF[26] = "glitch"; [8, 9, 10, 18, 23].forEach(i => SURF[i] = "ore");
+const surf = id => SURF[id] || "stone";
+function stepSnd(id, v = 1) { const t = tNow(), k = surf(id), r = .9 + Math.random() * .2; stepLR = -stepLR; const d = bus(stepLR * .14, v * 1.35);
+  if (k === "soft") { nz(t, .085, .07, d, { type: "lowpass", f: 1500 * r, q: .8, a: .008 }); nz(t + .015, .05, .035, d, { type: "bandpass", f: 3400 * r, q: 1.6 }); }
+  else if (k === "sand") { nz(t, .13, .06, d, { type: "bandpass", f: 2300 * r, f2: 1400, q: .6, a: .02 }); nz(t + .03, .08, .03, d, { type: "highpass", f: 4500 }); }
+  else if (k === "metal") { osc(t, "triangle", 610 * r, .1, .022, d); osc(t, "sine", 1730 * r, .14, .014, d); nz(t, .03, .05, d, { type: "bandpass", f: 2600 * r, q: 6 }); thump(t, 100, .07, .06, d); }
+  else if (k === "glass") { osc(t, "sine", 2900 * r, .08, .02, d); osc(t + .01, "sine", 4300 * r, .06, .012, d); nz(t, .03, .03, d, { type: "highpass", f: 5200 }); thump(t, 130, .05, .05, d); }
+  else if (k === "frost") { for (let i = 0; i < 3; i++) nz(t + i * .016, .03, .045, d, { type: "highpass", f: 2800 + Math.random() * 2600 }); thump(t, 110, .05, .05, d); }
+  else if (k === "glitch") { osc(t, "square", 160 + Math.random() * 520, .045, .018, d, { lp: 2600 }); nz(t, .03, .03, d, { type: "bandpass", f: 5200, q: 3 }); thump(t, 90, .05, .04, d); }
+  else { thump(t, 125 * r, .07, .08, d); nz(t, .045, .06, d, { type: "bandpass", f: 1300 * r, q: 1.3 }); } }
+function chipSnd(id, prog) { const t = tNow(), k = surf(id), u = 1 + prog * .3, r = (.92 + Math.random() * .16) * u, d = bus((Math.random() - .5) * .2, .9);
+  if (k === "metal") { osc(t, "triangle", 980 * r, .07, .022, d); nz(t, .025, .045, d, { type: "bandpass", f: 3200 * r, q: 9 }); }
+  else if (k === "glass") { osc(t, "sine", 3300 * r, .05, .022, d); nz(t, .02, .03, d, { type: "highpass", f: 6000 }); }
+  else if (k === "soft") nz(t, .05, .05, d, { type: "lowpass", f: 2600 * r, q: .9 });
+  else if (k === "sand") nz(t, .06, .05, d, { type: "bandpass", f: 2900 * r, q: .5 });
+  else if (k === "frost") { nz(t, .03, .045, d, { type: "highpass", f: 4200 * r }); osc(t, "sine", 3800 * r, .04, .01, d); }
+  else if (k === "glitch") osc(t, "square", 300 + Math.random() * 900, .03, .016, d, { lp: 3000 });
+  else { nz(t, .03, .06, d, { type: "bandpass", f: 2100 * r, q: 1.6 }); thump(t, 220 * r, .04, .04, d); if (k === "ore" && Math.random() < .35) bell(t, 2200 + prog * 1400, .25, .012, d); } }
+function brkSnd(id) { const t = tNow(), k = surf(id), r = .94 + Math.random() * .12, d = bus((Math.random() - .5) * .25);
+  if (k === "metal") { thump(t, 150, .16, .14, d); bell(t, 470 * r, .7, .045, d); nz(t, .12, .08, d, { type: "bandpass", f: 3100, q: 4 }); }
+  else if (k === "glass") { for (let i = 0; i < 9; i++) osc(t + i * .011 + Math.random() * .01, "sine", 2400 + Math.random() * 3800, .08 + Math.random() * .14, .02, d); nz(t, .32, .1, d, { type: "highpass", f: 3800 }); thump(t, 160, .08, .07, d); }
+  else if (k === "soft") { nz(t, .17, .14, d, { type: "lowpass", f: 2600, f2: 500, q: .9 }); osc(t, "sine", 320 * r, .11, .08, d, { slide: -190 }); }
+  else if (k === "sand") { nz(t, .32, .13, d, { type: "bandpass", f: 2000, f2: 600, q: .5, a: .01 }); thump(t, 120, .1, .08, d); }
+  else if (k === "frost") { for (let i = 0; i < 6; i++) nz(t + i * .02, .04, .06, d, { type: "highpass", f: 3000 + Math.random() * 3000 }); bell(t + .02, 1900 * r, .45, .02, d); thump(t, 130, .1, .1, d); }
+  else if (k === "glitch") { [880, 660, 440, 220].forEach((f, i) => osc(t + i * .035, "square", f * r, .05, .025, d, { lp: 3200 })); nz(t, .14, .07, d, { type: "bandpass", f: 4000, q: 2 }); }
+  else { thump(t, 145 * r, .2, .16, d); nz(t, .3, .18, d, { type: "lowpass", f: 1900, f2: 260, q: .8 }); for (let i = 0; i < 5; i++) nz(t + .02 + i * .028 + Math.random() * .01, .045, .055, d, { type: "bandpass", f: 1200 + Math.random() * 1900, q: 1.5 }); } }
+function splashSnd(big, t0, x, y, z) { const t = t0 || tNow(), d = (x != null && at3(x, y, z, 26)) || sfxG; nz(t, .35 + big * .35, .13 + big * .08, d, { type: "lowpass", f: 3600, f2: 320, q: .8, a: .006 }); nz(t, .14, .06, d, { type: "highpass", f: 3200 });
+  for (let i = 0; i < 3 + big * 5; i++) osc(t + .05 + Math.random() * (.2 + big * .3), "sine", 380 + Math.random() * 500, .06, .028, d, { slide: 700 + Math.random() * 900 }); }
+function roarSnd(kind) { const t = tNow(), p = boss.on && boss.g ? boss.g.position : null, d = (p && at3(p.x, p.y, p.z, 80)) || sfxG;
+  thump(t, 70, 1.1, .2, d);
+  if (kind === "whale") { osc(t, "sine", 105, 1.8, .14, d, { slide: -48, vib: [5, 6], a: .2 }); osc(t, "triangle", 210, 1.6, .05, d, { slide: -80, vib: [5.5, 10], a: .25, lp: 900 }); nz(t, 1.6, .1, d, { type: "bandpass", f: 500, f2: 260, q: 3, a: .25 }); osc(t + .9, "sine", 340, .9, .03, d, { slide: 260, a: .2 }); }
+  else if (kind === "king") { nz(t, 2.2, .26, d, { brown: 1, type: "lowpass", f: 520, f2: 90, q: .6, a: .05 }); for (let i = 0; i < 7; i++) nz(t + Math.random() * .5, .06, .1, d, { type: "bandpass", f: 2000 + Math.random() * 3000, q: 2 }); [0, 3, 7].forEach((s, i) => osc(t + .1, "sawtooth", mtof(38 + s), 1.6, .035, d, { det: (i - 1) * 12, lp: 380, lp2: 1400, lq: 4, a: .3 })); }
+  else { osc(t, "sawtooth", 175, 1.2, .1, d, { slide: -95, vib: [17, 22], lp: 520, lp2: 1500, lq: 6, a: .05 }); osc(t, "square", 88, 1.3, .06, d, { slide: -38, lp: 420 }); for (let i = 0; i < 12; i++) nz(t + i * .075, .06, .07, d, { type: "bandpass", f: 900 + (i % 2) * 500, q: 1.2 }); } }
 const sfx = {
-  jump: () => note(300, .12, "square", .035, 200),
+  jump: () => { const t = tNow(); nz(t, .17, .04, null, { type: "bandpass", f: 520, f2: 2000, q: 1.6, a: .025 }); osc(t, "sine", 250, .1, .03, null, { slide: 170 }); },
+  land: (iv, id) => { const t = tNow(), v = Math.min(1.3, iv / 16); thump(t, 120, .12 + v * .2, .06 + v * .14); if (id) stepSnd(id, .8 + v); if (v > .7) nz(t, .3, .1 * v, null, { type: "lowpass", f: 900, f2: 200 }); },
   boost: () => { note(420, .18, "sawtooth", .04, 600, 0, null, 2400); noise(.18, 3000, .06); },
-  brk: id => { const f = BRK_F[id] || 1200; noise(.13, f, .22, 1.2); note(f / 8, .1, "triangle", .12, -60); },
-  place: () => { note(520, .05, "square", .04); noise(.05, 4000, .05); },
-  click: () => note(880, .03, "square", .025),
-  vein: n => { noise(.2, 2500, .2, .8); const b = n >= 10 ? 84 : n >= 5 ? 79 : n >= 3 ? 76 : 72; [0, 4, 7].forEach((s, i) => note(mtof(b + s), .22, "triangle", .07, 0, AC ? AC.currentTime + i * .05 : 0)); },
-  pick: c => { const m = 76 + Math.min(14, c); note(mtof(m), .09, "sine", .06); note(mtof(m + 12), .07, "triangle", .025); },
-  hurt: () => { note(140, .25, "sawtooth", .08, -60, 0, null, 900); noise(.15, 400, .15); },
+  brk: id => brkSnd(id),
+  chip: (id, prog) => chipSnd(id, prog),
+  place: () => { const t = tNow(); thump(t, 230, .07, .09); osc(t, "triangle", 880, .05, .025); nz(t, .04, .05, null, { type: "bandpass", f: 3600, q: 2 }); },
+  click: () => sfx.ui(),
+  ui: () => { const t = tNow(); if (t - lastUi < .045) return; lastUi = t; osc(t, "sine", 1320, .05, .035); osc(t + .016, "sine", 1980, .045, .022); nz(t, .012, .02, null, { type: "highpass", f: 6000 }); },
+  vein: n => { const t = tNow(); nz(t, .2, .16, null, { type: "bandpass", f: 2500, q: .8 }); const b = n >= 10 ? 84 : n >= 5 ? 79 : n >= 3 ? 76 : 72; [0, 4, 7, 12].forEach((s, i) => bell(t + i * .055, mtof(b + s), .7, .035)); if (n >= 5) nz(t + .1, .8, .03, null, { type: "highpass", f: 8000 }); thump(t, 160, .15, .1); },
+  pick: c => { const t = tNow(), m = 76 + [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31, 33][Math.min(14, c | 0)], d = bus((Math.random() - .5) * .5); bell(t, mtof(m), .45, .04, d); osc(t + .03, "sine", mtof(m + 19), .18, .012, d); },
+  hurt: () => { note(140, .25, "sawtooth", .08, -60, 0, null, 900); noise(.15, 400, .15); thump(AC.currentTime, 90, .2, .14); },
   zap: () => { note(1200, .2, "sawtooth", .045, -900, 0, null, 3000); noise(.25, 1800, .1); },
-  quest: () => { if (!AC) return; const t = AC.currentTime; [72, 76, 79, 84, 88].forEach((m, i) => note(mtof(m), .3, "triangle", .07, 0, t + i * .07)); note(mtof(60), .6, "sawtooth", .03, 0, t, null, 1200); },
-  buy: () => { if (!AC) return; const t = AC.currentTime; [67, 74, 79, 86].forEach((m, i) => note(mtof(m), .2, "square", .04, 0, t + i * .05, null, 3000)); },
-  roar: () => { note(220, 1.2, "sawtooth", .12, -170, 0, null, 900); note(110, 1.4, "square", .08, -70, 0, null, 500); noise(1.2, 300, .2, .7); },
-  bshot: () => note(660, .25, "square", .035, -420, 0, null, 1800),
-  bhit: () => noise(.06, 3500, .05, 2),
-  win: () => { if (!AC) return; const t = AC.currentTime; [60, 64, 67, 72, 67, 72, 76, 79, 84].forEach((m, i) => note(mtof(m), .35, "square", .05, 0, t + i * .09, null, 2600)); noise(1.5, 600, .25, .5); },
+  quest: () => { const t = tNow(); [72, 76, 79, 84, 88].forEach((m, i) => bell(t + i * .07, mtof(m), .6, .04)); note(mtof(60), .6, "sawtooth", .03, 0, t, null, 1200); },
+  buy: () => { const t = tNow(); [67, 74, 79, 86].forEach((m, i) => note(mtof(m), .2, "square", .04, 0, t + i * .05, null, 3000)); },
+  roar: k => roarSnd(k || boss.kind),
+  bshot: () => { const t = tNow(), k = boss.kind, p = boss.g ? boss.g.position : P, d = at3(p.x, p.y, p.z, 70) || sfxG;
+    if (k === "whale") { osc(t, "sine", 240, .3, .06, d, { slide: 380 }); nz(t, .2, .05, d, { type: "lowpass", f: 1200, f2: 400 }); }
+    else if (k === "king") { nz(t, .22, .08, d, { type: "bandpass", f: 3500, f2: 900, q: 3 }); osc(t, "sawtooth", 1500, .18, .025, d, { slide: -1100, lp: 4000 }); }
+    else note(660, .25, "square", .035, -420, 0, d, 1800); },
+  bhit: () => { const t = tNow(); if (t - lastBHit < .11) return; lastBHit = t; const k = boss.kind, r = .9 + Math.random() * .2; thump(t, 150 * r, .12, .1);
+    if (k === "whale") nz(t, .12, .08, null, { type: "lowpass", f: 900 * r, q: 2 }); else if (k === "king") { nz(t, .07, .07, null, { type: "bandpass", f: 4200 * r, q: 3 }); osc(t, "square", 1800 * r, .03, .012, null, { lp: 5000 }); }
+    else if (k === "fudder") { nz(t, .09, .08, null, { type: "bandpass", f: 1500 * r, q: 1.5 }); osc(t, "triangle", 420 * r, .08, .03); } else { nz(t, .1, .08, null, { type: "lowpass", f: 1600 * r, q: 1.4 }); osc(t, "triangle", 300 * r, .07, .025); } },
+  win: () => { const t = tNow(); [60, 64, 67, 72, 67, 72, 76, 79, 84].forEach((m, i) => note(mtof(m), .35, "square", .045, 0, t + i * .09, null, 2600)); noise(1.5, 600, .25, .5); [84, 88, 91, 96].forEach((m, i) => bell(t + .8 + i * .06, mtof(m), .9, .03)); },
   combo: c => note(mtof(84 + Math.min(12, c / 5)), .15, "square", .04, 0, 0, null, 3500),
   bounce: () => { note(170, .38, "sine", .1, 650); note(340, .28, "triangle", .04, 900); },
-  fw: () => { if (!AC) return; const t = AC.currentTime; note(700, .7, "sine", .03, 1500, t); noise(.7, 5000, .04, 3, t); for (let i = 0; i < 6; i++) noise(.08, 2000 + Math.random() * 4000, .12, 1, t + .75 + i * .06); note(60, .6, "sine", .15, -30, t + .72); },
-  cache: () => { if (!AC) return; const t = AC.currentTime; [84, 88, 91, 96, 100].forEach((m, i) => note(mtof(m), .4, "triangle", .06, 0, t + i * .07)); noise(1, 9000, .05, 1, t, null, "highpass"); },
-  ach: () => { if (!AC) return; const t = AC.currentTime; [72, 79, 84, 88, 91].forEach((m, i) => note(mtof(m), .32, "square", .04, 0, t + i * .08, null, 3000)); note(mtof(60), 1, "sawtooth", .03, 0, t, null, 1500); },
-  event: () => { if (!AC) return; const t = AC.currentTime; [60, 67, 72, 79].forEach((m, i) => note(mtof(m), .6, "sawtooth", .03, 0, t + i * .12, null, 2200)); },
+  fw: () => { const t = tNow(); note(700, .7, "sine", .03, 1500, t); noise(.7, 5000, .04, 3, t); for (let i = 0; i < 6; i++) noise(.08, 2000 + Math.random() * 4000, .12, 1, t + .75 + i * .06); note(60, .6, "sine", .15, -30, t + .72); },
+  cache: () => { const t = tNow(); [84, 88, 91, 96, 100].forEach((m, i) => bell(t + i * .07, mtof(m), .6, .035)); noise(1, 9000, .05, 1, t, null, "highpass"); },
+  ach: () => { const t = tNow(); [72, 79, 84, 88, 91].forEach((m, i) => note(mtof(m), .32, "square", .04, 0, t + i * .08, null, 3000)); note(mtof(60), 1, "sawtooth", .03, 0, t, null, 1500); },
+  event: () => { const t = tNow(); [60, 67, 72, 79].forEach((m, i) => note(mtof(m), .6, "sawtooth", .03, 0, t + i * .12, null, 2200)); },
   key: m => { note(mtof(m), .45, "triangle", .07); note(mtof(m + 12), .3, "sine", .03); },
-  step: id => noise(.045, (BRK_F[id] || 1200) * .7, .03, 1.5),
+  step: id => stepSnd(id),
+  splash: (big, x, y, z) => splashSnd(big || 0, 0, x, y, z),
+  cast: (x, y, z) => { const t = tNow(); nz(t, .26, .06, null, { type: "bandpass", f: 500, f2: 2600, q: 2, a: .03 }); osc(t, "sine", 900, .2, .012, null, { slide: 900 }); splashSnd(0, t + .3, x, y, z); },
+  bite: (x, y, z) => { const t = tNow(); osc(t, "sine", 640, .1, .06, null, { slide: -420 }); splashSnd(0, t + .02, x, y, z); osc(t + .12, "square", 1320, .08, .04, null, { lp: 4000 }); osc(t + .21, "square", 1760, .1, .035, null, { lp: 4000 }); },
+  reel: (down, prog, inZ) => { const t = tNow(), f = down ? 5200 + prog * 2500 : 3400; nz(t, .014, down ? .05 : .03, null, { type: "highpass", f }); osc(t, "square", down ? 2300 + prog * 800 : 1500, .01, inZ ? .012 : .006, null, { lp: 6000 }); },
+  catchFish: (v, x, y, z) => { splashSnd(1, 0, x, y, z); sfx.vein(v); },
   bark: () => { note(520, .08, "square", .05, 260, 0, null, 2000); setTimeout(() => note(600, .1, "square", .05, 300, 0, null, 2000), 130); },
   shimmer: v => { note(mtof(96 + Math.floor(Math.random() * 5) * 2), .5, "sine", v); },
+  sting: kind => { const t = tNow(), base = { rug: 50, whale: 45, king: 47, fudder: 43 }[kind] || 48; thump(t, 60, 1.4, .22); [0, 7, 12, 15].forEach((s, i) => osc(t + i * .11, "sawtooth", mtof(base + s), 1.3 - i * .15, .045, musG || sfxG, { lp: 900, lp2: 3000, lq: 3, det: (i % 2 ? 9 : -9) })); nz(t, 1.4, .1, null, { brown: 1, type: "lowpass", f: 300 }); osc(t + .45, "square", mtof(base + 24), .9, .03, musG || sfxG, { lp: 2600, vib: [6, 8] }); },
 };
-function initAudio() { if (AC) { if (AC.state === "suspended") AC.resume(); return; }
-  try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
-  master = AC.createGain(); master.gain.value = .9; master.connect(AC.destination);
-  sfxG = AC.createGain(); sfxG.gain.value = sndOn ? 1 : 0; sfxG.connect(master); musG = AC.createGain(); musG.gain.value = musOn ? .55 : 0; musG.connect(master);
-  noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+for (const k in sfx) { const f = sfx[k]; sfx[k] = (...a) => { sfxN[k] = (sfxN[k] | 0) + 1; if (!AC || AC.state === "closed") return; try { return f(...a); } catch (e) {} }; }
+// ambience: wind, water, cave drone are looping noise beds; birds, crickets and cave drips are scheduled one-shots
+const amb = { wind: null, windF: null, whis: null, whisF: null, water: null, cave: null, birdT: 3, crickT: 1, dripT: 2, bloopT: 2, wT: 0, wTgt: 450, poolD: 99 };
+function loopBed(buf, type, f, q, to) { const s = AC.createBufferSource(); s.buffer = buf; s.loop = true; const fl = AC.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const g = AC.createGain(); g.gain.value = 0; s.connect(fl).connect(g).connect(to); s.start(0, Math.random() * 1.5); return [g, fl]; }
+function initAmb() { [amb.wind, amb.windF] = loopBed(noiseBuf, "bandpass", 450, .55, ambG); [amb.whis, amb.whisF] = loopBed(noiseBuf, "bandpass", 1700, 9, ambG); [amb.water] = loopBed(brownBuf, "lowpass", 650, .7, ambG); [amb.cave] = loopBed(brownBuf, "lowpass", 150, .8, ambG); }
+function bird(t) { sfxN.bird = (sfxN.bird | 0) + 1; const d = bus((Math.random() - .5) * 1.6, 1, ambG), kind = Math.random(), f0 = 2500 + Math.random() * 1800, n = 2 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < n; i++) { const at = t + i * (kind < .5 ? .11 : .07) + Math.random() * .02; if (kind < .5) osc(at, "sine", f0, .08, .02, d, { slide: (i % 2 ? -1 : 1) * (600 + Math.random() * 900), a: .01 }); else osc(at, "sine", f0 * (1 + i * .06), .06, .016, d, { vib: [38, 260], a: .008 }); } }
+function ambTick(dt) { if (!amb.wind) return; const t = tNow(), on = running && sndOn, ug = biomeNow === "UNDERGROUND", night = curNight;
+  const col = Math.max(0, Math.min(SX - 1, Math.floor(P.x))) + Math.max(0, Math.min(SZ - 1, Math.floor(P.z))) * SX, alt = Math.max(0, P.y - 12) / 24, exposed = !ug;
+  if ((amb.wT -= dt) <= 0) { amb.wT = 2 + Math.random() * 4; amb.wTgt = 300 + Math.random() * 500; }
+  const cold = biomeNow === "FROST CHAIN" || biomeNow === "MOON BASIN";
+  const wv = on ? (exposed ? .032 + alt * .06 + (cold ? .028 : 0) + (boss.on ? .02 : 0) : .01) : 0;
+  amb.wind.gain.setTargetAtTime(wv, t, .8); amb.windF.frequency.setTargetAtTime(amb.wTgt * (cold ? 1.3 : 1), t, 1.5);
+  amb.whis.gain.setTargetAtTime(on && exposed ? (alt * .012 + (cold ? .01 : 0)) * (.5 + .5 * Math.sin(t * .37)) : 0, t, .6); amb.whisF.frequency.setTargetAtTime(1400 + 600 * Math.sin(t * .21), t, .8);
+  let pd = 99, pq = null; for (const q of pools) { const dd = Math.hypot(q.x - P.x, q.z - P.z) - Math.max(q.rx, q.rz); if (dd < pd) { pd = dd; pq = q; } } amb.poolD = pd;
+  amb.water.gain.setTargetAtTime(on ? Math.pow(Math.max(0, 1 - pd / 14), 2) * .22 : 0, t, .5);
+  amb.cave.gain.setTargetAtTime(on && ug ? .16 : 0, t, 1.2);
+  if (sfxRv) sfxRv.gain.setTargetAtTime(ug ? .42 : .14, t, .8);
+  if (!on) return;
+  if (pd < 10 && (amb.bloopT -= dt) <= 0) { amb.bloopT = .7 + Math.random() * 2.2; const d = at3(pq.x, pq.y, pq.z, 18, ambG); if (d) { osc(t, "sine", 300 + Math.random() * 400, .07, .05, d, { slide: 500 + Math.random() * 600 }); } }
+  if (exposed && night < .35 && biomeNow !== "MOON BASIN" && biomeNow !== "GLITCH WASTES" && (amb.birdT -= dt) <= 0) { amb.birdT = 3.5 + Math.random() * 7; bird(t); if (Math.random() < .4) bird(t + .6 + Math.random()); }
+  if (exposed && night > .6 && (amb.crickT -= dt) <= 0) { amb.crickT = .6 + Math.random() * .9; const d = bus((Math.random() - .5) * 1.4, 1, ambG), f = 4300 + Math.random() * 500; for (let i = 0; i < 3; i++) osc(t + i * .045, "sine", f, .03, .007, d); }
+  if (ug && (amb.dripT -= dt) <= 0) { sfxN.drip = (sfxN.drip | 0) + 1; amb.dripT = 1 + Math.random() * 2.6; const d = bus((Math.random() - .5) * 1.4, 1, ambG), f = 900 + Math.random() * 900; osc(t, "sine", f, .09, .045, d, { slide: f * 1.3, sd: .05 }); osc(t + .23, "sine", f * 1.05, .07, .012, d, { slide: f * 1.3, sd: .04 }); if (rvSend) { const g = AC.createGain(); g.gain.value = .9; g.connect(rvSend); osc(t, "sine", f, .09, .05, g, { slide: f * 1.3, sd: .05 }); } } }
+let unlockN = 0;
+function initAudio() { if (AC) { if (AC.state !== "running") { const r = AC.resume(); if (r && r.catch) r.catch(() => {}); } return; }
+  try { AC = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" }); } catch (e) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e2) { return; } }
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}   // iPhone: let game audio play like a video would
+  try { const b = AC.createBuffer(1, 1, 22050), s = AC.createBufferSource(); s.buffer = b; s.connect(AC.destination); s.start(0); } catch (e) {}   // old iOS unlock trick
+  { const r = AC.resume && AC.resume(); if (r && r.catch) r.catch(() => {}); }
+  comp = AC.createDynamicsCompressor(); comp.threshold.value = -14; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = .004; comp.release.value = .22; comp.connect(AC.destination);
+  master = AC.createGain(); master.gain.value = .95; master.connect(comp);
+  meter = AC.createAnalyser(); meter.fftSize = 16384; meterBuf = new Float32Array(16384); comp.connect(meter);
+  sfxG = AC.createGain(); sfxG.gain.value = sndOn ? 1 : 0; sfxG.connect(master); musG = AC.createGain(); musG.gain.value = musOn ? MUS_V : 0; musG.connect(master); ambG = AC.createGain(); ambG.gain.value = sndOn ? AMB_V : 0; ambG.connect(master);
+  noiseBuf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  brownBuf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate); { const b = brownBuf.getChannelData(0); let l = 0; for (let i = 0; i < b.length; i++) { l = (l + .02 * (Math.random() * 2 - 1)) / 1.02; b[i] = l * 3.5; } }
   hum = AC.createOscillator(); hum.type = "sawtooth"; hum.frequency.value = 90; humF = AC.createBiquadFilter(); humF.type = "lowpass"; humF.frequency.value = 700; humG = AC.createGain(); humG.gain.value = 0;
   hum.connect(humF).connect(humG).connect(sfxG); hum.start(); musNext = AC.currentTime + .1;
   try { const rv = AC.createConvolver(), L = Math.floor(AC.sampleRate * 2.4), ib = AC.createBuffer(2, L, AC.sampleRate); for (let ch = 0; ch < 2; ch++) { const dd = ib.getChannelData(ch); for (let i = 0; i < L; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / L, 2.6); } rv.buffer = ib;
-    const rg = AC.createGain(); rg.gain.value = .42; musG.connect(rv); rv.connect(rg).connect(master); const ss = AC.createGain(); ss.gain.value = .14; sfxG.connect(ss).connect(rv); } catch (e) {} }
+    const rg = AC.createGain(); rg.gain.value = .42; rv.connect(rg).connect(master); rvSend = AC.createGain(); rvSend.gain.value = 1; rvSend.connect(rv); const ms = AC.createGain(); ms.gain.value = 1; musG.connect(ms).connect(rvSend); sfxRv = AC.createGain(); sfxRv.gain.value = .14; sfxG.connect(sfxRv).connect(rvSend); const as = AC.createGain(); as.gain.value = .3; ambG.connect(as).connect(rvSend); } catch (e) {}
+  try { initAmb(); } catch (e) {}
+  AC.onstatechange = () => updSndHud(); updSndHud(); }
+// iPhone: audio may only start inside a real touch. Resume on every gesture until it's running (also after calls / app switches)
+function unlockAudio() { if (!sndOn && !musOn && AC) return; if (AC && AC.state === "running") return; unlockN++; initAudio(); updSndHud(); }
+for (const evn of ["touchstart", "touchend", "pointerdown", "pointerup", "mousedown", "keydown", "click"]) document.addEventListener(evn, unlockAudio, { capture: true, passive: true });
+document.addEventListener("visibilitychange", () => { if (!AC) return; if (document.hidden) { if (AC.state === "running") AC.suspend().catch(() => {}); } else if (AC.state !== "running") { const r = AC.resume(); if (r && r.catch) r.catch(() => {}); } });
+// UI click for every button (deduped with in-game clicks)
+document.addEventListener("click", e => { const b = e.target && e.target.closest && e.target.closest("button"); if (b && b.id !== "sndHud") sfx.ui(); }, true);
+function audioLevel() { if (!meter) return { peak: 0, rms: 0 }; meter.getFloatTimeDomainData(meterBuf); let pk = 0, s = 0; for (const v of meterBuf) { pk = Math.max(pk, Math.abs(v)); s += v * v; } return { peak: pk, rms: Math.sqrt(s / meterBuf.length) }; }
 // music: 4-chord synthwave loop, arps soften at night, drums kick in during the boss fight
 const PROG = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], PROG_N = [[57, 60, 64], [53, 57, 60], [55, 58, 62], [52, 55, 59]];
 const LEAD = { "NEON FLATS": "square", "PUMP DUNES": "sawtooth", "SIGNAL GROVE": "triangle", "FROST CHAIN": "sine", "MOON BASIN": "sine", "GLITCH WASTES": "square", "UNDERGROUND": "triangle" };
 const MOTIF = [[0, -1, 2, -1, 4, -1, 2, 1], [4, -1, 3, 2, 0, -1, -1, -1], [2, 4, 5, 4, 2, -1, 0, -1], [0, -1, 0, 2, 4, -1, 7, -1]], SCALE = [0, 2, 3, 5, 7, 9, 10, 12];
-let musStep = 0, musNext = 0;
-function audioTick() { if (!AC) return; const t = AC.currentTime;
-  humG.gain.setTargetAtTime(isFiring && running ? .028 : 0, t, .03); hum.frequency.setTargetAtTime(70 + minePitch * 170 + upg.drill * 14, t, .05); humF.frequency.setTargetAtTime(500 + minePitch * 1800, t, .05);
+let musStep = 0, musNext = 0, hudT = 0;
+function audioTick() { if (!AC) return; const t = tNow(); const dt = applyView.dt || .016; try { ambTick(dt); } catch (e) {} if ((hudT -= dt) <= 0) { hudT = .5; updSndHud(); }
+  humG.gain.setTargetAtTime(isFiring && running ? .022 : 0, t, .03); hum.frequency.setTargetAtTime(70 + minePitch * 170 + upg.drill * 14, t, .05); humF.frequency.setTargetAtTime(500 + minePitch * 1800, t, .05);
   if (!musOn || !running) { musNext = t + .1; return; } if (musNext < t - .5) musNext = t + .05;
   while (musNext < t + .25) { const at = musNext, bar = Math.floor(musStep / 16) % 4, st = musStep % 16, nt = curNight > .6, ch = (nt ? PROG_N : PROG)[bar], fight = boss.on, phrase = Math.floor(musStep / 64);
     if (st === 0) for (const m of ch) note(mtof(m), 2.3, "sawtooth", .009, 0, at, musG, nt ? 700 : 1100);
@@ -523,8 +626,10 @@ function audioTick() { if (!AC) return; const t = AC.currentTime;
     if (st === 0) note(mtof(ch[2] + 12), 1.6, "sine", .02, 0, at, musG);
     if (fight) { if (st % 4 === 0) note(130, .14, "sine", .14, -90, at, musG); if (st % 8 === 4) noise(.12, 1800, .06, .8, at, musG); if (st % 2 === 1) noise(.03, 7000, .02, 1, at, musG, "highpass"); }
     musNext += fight ? .11 : curNight > .6 ? .17 : .15; musStep++; } }
+function updSndHud() { const b = $("sndHud"); if (!b) return; const muted = !sndOn && !musOn, blocked = !muted && (!AC || AC.state !== "running"); const s = muted ? "🔇" : blocked ? "🔈" : "🔊"; if (b.textContent !== s) b.textContent = s; b.classList.toggle("off", muted); b.classList.toggle("blocked", blocked && running); b.setAttribute("aria-label", muted ? "Sound off: tap to turn on" : blocked ? "Tap to start sound" : "Sound on: tap to mute"); }
 function updSetBtns() { const a = $("sndBtn"), b = $("musBtn"); if (a) a.textContent = "SFX: " + (sndOn ? "ON" : "OFF"); if (b) b.textContent = "MUSIC: " + (musOn ? "ON" : "OFF");
-  if (sfxG) sfxG.gain.value = sndOn ? 1 : 0; if (musG) musG.gain.value = musOn ? .55 : 0; }
+  if (sfxG) sfxG.gain.value = sndOn ? 1 : 0; if (ambG) ambG.gain.value = sndOn ? AMB_V : 0; if (musG) musG.gain.value = musOn ? MUS_V : 0; updSndHud(); }
+function toggleSound() { const anyOn = sndOn || musOn; sndOn = musOn = !anyOn; initAudio(); updSetBtns(); save(); if (sndOn) { sfx.ui(); pop("🔊 SOUND ON", "#14f195"); } else pop("🔇 SOUND OFF", "#cfefff"); }
 function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 
 // ---------------- controls: desktop ----------------
@@ -565,7 +670,7 @@ function overUI(x, y) {
   // Don't start look/joystick on HUD buttons, palette, tip, or pause.
   const el = document.elementFromPoint(x, y);
   if (!el || el === $("touch") || el === $("game") || el === $("lookPad") || el === document.body) return false;
-  return !!(el.closest && el.closest(".tbtn, #palette, #pauseBtn, #labBtn, #lab, #lookSlow, #tip, #menu, .chip, #shards, #photoBar, #photoBtn, #viewBtn, #shotBtn, #shareBtn"));
+  return !!(el.closest && el.closest(".tbtn, #palette, #pauseBtn, #labBtn, #lab, #lookSlow, #tip, #menu, .chip, #shards, #photoBar, #photoBtn, #viewBtn, #shotBtn, #shareBtn, #sndHud"));
 }
 function inLookZone(x, y) {
   // Right side of the screen, above the action buttons, so look doesn't fight MINE/BUILD/JUMP.
@@ -942,7 +1047,7 @@ let introDone = false;
 let introFx = 0;
 function intro() { introFx = 1; introDone = true; P.y = plaza.y + 26; P.vy = -2; P.pitch = -.35; banner("WELCOME TO THE $BOSS SANDBOX", "Dig, build, and bust the rug"); sfx.boost(); met.t = 28; save(); }
 let wasAir = false;
-function landCheck() { if (!P.ground) { if (P.vy < -14) wasAir = true; return; } if (wasAir) { wasAir = false; trauma = .7; buzz(60); burst(P.x, P.y + .1, P.z, [0x28dcff, 0xff4fd8, 0xffd24a, 0xffffff], IS_TOUCH ? 40 : 80, 7); sfx.brk(13); note(70, .5, "sine", .2, -40); } }
+function landCheck() { if (!P.ground) { if (P.vy < -14) wasAir = true; return; } if (wasAir) { wasAir = false; trauma = .7; buzz(60); burst(P.x, P.y + .1, P.z, [0x28dcff, 0xff4fd8, 0xffd24a, 0xffffff], IS_TOUCH ? 40 : 80, 7); sfx.land(22, get(Math.floor(P.x), Math.floor(P.y - .05), Math.floor(P.z))); } }
 
 // ---------------- SOL meteors: the wow moment (first one ~28s into a new game, then every few minutes) ----------------
 const met = { t: 9999, on: false, s: null, from: null, to: null, k: 0, crater: null, craterT: 0 };
@@ -1077,12 +1182,12 @@ function fishEnd(msg, col) { fish.st = "idle"; if (fish.bob) { scene.remove(fish
 // returns true when fishing owns the MINE input this frame
 function updFishing(dt, night, time) { const down = input.mine, press = down && !fish.wasDown; fish.wasDown = down; const rod = upg.rod || 1;
   if (fish.st === "idle") { if (poolHit && press) { bobMat.map = shotTex; fish.bob = new THREE.Sprite(bobMat); fish.bob.scale.set(.35, .35, 1); fish.bob.position.set(poolHit.x, poolHit.q.y + .05, poolHit.z); scene.add(fish.bob);
-      fish.pool = poolHit.q; fish.st = "wait"; fish.t = (2 + Math.random() * 4) / (1 + (rod - 1) * .4); note(500, .25, "sine", .05, -300); noise(.2, 2500, .08); fLine.visible = true; burst(poolHit.x, poolHit.q.y, poolHit.z, [0x28dcff, 0xffffff], 10, 2); stats.casts = (stats.casts || 0) + 1; return true; }
+      fish.pool = poolHit.q; fish.st = "wait"; fish.t = (2 + Math.random() * 4) / (1 + (rod - 1) * .4); sfx.cast(poolHit.x, poolHit.q.y, poolHit.z); fLine.visible = true; burst(poolHit.x, poolHit.q.y, poolHit.z, [0x28dcff, 0xffffff], 10, 2); stats.casts = (stats.casts || 0) + 1; return true; }
     return poolHit != null && down; }
   const b = fish.bob.position; dTip.getWorldPosition(tmpV); const la = lineGeo.attributes.position; la.setXYZ(0, tmpV.x, tmpV.y, tmpV.z); la.setXYZ(1, b.x, b.y, b.z); la.needsUpdate = true;
   if (Math.hypot(b.x - P.x, b.z - P.z) > 16) { fishEnd("LINE SNAPPED (TOO FAR)", "#ff6a8a"); return false; }
   if (fish.st === "wait") { b.y = fish.pool.y + .05 + Math.sin(time * 3) * .03; fish.t -= dt; if (press) { fishEnd("REELED IN EARLY", "#cfefff"); return true; }
-    if (fish.t <= 0) { fish.st = "bite"; fish.t = .95 + (rod - 1) * .25; fish.sp = rollFish(ev.k === "aurora" ? 1 : night, biomeName(fish.pool.x, fish.pool.z)); pop("❗ BITE! TAP NOW", "#ffd24a"); note(1320, .08, "square", .06); note(1760, .1, "square", .05, 0, AC ? AC.currentTime + .09 : 0); buzz(40); burst(b.x, b.y, b.z, [0x28dcff, 0xffffff], 14, 3); trauma = Math.max(trauma, .15); } return true; }
+    if (fish.t <= 0) { fish.st = "bite"; fish.t = .95 + (rod - 1) * .25; fish.sp = rollFish(ev.k === "aurora" ? 1 : night, biomeName(fish.pool.x, fish.pool.z)); pop("❗ BITE! TAP NOW", "#ffd24a"); sfx.bite(b.x, b.y, b.z); buzz(40); burst(b.x, b.y, b.z, [0x28dcff, 0xffffff], 14, 3); trauma = Math.max(trauma, .15); } return true; }
   if (fish.st === "bite") { b.y = fish.pool.y - .12 + Math.sin(time * 30) * .05; fish.t -= dt; if (press) { fish.st = "reel"; fish.f = .5; fish.fv = 0; fish.z = .4; fish.zv = 0; fish.prog = .3; $("reel").classList.add("show"); $("reelFish").style.background = fish.sp.c; return true; }
     if (fish.t <= 0) { fishEnd("TOO SLOW · IT SWAM OFF", "#ff6a8a"); } return true; }
   if (fish.st === "reel") { const sp = fish.sp, zw = .29 + (rod - 1) * .06, fE = (stats.fish | 0) < 1 ? .55 : (stats.fish | 0) < 4 ? .8 : 1;
@@ -1093,9 +1198,9 @@ function updFishing(dt, night, time) { const down = input.mine, press = down && 
     const inZ = fish.f >= fish.z && fish.f <= fish.z + zw; fish.prog += (inZ ? .34 : -.15 * fE) * dt * (1.15 - sp.sp * .15);
     $("reelZone").style.left = (fish.z * 100).toFixed(1) + "%"; $("reelZone").style.width = (zw * 100).toFixed(0) + "%"; $("reelZone").classList.toggle("on", inZ); $("reelFish").style.left = (fish.f * 100).toFixed(1) + "%"; $("reelProg").style.width = (Math.max(0, Math.min(1, fish.prog)) * 100).toFixed(0) + "%";
     b.x += (Math.random() - .5) * dt * 2; b.z += (Math.random() - .5) * dt * 2; b.y = fish.pool.y - .05 + Math.sin(time * 18) * .04; if (Math.random() < dt * 8) burst(b.x, b.y, b.z, [0x28dcff], 1, 1.5);
-    if (inZ && Math.random() < dt * 10) note(300 + fish.prog * 500, .04, "triangle", .02);
+    if ((reelT -= dt) <= 0) { reelT = down ? .05 : .11; sfx.reel(down, fish.prog, inZ); }
     if (fish.prog >= 1) { stats.fish = (stats.fish || 0) + 1; charJoy = 1; fish.dex[sp.n] = (fish.dex[sp.n] || 0) + 1; spawnOrbs(b.x, b.y + .3, b.z, sp.v, parseInt(sp.c.slice(1), 16)); banner(`CAUGHT: ${sp.n}`, `${sp.r} · ◆+${sp.v} SOL shards${fish.dex[sp.n] === 1 ? " · NEW IN FISHDEX!" : ""}`);
-      burst(b.x, b.y + .3, b.z, [parseInt(sp.c.slice(1), 16), 0xffffff, 0x28dcff], IS_TOUCH ? 30 : 60, 6); sfx.vein(sp.v); trauma = Math.max(trauma, sp.v >= 12 ? .6 : .25); buzz(60); fishEnd(); save(); }
+      burst(b.x, b.y + .3, b.z, [parseInt(sp.c.slice(1), 16), 0xffffff, 0x28dcff], IS_TOUCH ? 30 : 60, 6); sfx.catchFish(sp.v, b.x, b.y, b.z); trauma = Math.max(trauma, sp.v >= 12 ? .6 : .25); buzz(60); fishEnd(); save(); }
     else if (fish.prog <= 0) fishEnd(`${sp.n} GOT AWAY`, "#ff6a8a"); return true; }
   return false; }
 function updWater(dt, time, night) { waterU.uT.value = time; waterU.uNight.value = night; }
@@ -1333,10 +1438,11 @@ $("photoBar").addEventListener("pointerup", e => { const b = e.target.closest("b
   if (k === "f") filtI = (filtI + 1) % FILTERS.length; else if (k === "p") { poseI = (poseI + 1) % POSES.length; } else if (k === "t") { photoTodI = (photoTodI + 1) % PHOTO_TOD.length; tod = PHOTO_TOD[photoTodI][0]; updSky(0); }
   else if (k === "in") photoZoom = Math.max(.45, photoZoom - .15); else if (k === "out") photoZoom = Math.min(2.4, photoZoom + .15); else if (k === "snap") wantShot = true; else if (k === "x") setPhoto(false); updPhotoBar(); });
 $("photoBtn").addEventListener("click", e => { e.stopPropagation(); setPhoto(!photo); });
+$("sndHud").addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); toggleSound(); });
 { const pad = $("photoPad"); let lx = 0, ly = 0, dn = false; pad.addEventListener("pointerdown", e => { dn = true; lx = e.clientX; ly = e.clientY; pad.setPointerCapture(e.pointerId); });
   pad.addEventListener("pointermove", e => { if (!dn || !photo) return; P.yaw -= (e.clientX - lx) * .008; P.pitch = Math.max(-1.2, Math.min(.9, P.pitch - (e.clientY - ly) * .006)); lx = e.clientX; ly = e.clientY; });
   pad.addEventListener("pointerup", () => { dn = false; }); pad.addEventListener("wheel", e => { if (!photo) return; photoZoom = Math.max(.45, Math.min(2.4, photoZoom + Math.sign(e.deltaY) * .12)); e.preventDefault(); }, { passive: false }); }
-document.addEventListener("keydown", e => { if (e.code === "KeyO" && running) setPhoto(!photo); else if (photo && e.code === "Escape") setPhoto(false); });
+document.addEventListener("keydown", e => { if (e.code === "KeyM" && !e.repeat) toggleSound(); if (e.code === "KeyO" && running) setPhoto(!photo); else if (photo && e.code === "Escape") setPhoto(false); });
 
 // ---------------- v0.8: daily BUILD CHALLENGE (local only, rotates by your device's date) ----------------
 const bc = { key: "", base: {}, done: false, streak: 0, last: "", wins: 0 };
@@ -1370,6 +1476,6 @@ setInterval(save, 5000);
 requestAnimationFrame(frame);
 
 // test / debug hooks (harmless; used by automated checks)
-window.__SB = { pools: () => pools.map(q => ({ x: q.x, y: q.y, z: q.z, rx: q.rx, rz: q.rz })), stuck: () => ({ ...stuck, swim: !!P.swim, wet: !!P.wet }), dryLand, bc: () => ({ ...bc, def: bcDef(), v: bcVal(), line: bcLine() }), bcForce: i => { bcForceI = i; }, setPhoto, photo: () => ({ on: photo, pose: POSES[poseI], filter: FILTERS[filtI][0], zoom: photoZoom }), setChar: id => setChar(id, true), thumbs: () => ({ left: thumbQ.length, n: Object.keys(charThumb).length, r3: document.querySelectorAll("#chars .ch.r3").length }), rig: () => ({ vis: rig.visible, yaw: rigYaw, legL: CM ? CM.legL.rotation.x : 0, armR: CM ? CM.armR.rotation.x : 0, kneeL: CM ? CM.kneeL.rotation.x : 0, elbowR: CM ? CM.elbowR.rotation.x : 0, expr: CM ? CM.expr : "", dressed: rigFor, info: rig.userData.info }), petClick, pet: () => ({ ...pet, id: upg.pet, vis: petSpr.visible, px: petSpr.position.x }), FISH: () => FISH.map(f => f.n), roll: (n, z) => rollFish(n, z).n, brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
+window.__SB = { pools: () => pools.map(q => ({ x: q.x, y: q.y, z: q.z, rx: q.rx, rz: q.rz })), stuck: () => ({ ...stuck, swim: !!P.swim, wet: !!P.wet }), dryLand, audio: () => ({ state: AC ? AC.state : "none", snd: sndOn, mus: musOn, n: { ...sfxN }, unlock: unlockN, lvl: audioLevel(), hud: $("sndHud").textContent, amb: amb.wind ? { wind: +amb.wind.gain.value.toFixed(3), water: +amb.water.gain.value.toFixed(3), cave: +amb.cave.gain.value.toFixed(3), poolD: +amb.poolD.toFixed(1) } : null }), sfx: (k, ...a) => sfx[k](...a), toggleSound, ambMute: v => { if (ambG) ambG.gain.value = v ? 0 : AMB_V; }, setSnd: (a, b) => { sndOn = a; musOn = b; updSetBtns(); }, audioSuspend: () => AC && AC.suspend(), bc: () => ({ ...bc, def: bcDef(), v: bcVal(), line: bcLine() }), bcForce: i => { bcForceI = i; }, setPhoto, photo: () => ({ on: photo, pose: POSES[poseI], filter: FILTERS[filtI][0], zoom: photoZoom }), setChar: id => setChar(id, true), thumbs: () => ({ left: thumbQ.length, n: Object.keys(charThumb).length, r3: document.querySelectorAll("#chars .ch.r3").length }), rig: () => ({ vis: rig.visible, yaw: rigYaw, legL: CM ? CM.legL.rotation.x : 0, armR: CM ? CM.armR.rotation.x : 0, kneeL: CM ? CM.kneeL.rotation.x : 0, elbowR: CM ? CM.elbowR.rotation.x : 0, expr: CM ? CM.expr : "", dressed: rigFor, info: rig.userData.info }), petClick, pet: () => ({ ...pet, id: upg.pet, vis: petSpr.visible, px: petSpr.position.x }), FISH: () => FISH.map(f => f.n), roll: (n, z) => rollFish(n, z).n, brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
   state: () => ({ x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, ground: P.ground, shards, sel, running, tris, fps: Math.round(fps), fuds: fuds.length, tod, mp: mp.on ? { id: mp.id, rejects: mp.rejects || 0, lastEmote: mp.lastEmote || null, others: [...mp.others.values()].map(o => ({ name: o.p.name, x: o.p.x, y: o.p.y, z: o.p.z })) } : null, info: renderer.info.render }),
   select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, upg, stats, quest: () => ({ i: Qi, ...qDef(Qi), v: qVal(qDef(Qi)) }), boss: () => ({ on: boss.on, hp: boss.hp, max: boss.max, phase: boss.phase }), summon: k => summonBoss(k), daily: () => ({ ...daily, line: dailyLine() }), meteor: () => { met.t = 0; }, met: () => ({ on: met.on, crater: met.crater }), critters: () => critters.map(c => ({ x: c.s.position.x, y: c.s.position.y, z: c.s.position.z })), spawnCritter: () => spawnCritter(true), lookAtCrit: () => { const c = critters.slice().sort((a, b) => a.s.position.distanceTo(camera.position) - b.s.position.distanceTo(camera.position))[0]; if (!c) return false; const o = c.s.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return true; }, shot: () => { wantShot = true; }, lastShot: () => lastShotInfo, lastShotUrl: () => lastShot && lastShot.url, touchLook: (dx, dy) => touchLook(dx, dy), setLookMul: v => { lookMul = v; }, mem: () => ({ geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures, heap: performance.memory ? performance.memory.usedJSHeapSize : 0, scene: scene.children.length, orbs: orbs.length, fuds: fuds.length, shots: boss.shots.length, crit: critters.length }), fishSt: () => ({ st: fish.st, prog: fish.prog, sp: fish.sp && fish.sp.n, dex: fish.dex, n: stats.fish || 0 }), pools: () => pools, setView: v => { view = v; }, rigObj: () => rig, rinfo: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles }), headPNG: id => { const J = KIT.build(id); const u = J.headCanvas.toDataURL(); J.dispose(); return u; }, charPNG: (id, size, yaw) => new Promise(res => { const go = () => { const u = renderRigPNG(id, size || 384, yaw ?? .42); if (u) res(u); else setTimeout(go, 50); }; go(); }), view: () => view, tpCam: () => ({ ok: tpCam.ok, d: tpCam.d, sh: tpCam.sh, pos: tpCam.pos.toArray(), dir: tpCam.dir.toArray() }), aimHit: () => hit && { x: hit.x, y: hit.y, z: hit.z }, setChar: id => setChar(id, true), charId: () => charId, chars: () => CHARS.map(c => c[0]), aimState: () => ({ pool: !!poolHit, boss: bossHit, crit: !!critHit, fud: !!fudHit }), lookAtBoss: () => { if (!boss.on) return; const o = boss.g.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); }, bossDamage: n => bossDamage(n), openLab, closeLab, buy: id => buyUpg(id), hp: () => P.hp, biome: () => biomeName(P.x, P.z), give: n => { shards += n; updShards(); }, setTod: t => { tod = t; }, dpr: () => renderer.getPixelRatio(), combo: () => comboN, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza };
