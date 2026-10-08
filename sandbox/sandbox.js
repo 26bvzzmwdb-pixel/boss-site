@@ -1,21 +1,21 @@
 // $BOSS Sandbox: third-person (default) / first-person build & explore (Phase 1, single-player beta).
 // Original content: neon tiles, Rug-Buster drill, SOL shard veins (in-game items, no cash value), FUD wolves.
 // Season board is local. Prize SOL is a display stub and is never sent. ◆ shards have no cash value.
-import * as THREE from "./three.module.min.js?v=0.9.8";
-import { createCharKit } from "./chars3d.js?v=0.9.8";
-import { createGems } from "./gems.js?v=0.9.8";
-import { createTerrain } from "./terrain.js?v=0.9.8";
-import { createBosses } from "./bosses.js?v=0.9.8";
-import { createLair } from "./lair.js?v=0.9.8";
-import { createWolves } from "./wolves.js?v=0.9.8";
-import { createAnimals } from "./animals.js?v=0.9.8";
-import { createCombat, POWERS, WEAPONS, GUNS, GUN_ORDER } from "./combat.js?v=0.9.8";
-import { createRifts, RIFT_CFG, tierOdds } from "./rifts.js?v=0.9.8";
-import { createBoard } from "./leaderboard.js?v=0.9.8";
-import { createLive } from "./live.js?v=0.9.8";
-import { BURN, burnConfigured, burnLive, burnReady, burnFor, connectWallet, burnPrice, wallet } from "./burnshop.js?v=0.9.8";
-import { createHub, SAFE_R } from "./hub.js?v=0.9.8";
-import { STARTER, SKIN_NFT, claimHolderSkins, skinHeld, heldSkins, rememberHeld } from "./skins.js?v=0.9.8";
+import * as THREE from "./three.module.min.js?v=0.9.9";
+import { createCharKit } from "./chars3d.js?v=0.9.9";
+import { createGems } from "./gems.js?v=0.9.9";
+import { createTerrain } from "./terrain.js?v=0.9.9";
+import { createBosses } from "./bosses.js?v=0.9.9";
+import { createLair } from "./lair.js?v=0.9.9";
+import { createWolves } from "./wolves.js?v=0.9.9";
+import { createAnimals } from "./animals.js?v=0.9.9";
+import { createCombat, POWERS, WEAPONS, GUNS, GUN_ORDER } from "./combat.js?v=0.9.9";
+import { createRifts, RIFT_CFG, tierOdds } from "./rifts.js?v=0.9.9";
+import { createBoard } from "./leaderboard.js?v=0.9.9";
+import { createLive } from "./live.js?v=0.9.9";
+import { BURN, burnConfigured, burnLive, burnReady, burnFor, connectWallet, burnPrice, wallet } from "./burnshop.js?v=0.9.9";
+import { createHub, SAFE_R } from "./hub.js?v=0.9.9";
+import { STARTER, SKIN_NFT, claimHolderSkins, skinHeld, heldSkins, rememberHeld } from "./skins.js?v=0.9.9";
 
 const Q = new URLSearchParams(location.search);
 const $ = id => document.getElementById(id);
@@ -25,7 +25,7 @@ if (IS_TOUCH) document.body.classList.add("touch");
 const IS_PHONE = IS_TOUCH && Math.min(screen.width || 9999, screen.height || 9999) <= 540 && !Q.has("tablet");
 if (IS_PHONE) document.body.classList.add("phone");
 
-import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools, caches, trees, lair } from "./world.js?v=0.9.8";
+import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools, caches, trees, lair } from "./world.js?v=0.9.9";
 const SAVE_KEY = "boss_sandbox_v2", OLD_KEY = "boss_sandbox_v1", WORLD_V = 3;   // v0.9: WORLD_V 3 = bigger natural world (older saves keep progress, get the new map)
 const DAY_LEN = 480;                               // seconds per full day/night cycle
 let seed = 1337, edits = {}, shards = 0, plaza = { x: 40, y: 20, z: 40 };
@@ -783,7 +783,7 @@ function overUI(x, y) {
   // Don't start look/joystick on HUD buttons, palette, tip, or pause.
   const el = document.elementFromPoint(x, y);
   if (!el || el === $("touch") || el === $("game") || el === $("lookPad") || el === document.body) return false;
-  return !!(el.closest && el.closest(".tbtn, #palette, #pauseBtn, #labBtn, #lab, #lb, #hubDlg, #hubTalk, #lookSlow, #tip, #menu, .chip, #shards, #photoBar, #photoBtn, #viewBtn, #shotBtn, #shareBtn, #sndHud"));
+  return !!(el.closest && el.closest(".tbtn, #palette, #pauseBtn, #labBtn, #lab, #lb, #hubDlg, #hubTalk, #lookSlow, #tip, #menu, .chip, #shards, #photoBar, #photoBtn, #viewBtn, #shotBtn, #shareBtn, #sndHud, #fsBtn, #fsHelp"));
 }
 function landPhone() { return IS_TOUCH && innerWidth > innerHeight && innerHeight <= 540; }
 function inLookZone(x, y) {
@@ -834,6 +834,24 @@ function lockLandscape() { try { const o = screen.orientation; if (o && o.lock) 
 function goLandscape() { if (!IS_PHONE) return; try { const el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen, fs = document.fullscreenElement || document.webkitFullscreenElement;
   if (rq && !fs && !STANDALONE) { const r = rq.call(el, { navigationUI: "hide" }); if (r && r.then) r.then(lockLandscape, () => {}); else lockLandscape(); } else lockLandscape(); } catch (e) {} }
 if (IS_PHONE && document.documentElement.requestFullscreen && screen.orientation && screen.orientation.lock) document.body.classList.add("can-lock");
+// ---------------- v0.9.9 FULL SCREEN button: hides browser tabs / address bar. Fullscreen API (desktop, Android, iPad) + landscape lock on phones.
+// iPhone Safari/Chrome only allow fullscreen for <video>, so there the button explains Add to Home Screen (the manifest already launches fullscreen + landscape).
+const SITE_URL = new URL("../", location.href).href;
+const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+const FS_OK = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) && !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+if (STANDALONE) document.body.classList.add("standalone");
+function fsUpd() { const on = !!fsEl(); document.body.classList.toggle("fs", on); const b = $("fsBtn"), m = $("fsMenu");
+  if (b) { b.textContent = on ? "🗗" : "⛶"; b.setAttribute("aria-label", on ? "Exit full screen" : "Full screen"); } if (m) m.textContent = on ? "⛶ EXIT FULL SCREEN" : "⛶ FULL SCREEN"; }
+function fsHelp(on) { const el = $("fsHelp"); if (el) el.classList.toggle("show", !!on); }
+function enterFs() { const el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
+  try { const r = rq.call(el, { navigationUI: "hide" }); if (r && r.then) r.then(() => { if (IS_PHONE) lockLandscape(); fsUpd(); }, () => pop(IS_TOUCH ? "FULL SCREEN BLOCKED: TAP ⛶ AGAIN" : "FULL SCREEN BLOCKED: TRY F11", "#ff6a8a")); else if (IS_PHONE) lockLandscape(); } catch (e) {} }
+function exitFs() { try { const x = document.exitFullscreen || document.webkitExitFullscreen; const r = x && x.call(document); if (r && r.catch) r.catch(() => {}); } catch (e) {} }
+function toggleFs() { if (STANDALONE) return; if (!FS_OK) { if (running) pause(); fsHelp(true); return; } if (fsEl()) exitFs(); else enterFs(); }
+for (const id of ["fsBtn", "fsMenu"]) { const b = $(id); if (b) b.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); toggleFs(); }); }
+$("fsHelpOk").addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); fsHelp(false); });
+document.addEventListener("fullscreenchange", fsUpd); document.addEventListener("webkitfullscreenchange", fsUpd); fsUpd();
+// v0.9.9 exit portal at spawn: save, then go back to the $BOSS website
+function leaveToSite() { try { save(); } catch (e) {} if (window.__SB_TEST) { window.__SB_LEFT = SITE_URL; return; } running = false; pop("🌀 BACK TO THE $BOSS SITE…", "#ffd24a"); setTimeout(() => { location.href = SITE_URL; }, 350); }
 function orientCheck() { const port = IS_PHONE && innerHeight > innerWidth * 1.05 && !Q.has("portrait"); document.body.classList.toggle("portrait-phone", port);
   if (port && running) { rotPaused = true; running = false; input.mine = false; input.jump = false; input.jumpHeld = false; if (resetTouch) resetTouch(); save(); }
   else if (!port && rotPaused) { rotPaused = false; if ($("menu").classList.contains("hide")) { running = true; last = performance.now(); } }
@@ -842,7 +860,7 @@ if (IS_PHONE) { window.addEventListener("resize", orientCheck); window.addEventL
   $("rotGo").addEventListener("click", e => { e.preventDefault(); goLandscape(); });
   // menu: two columns side by side on a landscape phone (title + PLAY left, characters + info right)
   { const card = document.querySelector("#menu .card"), cA = document.createElement("div"), cB = document.createElement("div"); cA.className = "mcol a"; cB.className = "mcol b"; const row = $("sndBtn").parentElement;
-    for (const el of [card.querySelector(".heroRow"), card.querySelector(".title"), card.querySelector(".tag"), $("playBtn"), row]) if (el) cA.appendChild(el); while (card.firstChild) cB.appendChild(card.firstChild); card.append(cA, cB); } }
+    for (const el of [card.querySelector(".heroRow"), card.querySelector(".title"), card.querySelector(".tag"), $("playBtn"), $("fsMenu"), row]) if (el) cA.appendChild(el); while (card.firstChild) cB.appendChild(card.firstChild); card.append(cA, cB); } }
 if (IS_TOUCH) {
   const T = $("touch"); T.style.display = "block";
   for (const b of ["bMine", "bBuild", "bJump", "bWpn"]) $(b).style.display = "block";
@@ -1865,7 +1883,7 @@ if (saved && !saved.migr) { seed = saved.seed; edits = saved.edits || {}; shards
   if (saved.upg) Object.assign(upg, saved.upg); if (saved.stats) Object.assign(stats, saved.stats); if (saved.guild && Array.isArray(saved.guild.posted)) guild = saved.guild; Qi = saved.Qi | 0; if (!saved.qv && Qi >= 7) Qi++; if ((saved.qv | 0) < 3 && Qi >= 12) { Qi = 12; saved.qBase = {}; } qBase = saved.qBase || {}; P.hp = saved.hp || maxHp();
   view = saved.tp ? (saved.view ?? 1) : 1; if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; lookMul = saved.set.look || 1; } if (saved.daily) Object.assign(daily, saved.daily); if (saved.bc) Object.assign(bc, saved.bc); if (saved.dex) fish.dex = saved.dex; if (saved.ach) ach = saved.ach; if (saved.char) charId = saved.char; if (skinKind(charId) === 1 && !skinHeld(charId)) charId = STARTER; introDone = saved.intro !== false; if (introDone) met.t = 150 + Math.random() * 120; }
 else { seed = parseInt(Q.get("seed")) || 1337; if (saved && saved.migr) { shards = saved.shards; migrated = true; } qStart(); }
-const HUB = createHub(THREE, { scene, toon: BX.toon, plaza: () => plaza, px: () => P.x, pz: () => P.z, onOpen: v => { hubOpen = !!v; input.mine = false; if (v && document.pointerLockElement) document.exitPointerLock(); }, onShop: () => openLab(), onClaim: () => claimNftSkins(), onQuests: () => openGuild(), onRanks: () => openBoard(), ranks: () => signRanks(), quests: () => guildView() });
+const HUB = createHub(THREE, { scene, toon: BX.toon, plaza: () => plaza, px: () => P.x, pz: () => P.z, onOpen: v => { hubOpen = !!v; input.mine = false; if (v && document.pointerLockElement) document.exitPointerLock(); }, onShop: () => openLab(), onClaim: () => claimNftSkins(), onQuests: () => openGuild(), onRanks: () => openBoard(), onExit: () => leaveToSite(), ranks: () => signRanks(), quests: () => guildView() });
 generate(seed); applyEdits(); for (const t of trees) if (get(t.x, t.y + 1, t.z) !== 27 || !get(t.x, t.y, t.z)) { t.dead = true; for (let y = t.y + 1; y <= t.y + t.h; y++) if (get(t.x, y, t.z) === 27) world[idx(t.x, y, t.z)] = 0; } const tris = buildAll(); visY = P.y;
 respawn(); if (saved && saved.p && !riftReload) { [P.x, P.y, P.z, P.yaw, P.pitch] = saved.p; if (P.y > SY + 2 || collides(P.x, P.y, P.z)) respawn(); }
 if (riftReload) { const lost = wipeLoot(); try { localStorage.removeItem(RIFT_KEY); } catch (e) {} respawn(); stats.riftLosses = (stats.riftLosses | 0) + 1; setTimeout(() => showLost(lost, riftReload, true), 700); setTimeout(save, 50); }
@@ -1911,6 +1929,7 @@ $("hubShop").addEventListener("click", e => { e.stopPropagation(); HUB.shopOpen(
 $("hubClaim").addEventListener("click", e => { e.stopPropagation(); HUB.claim(); });
 $("hubQuests").addEventListener("click", e => { e.stopPropagation(); HUB.quests(); });
 $("hubRanks").addEventListener("click", e => { e.stopPropagation(); HUB.ranks(); });
+$("hubExit").addEventListener("click", e => { e.stopPropagation(); HUB.leave(); });
 $("guildClose").addEventListener("click", () => closeGuild());
 $("guildL").addEventListener("click", e => { const b = e.target.closest("button[data-gq]"); if (b && !b.disabled) guildClaim(b.dataset.gq); });
 $("lbOpen").addEventListener("click", () => openBoard());
@@ -1953,7 +1972,7 @@ Object.assign(window.__SB, {
   // v0.9.7
   fudderDead: () => fudderDead(), fudderRec: () => fudDeadRec(), lairIn: () => lairIn ? { ...lairIn } : null, lairAskOpen: () => lairAsk && $("riftAsk").classList.contains("show"), lairAnswer, startLair, lairSealed: () => !!lairWall,
   askLairText: () => $("riftAsk").innerText, lairPlace, riftAgain, againPos: () => RF.againPos(), exitPos: () => RF.exitPos(),
-  guild: () => ({ view: guildView(), done: guild.done | 0, open: guildOpen }), guildClaim, openGuild, closeGuild, hubSign: () => HUB.signKey(), hubQuests: () => HUB.quests(), hubRanks: () => HUB.ranks(),
+  guild: () => ({ view: guildView(), done: guild.done | 0, open: guildOpen }), guildClaim, openGuild, closeGuild, hubSign: () => HUB.signKey(), hubQuests: () => HUB.quests(), hubRanks: () => HUB.ranks(), hubLeave: () => HUB.leave(), fs: () => ({ ok: FS_OK, on: !!fsEl(), standalone: STANDALONE }),
   nextPts: (k, t, l) => LB.nextPoints(k, t, !!l), labPowHtml: () => { renderPowers(); return $("powL").innerHTML; },
   guildSet: ids => { guild.posted = ids.map(id => ({ id, base: guildDef(id).v(stats) })); HUB.refresh(); return guildView(); },
 });

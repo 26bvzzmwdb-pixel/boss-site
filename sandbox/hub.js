@@ -1,5 +1,6 @@
 // v0.9.7 spawn hub. The plaza is a safe zone: no damage, and bosses / rifts / wolves do not spawn inside SAFE_R.
 // Original toon NPCs, the GUILD HOUSE (shop) with a hanging GUILD sign, the Guild contract board, and a big Season 1 rank sign.
+// v0.9.9: an EXIT PORTAL at spawn leaves the game and goes back to the $BOSS website (asks first, progress is saved).
 // v0.9.8: the rank sign shows the LIVE shared Season board (top 5 for everyone, from the $BOSS score server). Falls back to this device if offline.
 export const SAFE_R = 11;
 
@@ -36,6 +37,7 @@ export function createHub(THREE, C) {
   // talk-to spots that are not people: the contract board and the big rank sign
   const PROPS = [
     { id: "board", name: "GUILD BOARD", role: "CONTRACTS", dx: 0.0, dz: -2.7, quests: true, lines: ["Guild contracts pay extra ◆ shards. The top ones pay a BOSS POWER. Finish one, then come back here to claim it."] },
+    { id: "exit", name: "EXIT PORTAL", role: "$BOSS SITE", dx: 5.4, dz: 3.2, exit: true, lines: ["This portal leaves the Sandbox and takes you back to the $BOSS website. Your world and shards are saved, so you can jump back in any time."] },
     { id: "ranks", name: "SEASON 1", role: "RANKS", dx: -4.0, dz: -3.9, ranks: true, lines: ["The big sign is LIVE: the shared Season 1 top 5, same for every player. Link Phantom here (free, no transaction) to rank.", "Rounds last 3 days. The top 5 split the Sandbox SOL pot 40 / 25 / 15 / 12 / 8 every round. Free to play, no purchase needed."] },
   ];
   const CAST = [
@@ -137,6 +139,25 @@ export function createHub(THREE, C) {
     const glowM = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 3.7), new THREE.MeshBasicMaterial({ color: 0xffd24a, transparent: true, opacity: .14, blending: THREE.AdditiveBlending, depthWrite: false })); glowM.position.set(0, 2.75, -.2); g.add(glowM); g.userData.glow = glowM;
     return g; }
 
+
+  // ---- v0.9.9 EXIT PORTAL: a gold-ringed swirl on two stone pillars. Walk in (or TALK) and it asks before leaving for the $BOSS website ----
+  const swirlTex = () => canvasTex(256, 256, (g, w, h) => { const cx = w / 2, cy = h / 2; const rg = g.createRadialGradient(cx, cy, 4, cx, cy, w / 2); rg.addColorStop(0, "#ffffff"); rg.addColorStop(.25, "#ffe27a"); rg.addColorStop(.6, "#ff4fd8"); rg.addColorStop(1, "rgba(153,69,255,0)"); g.fillStyle = rg; g.fillRect(0, 0, w, h);
+    g.lineWidth = 7; g.lineCap = "round"; for (let a = 0; a < 6; a++) { g.strokeStyle = a % 2 ? "rgba(40,220,255,.85)" : "rgba(255,255,255,.75)"; g.beginPath(); for (let t = 0; t < 1; t += .02) { const r = 10 + t * 112, an = a * Math.PI / 3 + t * 5.2; const x = cx + Math.cos(an) * r, y = cy + Math.sin(an) * r; t ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); } });
+  const exitSignTex = () => canvasTex(512, 160, (g, w, h) => { g.fillStyle = "rgba(8,6,24,.88)"; g.fillRect(0, 0, w, h); g.strokeStyle = "#ffd24a"; g.lineWidth = 8; g.strokeRect(6, 6, w - 12, h - 12);
+    g.textAlign = "center"; g.textBaseline = "middle"; g.font = "900 50px Orbitron,Verdana,sans-serif"; g.shadowColor = "#ff4fd8"; g.shadowBlur = 18; g.fillStyle = "#ffe27a"; g.fillText("$BOSS SITE ↩", w / 2, 62); g.shadowBlur = 0;
+    g.font = "700 24px Verdana,sans-serif"; g.fillStyle = "#9df7ff"; g.fillText("EXIT PORTAL · leave the game", w / 2, 118); });
+  function exitPortal(x, z) { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = Math.atan2(-x, -z);
+    const stone = toon(0x3a3450, 0x1a1428, .18), gold = toon(0xffd24a, 0xffb020, .9);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.9, .24, 24), stone); base.position.y = .12; g.add(base);
+    const pad = new THREE.Mesh(new THREE.CircleGeometry(1.5, 32), new THREE.MeshBasicMaterial({ color: 0xff4fd8, transparent: true, opacity: .35, blending: THREE.AdditiveBlending, depthWrite: false })); pad.rotation.x = -Math.PI / 2; pad.position.y = .26; g.add(pad); g.userData.pad = pad;
+    for (const s of [-1, 1]) { const pil = new THREE.Mesh(new THREE.BoxGeometry(.42, 3.1, .42), stone); pil.position.set(s * 1.55, 1.75, 0); g.add(pil);
+      const cap = new THREE.Mesh(new THREE.OctahedronGeometry(.26), gold); cap.position.set(s * 1.55, 3.5, 0); cap.userData.spin = s + 2; g.add(cap); }
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.25, .13, 10, 40), gold); ring.position.y = 1.85; g.add(ring);
+    const neon = new THREE.Mesh(new THREE.TorusGeometry(1.42, .04, 6, 48), new THREE.MeshBasicMaterial({ color: 0x28dcff })); neon.position.y = 1.85; g.add(neon);
+    const sw = new THREE.Mesh(new THREE.CircleGeometry(1.14, 40), new THREE.MeshBasicMaterial({ map: swirlTex(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })); sw.position.y = 1.85; g.add(sw); g.userData.swirl = sw;
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.6, .81), new THREE.MeshBasicMaterial({ map: exitSignTex(), transparent: true, side: THREE.DoubleSide, toneMapped: false })); sign.position.set(0, 3.95, 0); g.add(sign);
+    return g; }
+
   function stall(x, z) {
     const g = new THREE.Group(); g.position.set(x, 0, z);
     const back = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.7, .16), toon(0x1a1030, 0xff4fd8, .35)); back.position.set(0, 1.15, -.7); g.add(back);
@@ -152,7 +173,7 @@ export function createHub(THREE, C) {
     return g;
   }
 
-  let shop = null, ring = null, qb = null, rs = null, signT = 0;
+  let shop = null, ring = null, qb = null, rs = null, portal = null, signT = 0, inPortal = false;
   function place() {
     const p = C.plaza();
     root.position.set(p.x, p.y, p.z);
@@ -166,6 +187,7 @@ export function createHub(THREE, C) {
     shop = guildHouse(3.7, -4.6); root.add(shop);
     qb = questBoard(0.0, -3.7); root.add(qb);
     rs = rankSign(-4.3, -5.2, .42); root.add(rs); signT = 0;
+    { const ex = PROPS.find(k => k.exit); portal = exitPortal(ex.dx, ex.dz); root.add(portal); inPortal = false; }
     for (const k of PROPS) npcs.push({ ...k, g: null, x: () => p.x + k.dx, z: () => p.z + k.dz });
     for (const c of CAST) {
       const g = guy(c.skin, c.cloth, c.glow, c.hat); g.position.set(c.dx, 0, c.dz); g.rotation.y = c.yaw; g.add(tag(c.name, c.glow === 0xffd24a ? "#ffd24a" : c.glow === 0x14f195 ? "#14f195" : "#ff4fd8"));
@@ -183,7 +205,7 @@ export function createHub(THREE, C) {
     document.getElementById("hubWho").textContent = open.name + " · " + open.role;
     document.getElementById("hubLine").textContent = open.lines[line];
     document.getElementById("hubShop").hidden = !open.shop; const cl = document.getElementById("hubClaim"); if (cl) cl.hidden = !open.shop;
-    const hq = document.getElementById("hubQuests"); if (hq) hq.hidden = !(open.quests || open.shop); const hr = document.getElementById("hubRanks"); if (hr) hr.hidden = !open.ranks;
+    const hq = document.getElementById("hubQuests"); if (hq) hq.hidden = !(open.quests || open.shop); const hr = document.getElementById("hubRanks"); if (hr) hr.hidden = !open.ranks; const hx = document.getElementById("hubExit"); if (hx) hx.hidden = !open.exit;
     document.getElementById("hubNext").hidden = line >= open.lines.length - 1;
     el.classList.add("show");
   }
@@ -197,6 +219,7 @@ export function createHub(THREE, C) {
   function shopOpen() { if (open && open.shop && C.onShop) { close(); C.onShop(); } }
   function quests() { if (open && (open.quests || open.shop) && C.onQuests) { close(); C.onQuests(); } }
   function ranks() { if (open && open.ranks && C.onRanks) { close(); C.onRanks(); } }
+  function leave() { if (open && open.exit && C.onExit) { close(); C.onExit(); return true; } return false; }
   function claim() { if (open && open.shop && C.onClaim) return C.onClaim(); return null; }
   function tick(time, on) {
     root.visible = !!on;
@@ -209,11 +232,16 @@ export function createHub(THREE, C) {
     npcs.forEach((n, i) => { if (!n.g) return; n.g.position.y = Math.sin(time * 2.2 + i) * .06; const px = C.px(), pz = C.pz(), p = C.plaza(); n.g.rotation.y = Math.atan2(px - (p.x + n.dx), pz - (p.z + n.dz)); });
     if (shop) shop.traverse(o => { if (o.userData && o.userData.spin != null) o.rotation.y = time * 1.4 + o.userData.spin; });
     if (ring) ring.material.opacity = .4 + Math.sin(time * 3) * .15;
+    if (portal) { const u = portal.userData; if (u.swirl) u.swirl.rotation.z = -time * 2.2; if (u.pad) u.pad.material.opacity = .25 + .15 * Math.sin(time * 4);
+      portal.traverse(o => { if (o.userData && o.userData.spin != null) o.rotation.y = time * 1.6 + o.userData.spin; });
+      // stepping onto the portal pad opens the "leave the game?" prompt once; step off and back on to see it again
+      const ex = PROPS.find(k => k.exit), p = C.plaza(), d = Math.hypot(C.px() - (p.x + ex.dx), C.pz() - (p.z + ex.dz));
+      if (d < 1.2 && !inPortal) { inPortal = true; if (!open) talk("exit"); } else if (d > 1.9) inPortal = false; }
     const near = !open && nearest(C.px(), C.pz());
     const b = document.getElementById("hubTalk"); if (b) { b.classList.toggle("show", !!near && !document.body.classList.contains("inmenu")); b.textContent = near ? "TALK · " + near.name : "TALK"; }
     if (open) show();
   }
-  function info() { const p = C.plaza(); return { r: SAFE_R, open: open && open.id, line, npcs: npcs.map(n => ({ id: n.id, name: n.name, shop: !!n.shop, quests: !!n.quests, ranks: !!n.ranks, x: p.x + n.dx, z: p.z + n.dz })), shop: true, guild: !!shop, board: !!qb, sign: !!rs }; }
+  function info() { const p = C.plaza(); return { r: SAFE_R, open: open && open.id, line, npcs: npcs.map(n => ({ id: n.id, name: n.name, shop: !!n.shop, quests: !!n.quests, ranks: !!n.ranks, x: p.x + n.dx, z: p.z + n.dz })), shop: true, guild: !!shop, board: !!qb, sign: !!rs, portal: !!portal }; }
   function refresh() { signT = 0; }
-  return { root, place, nearest, talk, next, close, shopOpen, claim, quests, ranks, refresh, tick, info, SAFE_R, signKey: () => ({ ranks: lbKey, quests: qKey }) };
+  return { root, place, nearest, talk, next, close, shopOpen, leave, claim, quests, ranks, refresh, tick, info, SAFE_R, signKey: () => ({ ranks: lbKey, quests: qKey }) };
 }

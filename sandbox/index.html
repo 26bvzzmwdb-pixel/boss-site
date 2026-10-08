@@ -363,6 +363,27 @@ body.inmenu #hubTalk,body.photo #hubTalk,body.cine #hubTalk{display:none!importa
 .gun.sealed{opacity:.72}
 #skinNote{font-size:10px;opacity:.8;margin-top:4px;line-height:1.35}
 @media (orientation:landscape) and (max-height:540px){#hubTalk{top:8px;padding:6px 10px;font-size:11px}#hubDlg{top:46px;padding:8px 10px}#hubDlg p{font-size:12px}}
+
+/* v0.9.9 shop/guild: leave button pinned at the TOP of the card */
+.mtop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 2px;flex:none}
+.mtop h3{margin:0!important}
+#guild .mtop{position:sticky;top:-14px;z-index:3;margin:-14px -14px 4px;padding:12px 14px 8px;background:rgba(14,10,30,.97);border-bottom:1px solid rgba(255,210,74,.3)}
+.xtop{flex:none;padding:9px 14px;border-radius:12px;border:2px solid #ff6a8a;background:linear-gradient(180deg,rgba(255,106,138,.32),rgba(255,106,138,.08));color:#fff;font:900 11px Orbitron,sans-serif;letter-spacing:1px;cursor:pointer;touch-action:manipulation;box-shadow:0 0 12px rgba(255,106,138,.35)}
+.xtop:active{transform:scale(.96)}
+/* v0.9.9 FULL SCREEN button (Fullscreen API; iPhone gets Add-to-Home-Screen help) */
+#fsBtn{position:fixed;z-index:4;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 284px);width:44px;height:40px;border-radius:12px;border:1px solid rgba(255,79,216,.6);background:rgba(8,6,24,.62);color:#fff;font-size:20px;line-height:1;touch-action:manipulation;cursor:pointer}
+body.fs #fsBtn{border-color:rgba(20,241,149,.7)}
+body.inmenu #fsBtn,body.photo #fsBtn,body.standalone #fsBtn,body.standalone #fsMenu{display:none!important}
+#fsMenu{display:block;margin:6px auto 2px;border-color:#ff4fd8;letter-spacing:1px}
+@media (orientation:landscape) and (max-height:500px){body.touch #fsBtn{right:calc(max(10px,env(safe-area-inset-right)) + 54px);top:calc(max(10px,env(safe-area-inset-top)) + 238px)}}
+@media (orientation:landscape) and (max-height:540px){body.touch #fsBtn{top:max(6px,env(safe-area-inset-top));right:calc(max(8px,env(safe-area-inset-right)) + 252px);width:38px;height:36px;border-radius:10px;font-size:17px;padding:0}#fsMenu{margin:4px auto 0;padding:6px 12px}}
+#fsHelp{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;padding:12px;background:rgba(5,6,15,.8)}
+#fsHelp.show{display:flex}
+#fsHelp .box{max-width:400px;width:100%;max-height:94vh;overflow:auto;background:rgba(8,6,28,.96);border:2px solid #ff4fd8;border-radius:16px;padding:14px;box-shadow:0 0 28px rgba(255,79,216,.4);text-align:left;color:#fff}
+#fsHelp h3{margin:0 0 6px;font:900 15px Orbitron,sans-serif;letter-spacing:2px;color:#ffd24a;text-align:center}
+#fsHelp p{margin:0 0 8px;font-size:12px;line-height:1.4;opacity:.92}#fsHelp p.sm{font-size:10px;opacity:.75}
+#fsHelp ol{margin:0 0 8px;padding-left:20px;font-size:12px;line-height:1.45}#fsHelp li{margin:3px 0}#fsHelp b{color:#9df7ff}
+#fsHelp .got{width:100%;padding:11px;border-radius:12px;border:2px solid var(--teal);background:linear-gradient(180deg,rgba(20,241,149,.3),rgba(20,241,149,.08));color:#fff;font:900 13px Orbitron,sans-serif;letter-spacing:2px;touch-action:manipulation}
 </style>
 </head>
 <body class="inmenu">
@@ -390,14 +411,15 @@ body.inmenu #hubTalk,body.photo #hubTalk,body.cine #hubTalk{display:none!importa
 <button id="viewBtn" aria-label="Change view">👤</button>
 <button id="photoBtn" aria-label="Photo mode">🖼️</button>
 <button id="sndHud" aria-label="Sound">🔊</button>
+<button id="fsBtn" type="button" aria-label="Full screen">⛶</button>
 <div id="photoPad"></div>
 <div id="photoBar"><div class="phh">📷 PHOTO MODE · drag to orbit</div><div class="phr"><button data-k="f" id="phF">NO FILTER</button><button data-k="p" id="phP">POSE: IDLE</button><button data-k="t" id="phT">TIME</button></div><div class="phr"><button data-k="in">＋</button><button data-k="snap" class="snap">📸 SNAP</button><button data-k="out">－</button><button data-k="x">✕ EXIT</button></div></div>
 <div class="hud" id="reel"><div class="track"><div id="reelZone"></div><div id="reelFish"></div></div><div class="pb"><div id="reelProg"></div></div></div>
 <div id="flash"></div>
-<div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
+<div id="lab"><div class="card"><div class="mtop"><h3>⚡ BOSS LAB</h3><button class="xtop" id="labClose" type="button" aria-label="Leave shop">✕ LEAVE SHOP</button></div><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
 <button id="lbOpen" class="btn sm" type="button">🏆 SEASON 1 BOARD</button>
 <div id="labScroll"><div id="gunL"></div>
-<div id="labList"></div><div id="dailyL" class="dl"></div><div id="buildL" class="dl bl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="powL"></div><div id="petL"></div><div id="achL"></div><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div></div>
+<div id="labList"></div><div id="dailyL" class="dl"></div><div id="buildL" class="dl bl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="powL"></div><div id="petL"></div><div id="achL"></div><div id="labStats"></div></div></div></div>
 <div class="hud" id="badge"><b>$BOSS SANDBOX</b> <span class="bt">BETA</span><br><span>third-person · practice only</span></div>
 <div class="hud" id="clock">--</div>
 <div class="hud" id="shards"><div class="n" id="shardN">0</div><div class="l">◆ SOL SHARDS</div><div class="nv">in-game items · no cash value</div></div>
@@ -438,6 +460,7 @@ body.inmenu #hubTalk,body.photo #hubTalk,body.cine #hubTalk{display:none!importa
   <div id="mStats" class="mstats"></div>
   <div id="dailyM" class="dl"></div><div id="buildM" class="dl bl"></div>
   <button class="btn big" id="playBtn">PLAY</button>
+  <button class="btn sm" id="fsMenu" type="button">⛶ FULL SCREEN</button>
   <div class="row"><button class="btn sm" id="sndBtn" type="button">SFX: ON</button><button class="btn sm" id="musBtn" type="button">MUSIC: ON</button>
    <span class="lk">LOOK <button class="btn sm" id="lookDn" type="button">−</button><b id="lookV">100%</b><button class="btn sm" id="lookUp" type="button">+</button></span></div>
   <button class="btn sm" id="howBtn" type="button">HOW TO PLAY ▾</button>
@@ -458,6 +481,7 @@ body.inmenu #hubTalk,body.photo #hubTalk,body.cine #hubTalk{display:none!importa
   <div class="legal">Single-player. The Season board is LIVE and shared (link Phantom with one free signed message, no transaction); it is separate from the ranked runner board. ◆ shards have no cash value. Every 3-day round the top 5 split the Sandbox pot (10% of creator fees received) 40/25/15/12/8, paid by the $BOSS team. This game itself never sends SOL. Joke game · not financial advice.</div>
  </div>
 </div>
+<div id="fsHelp" role="dialog" aria-modal="true" aria-labelledby="fsHelpH"><div class="box"><h3 id="fsHelpH">⛶ FULL SCREEN</h3><p id="fsHelpWhy">iPhone browsers don't let a website hide the tabs and address bar. Here's how to get the game full screen:</p><ol><li>Tap <b>Share</b> <span class="ic">⬆︎</span> (Safari: bottom bar or the <b>⋯</b> menu · Chrome: top right)</li><li>Tap <b>Add to Home Screen</b>, then <b>Add</b></li><li>Open <b>$BOSS Sandbox</b> from your home screen. It runs full screen with no tabs. (On iPhone the Home Screen app keeps its own save, separate from the browser tab.)</li></ol><p class="sm">Quick fix: in Safari, the <b>aA</b> / <b>⋯</b> page menu may offer <b>Hide Toolbar</b>.</p><button id="fsHelpOk" class="got" type="button">GOT IT</button></div></div>
 <div id="rotate" aria-live="polite"><div class="rb"><div class="stage"><div class="ar"></div><div class="ph"></div></div><h2>TURN YOUR PHONE<br>SIDEWAYS</h2><p>$BOSS Sandbox plays in landscape · the game is paused</p><button id="rotGo" type="button">ROTATE FOR ME</button><small>Nothing happening? Turn off rotation lock<br>(iPhone: swipe down for Control Center).</small></div></div>
 <div id="safeProbe"></div>
 <div id="load">LOADING…</div>
@@ -470,9 +494,9 @@ window.addEventListener("error",e=>{const d=document.getElementById("err");d.sty
 <div id="riftLost" class="rmod" role="dialog" aria-modal="true" aria-labelledby="riftLostH"><div class="rc"><b class="tn">RIFT LOST</b><h3 id="riftLostH">YOUR LOOT WAS LOST TO THE RIFT</h3><p class="why"></p><ul class="ll"></ul><small>Safe: reward &amp; holder skins, achievements, your builds.</small><div class="rb"><button class="btn" id="lostOk" type="button">BACK TO SPAWN</button></div></div></div>
 <div id="powCard" role="status"><div class="pr"></div><span class="pi">⚡</span><h3>YOU ABSORBED THE POWER!</h3><b class="pn"></b><p class="pd"></p><small class="pk"></small><small class="pw">Boss powers are rift loot: dying in a rift wipes them.</small></div>
 <div id="lb" role="dialog" aria-modal="true" aria-labelledby="lbH"><div class="card"><h3 id="lbH">🏆 SEASON 1</h3><p class="sub" id="lbFormula"></p><p class="sub" id="lbPrize"></p><div id="lbYou"></div><div id="lbNameRow"><label for="lbName">NAME</label><input id="lbName" maxlength="16" autocomplete="off" aria-label="Display name"><button id="lbPhantom" type="button">USE PHANTOM</button></div><div id="lbPot"></div><table><thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BOSSES</th><th>SHARDS</th><th>LEGENDARY</th><th>EST. SOL</th></tr></thead><tbody id="lbRows"></tbody></table><div id="lbRank"></div><div class="btns"><button id="lbReset" class="btn sm" type="button" hidden>RESET SEASON</button><button id="lbClose" class="btn sm" type="button">CLOSE</button></div></div></div>
-<div id="hubDlg" role="dialog" aria-modal="true"><b id="hubWho"></b><p id="hubLine"></p><div class="row"><button id="hubClaim" class="btn sm" type="button" hidden>CLAIM NFT SKINS</button><button id="hubShop" class="btn sm" type="button" hidden>OPEN SHOP</button><button id="hubQuests" class="btn sm" type="button" hidden>📜 CONTRACTS</button><button id="hubRanks" class="btn sm" type="button" hidden>🏆 FULL BOARD</button><button id="hubNext" class="btn sm" type="button">NEXT</button><button id="hubBye" class="btn sm" type="button">BYE</button></div></div>
+<div id="hubDlg" role="dialog" aria-modal="true"><b id="hubWho"></b><p id="hubLine"></p><div class="row"><button id="hubClaim" class="btn sm" type="button" hidden>CLAIM NFT SKINS</button><button id="hubShop" class="btn sm" type="button" hidden>OPEN SHOP</button><button id="hubQuests" class="btn sm" type="button" hidden>📜 CONTRACTS</button><button id="hubRanks" class="btn sm" type="button" hidden>🏆 FULL BOARD</button><button id="hubExit" class="btn sm" type="button" hidden>🌀 GO TO $BOSS SITE</button><button id="hubNext" class="btn sm" type="button">NEXT</button><button id="hubBye" class="btn sm" type="button">BYE</button></div></div>
 <button id="hubTalk" type="button">TALK</button>
-<div id="guild" role="dialog" aria-modal="true" aria-labelledby="guildH"><div class="card"><h3 id="guildH">📜 GUILD CONTRACTS</h3><p class="sub">Finish a contract out in the world, then claim it here. Rewards are ◆ SOL shards (in-game items, no cash value). The top contracts also pay a BOSS POWER (dying in a rift or the lair wipes powers). A new contract is pinned after every claim.</p><div id="guildL"></div><div class="btns"><small id="guildN"></small><button id="guildClose" class="btn sm" type="button">CLOSE</button></div></div></div>
-<script type="module" src="./sandbox.js?v=0.9.8"></script>
+<div id="guild" role="dialog" aria-modal="true" aria-labelledby="guildH"><div class="card"><div class="mtop"><h3 id="guildH">📜 GUILD CONTRACTS</h3><button class="xtop" id="guildClose" type="button" aria-label="Leave the guild board">✕ LEAVE</button></div><p class="sub">Finish a contract out in the world, then claim it here. Rewards are ◆ SOL shards (in-game items, no cash value). The top contracts also pay a BOSS POWER (dying in a rift or the lair wipes powers). A new contract is pinned after every claim.</p><div id="guildL"></div><div class="btns"><small id="guildN"></small></div></div></div>
+<script type="module" src="./sandbox.js?v=0.9.9"></script>
 </body>
 </html>
