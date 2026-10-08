@@ -1165,11 +1165,11 @@ const waterMat = new THREE.ShaderMaterial({ uniforms: waterU, transparent: true,
       float age = uT - uRip.z; if (age > 0. && age < 4.) { vec2 dv = p - uRip.xy; float dd = length(dv) + 1e-3; float ring = sin(dd * 9. - age * 7.) * exp(-dd * 1.1) * exp(-age * .9) * uRip.w; g += dv / dd * ring * .5; }
       vec3 N = normalize(vec3(-g.x, 1., -g.y)); vec3 V = normalize(cameraPosition - vW); float fr = .04 + .96 * pow(1. - max(dot(N, V), 0.), 4.);
       vec3 R = reflect(-V, N); vec3 sky = mix(uHor, uTop, smoothstep(0., .6, R.y)); vec3 L = normalize(uSun); float spec = pow(max(dot(R, L), 0.), 120.) * smoothstep(-.05, .15, L.y) * 2.2;
-      vec3 deep = vec3(.03, .2, .4), shallow = vec3(.12, .75, .85);
-      vec3 col = mix(shallow, deep, smoothstep(.85, .2, r)); col = mix(col, sky, fr * .8) + vec3(1., .95, .85) * spec;
-      float foam = smoothstep(.86, .99, r + (sin(atan(c.y, c.x) * 9. + uT * 1.5) * .02 + sin(p.x * 7. + uT * 2.) * .015)); col = mix(col, vec3(.85, .97, 1.), foam * .55);
-      col += vec3(.1, .6, .9) * uNight * .25 * (1. - r) + vec3(1., .35, .85) * smoothstep(.06, .0, abs(fract(r * 3.0 - uT * .25) - .5) - .44) * .12;
-      float a = mix(.62, .92, fr) + foam * .25; col = mix(col, uFogC, smoothstep(uFogN, uFogF, vD)); gl_FragColor = vec4(col, min(1., a));
+      vec3 deep = vec3(.0, .035, .11), shallow = vec3(.01, .19, .28);
+      vec3 col = mix(shallow, deep, smoothstep(.95, .35, r)); float lit = .75 + .35 * dot(N, normalize(vec3(L.x, 1., L.z))); col = mix(col * lit, sky * vec3(.75, .9, 1.), fr * .42) + vec3(1., .95, .85) * spec;
+      float foam = smoothstep(.91, 1., r + (sin(atan(c.y, c.x) * 9. + uT * 1.5) * .02 + sin(p.x * 7. + uT * 2.) * .015)); col = mix(col, vec3(.85, .97, 1.), foam * .55);
+      col += vec3(.1, .6, .9) * uNight * .25 * (1. - r);
+      float a = mix(.86, .97, fr) + foam * .2; col = mix(col, uFogC, smoothstep(uFogN, uFogF, vD)); gl_FragColor = vec4(col, min(1., a));
       #include <colorspace_fragment>
     }` });
 const poolMeshes = [];
