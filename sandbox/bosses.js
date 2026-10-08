@@ -165,8 +165,9 @@ export function createBosses(THREE, C) {
       if (a.t > wd + .5) { st.wind = 0; return true; } }
     else if (a.n === "bolts" || a.n === "storm") { // the king lifts its crown (gem exposed) and calls lightning on marked spots
       if (a.s === 0) { a.s = 1; const n = a.n === "storm" ? 8 : ph === 1 ? 3 : 5; a.pts = []; for (let i = 0; i < n; i++) { const r = i === 0 ? 0 : a.n === "storm" ? 3 + (i % 3) * 2.2 : 2.2 + Math.random() * 3, an = i * 2.4 + Math.random(); a.pts.push([P.x + Math.cos(an) * r, P.z + Math.sin(an) * r, i * (a.n === "storm" ? .22 : .3)]); }
-        for (const q of a.pts) setTimeout(() => { if (st.on && st.act === a) marker(q[0], q[1], 1.5, 0xffd24a, 1.05 * W); }, q[2] * 1000); st.expose = (1.2 + n * .3) * W; C.pop(a.n === "storm" ? "⚡ FUD STORM! WATCH THE RINGS" : "⚡ LIGHTNING! LEAVE THE RINGS", "#ffe08a"); C.sfx.warn && C.sfx.warn(); }
-      for (const q of a.pts) if (!q.done && a.t > q[2] + 1.05 * W) { q.done = 1; bolt(q[0], q[1], 0xb46aff); if (inR(q[0], q[1], 1.5)) hurtP(1, "ZAPPED", { x: 0, z: 0, y: 5 }); }
+        st.expose = (1.2 + n * .3) * W; C.pop(a.n === "storm" ? "⚡ FUD STORM! WATCH THE RINGS" : "⚡ LIGHTNING! LEAVE THE RINGS", "#ffe08a"); C.sfx.warn && C.sfx.warn(); }
+      for (const q of a.pts) if (!q.m && a.t >= q[2]) { q.m = 1; marker(q[0], q[1], 1.5, 0xffd24a, 1.05 * W); } // rings on the game clock, so every strike gets its full warning
+      for (const q of a.pts) if (q.m && !q.done && a.t > q[2] + 1.05 * W) { q.done = 1; bolt(q[0], q[1], 0xb46aff); if (inR(q[0], q[1], 1.5)) hurtP(1, "ZAPPED", { x: 0, z: 0, y: 5 }); }
       st.wind = .6; if (a.pts.every(q => q.done) && a.t > 2) { st.wind = 0; return true; } }
     else if (a.n === "spread") { const wd = .8 * W; st.wind = Math.min(1, a.t / wd); if (a.s === 0 && a.t > wd) { a.s = 1; const n = ph === 1 ? 5 : 7, o = g.position.clone(); for (let i = 0; i < n; i++) shot(o, toP.clone().applyAxisAngle(new V3(0, 1, 0), (i - (n - 1) / 2) * .22), ph >= 2 ? 5 : 4.3, 0xb46aff, 1.1, 1, "FUDDED"); C.sfx.bshot(); }
       if (a.t > wd + .5) { st.wind = 0; return true; } }
