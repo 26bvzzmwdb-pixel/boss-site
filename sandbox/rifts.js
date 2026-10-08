@@ -1,10 +1,11 @@
-// $BOSS Sandbox v0.9.5 BOSS RIFTS: glowing portals open at random spots on a timer. Walk in (after a warning) to fight a boss in a sealed arena.
+// $BOSS Sandbox v0.9.7 BOSS RIFTS (replayable: FIGHT AGAIN + the rift stays open after a win): glowing portals open at random spots on a timer. Walk in (after a warning) to fight a boss in a sealed arena.
 // Rarer rifts are rarer, harder and drop better in-game loot (shards / gems only, no cash value). Everything tunable lives in RIFT_CFG.
 export const RIFT_CFG = {
   firstDelay: [70, 100],     // seconds of play before the first rift
   gap: [150, 240],           // seconds between rifts (random in range)
   life: 180,                 // a rift closes after this many seconds if nobody uses it
   retryLife: 60,             // after a lost fight the same rift stays open at least this long
+  replayLife: 150,           // v0.9.7: after a WIN the same rift stays open this long so you can run it again (same tier)
   maxOpen: 2,                // at most this many rifts open at once
   dist: [22, 55],            // spawn distance from the player
   arena: { r: 16, floorY: 150 },
@@ -82,12 +83,17 @@ export function createRifts(THREE, C) {
     for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283; const pil = new THREE.Mesh(new THREE.CylinderGeometry(.35, .5, 3.2, 6), C.toon(0x2a2040, tier.col, .25)); pil.position.set(Math.cos(a) * (R + 1.4), 1.2, Math.sin(a) * (R + 1.4)); g.add(pil); const gem = new THREE.Mesh(shardG, C.toon(tier.col, tier.col, 1.3)); gem.scale.setScalar(2.4); gem.position.set(Math.cos(a) * (R + 1.4), 3.3, Math.sin(a) * (R + 1.4)); g.add(gem); rocks.push([gem, 3.3, i]); }
     scene.add(g); return { g, u, bar, dome, floor, rocks, ft, R, fy, cx, cz, sealT: 0, entry: null, exit: null, tier }; }
   function enter(p) { if (A) leaveArena(); A = buildArena(p.tier); p.busy = true; const M = portalMesh(p.tier, null, 1); M.g.position.set(A.cx, A.fy, A.cz + A.R - 1.2); scene.add(M.g); A.entry = M; A.entryT = 0; A.portal = p; return A; }
-  function openExit() { if (!A || A.exit) return; const M = portalMesh({ key: "home", col: 0xfff2b0, css: "#fff2b0", parts: 60, beam: 14 }, "PORTAL HOME"); M.g.position.set(A.cx, A.fy, A.cz); scene.add(M.g); A.exit = M; A.exitT = 0; }
-  function leaveArena() { if (!A) return; if (A.entry) dispose(A.entry); if (A.exit) dispose(A.exit); A.g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); }); A.ft.dispose(); scene.remove(A.g); A = null; }
+  // v0.9.7: a cleared arena opens TWO portals: PORTAL HOME (centre) and FIGHT AGAIN (same tier, a fresh boss from that tier)
+  function openExit(again = true) { if (!A || A.exit) return; const M = portalMesh({ key: "home", col: 0xfff2b0, css: "#fff2b0", parts: 60, beam: 14 }, "PORTAL HOME"); M.g.position.set(A.cx, A.fy, A.cz); scene.add(M.g); A.exit = M; A.exitT = 0;
+    if (again) { const G = portalMesh(A.tier, "FIGHT AGAIN"); G.g.position.set(A.cx, A.fy, A.cz - 7); scene.add(G.g); A.again = G; } }
+  function closeExits() { if (!A) return; if (A.exit) { dispose(A.exit); A.exit = null; } if (A.again) { dispose(A.again); A.again = null; } }
+  const exitPos = () => A && A.exit ? [A.exit.g.position.x, A.exit.g.position.z] : null, againPos = () => A && A.again ? [A.again.g.position.x, A.again.g.position.z] : null;
+  function leaveArena() { if (!A) return; if (A.entry) dispose(A.entry); if (A.exit) dispose(A.exit); if (A.again) dispose(A.again); A.g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); }); A.ft.dispose(); scene.remove(A.g); A = null; }
   function arenaTick(dt, time, dark) { if (!A) return; A.u.uT.value = time; A.u.uD.value += ((dark ? 1 : 0) - A.u.uD.value) * Math.min(1, dt * 4);
     if (A.entry) { A.entryT += dt; const k = Math.max(0, 1 - A.entryT / 1.3); animPortal(A.entry, time, Math.max(.01, k)); if (k <= 0) { dispose(A.entry); A.entry = null; } }
-    if (A.exit) { A.exitT += dt; animPortal(A.exit, time, Math.min(1, A.exitT * 1.5)); }
+    if (A.exit) { A.exitT += dt; animPortal(A.exit, time, Math.min(1, A.exitT * 1.5)); } if (A.again) animPortal(A.again, time, Math.min(1, A.exitT * 1.5));
     A.u.uA.value += ((A.exit ? .15 : 1) - A.u.uA.value) * Math.min(1, dt * 2); for (const [m, y0, ph] of A.rocks) { m.position.y = y0 + Math.sin(time * .6 + ph) * .5; m.rotation.y += dt * .2; } }
   function clearAll() { while (portals.length) close(portals[0], "clear"); leaveArena(); }
-  return { portals, spawn, close, update, enter, openExit, leaveArena, arenaTick, arena: () => A, clearAll, timer: () => timer, setTimer: v => { timer = v; }, pickTier, CFG };
+  function rearm(p) { if (!p) return; p.busy = false; p.life = Math.max(p.life, CFG.replayLife); p.cd = 5; p.kind = p.tier.bosses[(Math.random() * p.tier.bosses.length) | 0]; }
+  return { portals, spawn, close, update, enter, openExit, closeExits, exitPos, againPos, rearm, leaveArena, arenaTick, arena: () => A, clearAll, timer: () => timer, setTimer: v => { timer = v; }, pickTier, CFG };
 }

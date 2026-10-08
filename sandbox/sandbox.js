@@ -1,20 +1,20 @@
 // $BOSS Sandbox: third-person (default) / first-person build & explore (Phase 1, single-player beta).
 // Original content: neon tiles, Rug-Buster drill, SOL shard veins (in-game items, no cash value), FUD wolves.
 // Season board is local. Prize SOL is a display stub and is never sent. ◆ shards have no cash value.
-import * as THREE from "./three.module.min.js?v=0.9.6";
-import { createCharKit } from "./chars3d.js?v=0.9.6";
-import { createGems } from "./gems.js?v=0.9.6";
-import { createTerrain } from "./terrain.js?v=0.9.6";
-import { createBosses } from "./bosses.js?v=0.9.6";
-import { createLair } from "./lair.js?v=0.9.6";
-import { createWolves } from "./wolves.js?v=0.9.6";
-import { createAnimals } from "./animals.js?v=0.9.6";
-import { createCombat, POWERS, WEAPONS, GUNS, GUN_ORDER } from "./combat.js?v=0.9.6";
-import { createRifts, RIFT_CFG, tierOdds } from "./rifts.js?v=0.9.6";
-import { createBoard } from "./leaderboard.js?v=0.9.6";
-import { BURN, burnConfigured, burnLive, burnReady, burnFor, connectWallet, burnPrice, wallet } from "./burnshop.js?v=0.9.6";
-import { createHub, SAFE_R } from "./hub.js?v=0.9.6";
-import { STARTER, SKIN_NFT, claimHolderSkins, skinHeld, heldSkins, rememberHeld } from "./skins.js?v=0.9.6";
+import * as THREE from "./three.module.min.js?v=0.9.7";
+import { createCharKit } from "./chars3d.js?v=0.9.7";
+import { createGems } from "./gems.js?v=0.9.7";
+import { createTerrain } from "./terrain.js?v=0.9.7";
+import { createBosses } from "./bosses.js?v=0.9.7";
+import { createLair } from "./lair.js?v=0.9.7";
+import { createWolves } from "./wolves.js?v=0.9.7";
+import { createAnimals } from "./animals.js?v=0.9.7";
+import { createCombat, POWERS, WEAPONS, GUNS, GUN_ORDER } from "./combat.js?v=0.9.7";
+import { createRifts, RIFT_CFG, tierOdds } from "./rifts.js?v=0.9.7";
+import { createBoard } from "./leaderboard.js?v=0.9.7";
+import { BURN, burnConfigured, burnLive, burnReady, burnFor, connectWallet, burnPrice, wallet } from "./burnshop.js?v=0.9.7";
+import { createHub, SAFE_R } from "./hub.js?v=0.9.7";
+import { STARTER, SKIN_NFT, claimHolderSkins, skinHeld, heldSkins, rememberHeld } from "./skins.js?v=0.9.7";
 
 const Q = new URLSearchParams(location.search);
 const $ = id => document.getElementById(id);
@@ -24,7 +24,7 @@ if (IS_TOUCH) document.body.classList.add("touch");
 const IS_PHONE = IS_TOUCH && Math.min(screen.width || 9999, screen.height || 9999) <= 540 && !Q.has("tablet");
 if (IS_PHONE) document.body.classList.add("phone");
 
-import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools, caches, trees, lair } from "./world.js?v=0.9.6";
+import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools, caches, trees, lair } from "./world.js?v=0.9.7";
 const SAVE_KEY = "boss_sandbox_v2", OLD_KEY = "boss_sandbox_v1", WORLD_V = 3;   // v0.9: WORLD_V 3 = bigger natural world (older saves keep progress, get the new map)
 const DAY_LEN = 480;                               // seconds per full day/night cycle
 let seed = 1337, edits = {}, shards = 0, plaza = { x: 40, y: 20, z: 40 };
@@ -41,7 +41,7 @@ function setBlock(x, y, z, id, fromNet) {
 // ---------------- save / load ----------------
 let saveT = 0;
 function scheduleSave() { saveT = 1.0; }
-function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, wv: WORLD_V, seed, edits, shards, sel, p: riftIn ? [plaza.x, plaza.y + .1, plaza.z, 0, -.08] : [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qv: 3, qBase, hp: P.hp, daily, intro: introDone, dex: fish.dex, ach, bc, char: charId, view, tp: 1, set: { snd: sndOn, mus: musOn, slow: lookSlow, look: lookMul } })); } catch (e) {} }
+function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, wv: WORLD_V, seed, edits, shards, sel, p: riftIn ? [plaza.x, plaza.y + .1, plaza.z, 0, -.08] : [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, guild, Qi, qv: 3, qBase, hp: P.hp, daily, intro: introDone, dex: fish.dex, ach, bc, char: charId, view, tp: 1, set: { snd: sndOn, mus: musOn, slow: lookSlow, look: lookMul } })); } catch (e) {} }
 function load() { if (Q.has("reset")) try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {}
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); if (s && s.v === 2) return s;
     const o = JSON.parse(localStorage.getItem(OLD_KEY) || "null"); if (o && o.v === 1) return { migr: true, shards: o.shards | 0 }; } catch (e) {} return null; }
@@ -291,7 +291,7 @@ function climbFx() { const q = inPool(P.x, P.z) || pools.find(q => ((P.x - q.x) 
 function dryLand(px, pz) { let best = null, bd = 1e9; for (let r = 1; r <= 24 && !best; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
     const x = Math.floor(px) + dx, z = Math.floor(pz) + dz; if (x < 1 || z < 1 || x >= SX - 1 || z >= SZ - 1) continue; if (pools.some(q => ((x + .5 - q.x) / (q.rx + .6)) ** 2 + ((z + .5 - q.z) / (q.rz + .6)) ** 2 < 1)) continue;
     const t = topH[x + z * SX]; if (t < 1 || t > SY - 4 || !get(x, t, z) || get(x, t + 1, z) || get(x, t + 2, z)) continue; const d = dx * dx + dz * dz; if (d < bd) { bd = d; best = [x, t, z]; } } return best; }
-function rescue(why) { if (riftIn) { riftPlace(); return; } const c = dryLand(P.x, P.z); if (!c) { respawn(); return; } P.x = c[0] + .5; P.y = c[1] + 1.01; P.z = c[2] + .5; stuck.last = why === "water" ? stuck.t : stuck.emb; stuck.why = why; P.vx = P.vy = P.vz = 0; P.swim = false; P.wet = false; stuck.t = 0; stuck.emb = 0; stuck.n++;
+function rescue(why) { if (riftIn) { riftPlace(); return; } if (lairIn) { lairPlace(); return; } const c = dryLand(P.x, P.z); if (!c) { respawn(); return; } P.x = c[0] + .5; P.y = c[1] + 1.01; P.z = c[2] + .5; stuck.last = why === "water" ? stuck.t : stuck.emb; stuck.why = why; P.vx = P.vy = P.vz = 0; P.swim = false; P.wet = false; stuck.t = 0; stuck.emb = 0; stuck.n++;
   burst(P.x, P.y + .5, P.z, [0x28dcff, 0x14f195, 0xffffff], 24, 3); pop(why === "water" ? "🛟 PULLED YOU ONTO DRY LAND" : "🛟 UNSTUCK", "#14f195"); }
 // stuck-safety: trying to move in water for 3s without getting anywhere, or stuck inside a tile, puts you on the nearest dry land
 function stuckCheck(dt, wet, trying) { if (collides(P.x, P.y, P.z)) { if ((stuck.emb += dt) > .6) rescue("tile"); } else stuck.emb = 0;
@@ -331,7 +331,7 @@ function updPlayer(dt) { const g0 = P.ground;
   P.hurtCD = Math.max(0, P.hurtCD - dt);
   P.regenT -= dt; if (P.regenT <= 0 && P.hp < maxHp()) { P.hp++; P.regenT = 1.4; updHP(); }
 }
-function respawn() { if (riftIn) { riftPlace(); return; } /* no escaping a sealed rift (R key, falls, unstuck): you go back to the arena start */ P.x = plaza.x; P.y = plaza.y + .1; P.z = plaza.z; P.vx = P.vy = P.vz = 0; P.yaw = 0; P.pitch = -.08;
+function respawn() { if (riftIn) { riftPlace(); return; } if (lairIn) { lairPlace(); return; } /* no escaping a sealed rift (R key, falls, unstuck): you go back to the arena start */ P.x = plaza.x; P.y = plaza.y + .1; P.z = plaza.z; P.vx = P.vy = P.vz = 0; P.yaw = 0; P.pitch = -.08;
   // safe spawn: if the plaza floor under spawn was dug out, rebuild a 3x3 chrome pad so you never respawn into a pit
   const fx = Math.floor(P.x), fz = Math.floor(P.z), fy = Math.floor(plaza.y) - 1; for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) { if (!get(fx + dx, fy, fz + dz)) setBlock(fx + dx, fy, fz + dz, 13, true); for (let y = fy + 1; y <= fy + 2; y++) if (get(fx + dx, y, fz + dz) && !(dx || dz)) setBlock(fx, y, fz, 0, true); }
   let best = 1e9; for (let z = fz - 22; z <= fz + 22; z++) for (let x = fx - 22; x <= fx + 22; x++) { if (!inB(x, 1, z)) continue; const t = topH[x + z * SX]; if (t > 0 && world[idx(x, t, z)] === 8) { const d = (x - fx) ** 2 + (z - fz) ** 2; if (d < best && d > 9) { best = d; P.yaw = Math.atan2(-(x + .5 - P.x), -(z + .5 - P.z)); } } }
@@ -719,7 +719,7 @@ const PROG = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], PROG_N = 
 const LEAD = { "NEON FLATS": "square", "PUMP DUNES": "sawtooth", "SIGNAL GROVE": "triangle", "FROST CHAIN": "sine", "MOON BASIN": "sine", "GLITCH WASTES": "square", "UNDERGROUND": "triangle" };
 const MOTIF = [[0, -1, 2, -1, 4, -1, 2, 1], [4, -1, 3, 2, 0, -1, -1, -1], [2, 4, 5, 4, 2, -1, 0, -1], [0, -1, 0, 2, 4, -1, 7, -1]], SCALE = [0, 2, 3, 5, 7, 9, 10, 12];
 let musStep = 0, musNext = 0, hudT = 0, bossNotes = 0, bossTierNow = "";
-function bossTierKey() { if (boss.tier && boss.tier.key) return boss.tier.key; const k = boss.kind; if (k === "moth") return "legendary"; if (k === "king" || k === "colossus" || k === "fudder") return "epic"; if (k === "jelly") return "rare"; return "common"; }
+function bossTierKey() { if (boss.tier && boss.tier.key) return boss.tier.key === "mythic" ? "legendary" : boss.tier.key; const k = boss.kind; if (k === "moth" || k === "fudder") return "legendary"; if (k === "king" || k === "colossus") return "epic"; if (k === "jelly") return "rare"; return "common"; }
 function bossCue(at, tier) { const leg = tier === "legendary", epic = leg || tier === "epic", root = leg ? 40 : epic ? 42 : tier === "rare" ? 45 : 48, st = musStep % 16, v = leg ? 1.35 : epic ? 1.12 : tier === "rare" ? .82 : .62;
   if (st % 4 === 0) { osc(at, "sine", mtof(root - 12), .28, .09 * v, musG, { slide: -30 }); bossNotes++; }
   if (st === 0) { osc(at, "sawtooth", mtof(root), 1.5, .045 * v, musG, { lp: leg ? 980 : 620 }); osc(at, "triangle", mtof(root + 7), 1.2, .03 * v, musG, { lp: 1400 }); bossNotes++; }
@@ -1059,6 +1059,7 @@ let hubSafeT = 0;
 function inHub(x = P.x, z = P.z) { return !riftIn && Math.hypot(x - plaza.x, z - plaza.z) < SAFE_R; }
 function hurt(n) { if (inHub()) { if (performance.now() > hubSafeT) { hubSafeT = performance.now() + 1600; pop("SAFE HUB", "#9df7ff"); } return; } if (upg.armor && n > 0) { n -= 1; pop("ARMOR SOAKED 1", "#9df7ff"); if (n <= 0) return; } P.hp -= n; P.regenT = 5; updHP(); trauma = Math.max(trauma, .5); buzz(60); sfx.hurt(); $("hurt").style.opacity = 1; setTimeout(() => $("hurt").style.opacity = 0, 250);
   if (P.hp <= 0 && riftIn) { riftDeath(); return; }
+  if (P.hp <= 0 && lairIn) { lairDeath(); return; }
   if (P.hp <= 0) { banner("REKT", "Back to the plaza. Your shards are safe."); if (boss.on) bossEnd(false); P.hp = maxHp(); updHP(); respawn(); } }
 
 // ---------------- shard orbs that fly to you ----------------
@@ -1103,23 +1104,23 @@ const shotTex = (() => { const c = document.createElement("canvas"); c.width = c
 const BOSSES = { rug: { name: "THE RUG PULLER", hp: 240, tag: "Blast its eye with your drill!", epi: "IT WEAVES. IT WAVES. IT YANKS.", ph: ["It sweeps low now: jump it or step aside", "It pulls the floor! FUD minions incoming"] },
   king: { name: "THE FUD KING", hp: 300, tag: "Zap the crowned cloud! Hit the crown gem", epi: "RULER OF RUMOURS", ph: ["It splits into FUD minions", "FUD STORM: lightning everywhere"] },
   whale: { name: "THE DUMP WHALE", hp: 320, tag: "It DIVES at you. Sidestep, then drill the blowhole!", epi: "BELLY-FLOP CHAMPION", ph: ["Every slam sends a wave: jump it", "Double dives! Stay light on your feet"] },
-  fudder: { name: "THE TROGLODYTE FUDDER", hp: 420, tag: "Hit the snack bag on its belt!", epi: "KING OF THE COMMENT CAVE", ph: ["It summons FUD WOLVES", "RAGE MODE! It left the chair!"] },
+  fudder: { name: "THE TROGLODYTE FUDDER", hp: 420, tag: "Hit the snack bag on its belt!", epi: "KING OF THE COMMENT CAVE", ph: ["It summons FUD WOLVES", "RAGE MODE! It left the chair!", "Snack rage: faster slams, more wolves", "Last stand! Dodge everything, hit the bag"] },
   jelly: { name: "THE PUMP JELLY", hp: 280, tag: "Shoot the glowing core when it deflates!", epi: "IT ONLY GOES UP. THEN IT POPS.", ph: ["Zap rings + bubble rain: keep moving", "PUMP FRENZY! Double pulses"] },
   colossus: { name: "THE CANDLE COLOSSUS", hp: 340, tag: "Dodge the candles. Hit the chart core when its plates open!", epi: "GREEN CANDLE, RED CANDLE", ph: ["It charges across the arena: sidestep!", "CANDLE STORM: the chart goes wild"] },
   moth: { name: "THE ECLIPSE MOTH", hp: 360, tag: "Shoot the moon gem! In the dark, stand in the light", epi: "THE NIGHT HAS WINGS", ph: ["ECLIPSE! Only the light circles are safe", "Dust spirals everywhere: keep moving"] } };
-const BOSS_TXT = { rug: ["RUG BUSTED!", "IT'S PULLING THE RUG!", "THE RUG IS LOOSE!"], king: ["KING DETHRONED!", "THE KING IS SPLITTING!", "FUD STORM!"], whale: ["WHALE BEACHED!", "THE WHALE IS DUMPING!", "DOUBLE DIVE!"], fudder: ["FUDDER SILENCED!", "THE FUDDER IS TYPING…", "RAGE QUIT? NOPE. RAGE MODE!"],
+const BOSS_TXT = { rug: ["RUG BUSTED!", "IT'S PULLING THE RUG!", "THE RUG IS LOOSE!"], king: ["KING DETHRONED!", "THE KING IS SPLITTING!", "FUD STORM!"], whale: ["WHALE BEACHED!", "THE WHALE IS DUMPING!", "DOUBLE DIVE!"], fudder: ["FUDDER SILENCED!", "THE FUDDER IS TYPING…", "RAGE QUIT? NOPE. RAGE MODE!", "ALL CAPS MODE!", "FINAL FORM: THE MEGA THREAD!"],
   jelly: ["JELLY POPPED!", "THE JELLY IS PUMPING!", "PUMP FRENZY!", "MAX PUMP!", "SUPERNOVA PUMP!"], colossus: ["COLOSSUS TOPPLED!", "IT'S CHARGING!", "CANDLE STORM!", "ALL-TIME HIGH RAGE!", "PARABOLIC!"], moth: ["MOTH ECLIPSED!", "THE LIGHTS GO OUT!", "DUST STORM!", "TOTAL ECLIPSE!", "THE LAST LIGHT!"] };
 const BC = { scene, P, IS_TOUCH, rugTex, glowTex: shotTex, get, SX, SZ, BOSSES, BOSS_TXT, sfx, burst, debris, buzz, spawnOrbs,
   spawnFud: (x, y, z) => spawnFud(x, y, z), groundY: (x, z) => { const X = Math.max(0, Math.min(SX - 1, Math.floor(x))), Z = Math.max(0, Math.min(SZ - 1, Math.floor(z))); if (BX && BX.st.arena && BX.st.arena.floorY != null && Math.hypot(x - BX.st.arena.x, z - BX.st.arena.z) < BX.st.arena.r + 2) return BX.st.arena.floorY; return topH[X + Z * SX] + 1; },
   hurt: n => hurt(n), pop: (t, c) => pop(t, c), banner: (a, b) => banner(a, b), shake: v => { trauma = Math.max(trauma, v); }, roar: () => sfx.roar(boss.kind), gemGeo: id => GEM.pickupGeo(id),
   bar: () => updBossBar(), cine: (on, a, b, t) => cine(on, a, b, t),
   iframes: () => CB.iframes(), dark: t => { riftDarkT = t; },
-  onWin: (kind, p) => { if (riftIn) return riftWin(kind); stats.kills++; stats["k_" + kind] = (stats["k_" + kind] | 0) + 1; stats.lastBoss = kind; LB.kill(kind, null, false); charJoy = 1; const prize = 40 + 10 * stats.kills + (kind === "fudder" ? 60 : 0); banner(BOSS_TXT[kind][0], `◆+${prize} SOL shards (in-game) · next one is tougher`); sfx.win(); buzz(200); if (window.__fudderWin && kind === "fudder") window.__fudderWin(); save(); return prize; },
-  onLose: (kind, silent) => { stats.lastBoss = kind; if (riftIn) return; if (kind === "fudder") lairCd = 15; if (!silent) banner("IT GOT AWAY…", kind === "fudder" ? "Head back into the lair to try again" : "Summon it again from the ⚡ LAB"); } };
+  onWin: (kind, p) => { if (riftIn) return riftWin(kind); if (kind === "fudder") return lairWin(); stats.kills++; stats["k_" + kind] = (stats["k_" + kind] | 0) + 1; stats.lastBoss = kind; LB.kill(kind, null, false); charJoy = 1; const prize = 40 + 10 * stats.kills + (kind === "fudder" ? 60 : 0); banner(BOSS_TXT[kind][0], `◆+${prize} SOL shards (in-game) · next one is tougher`); sfx.win(); buzz(200); if (window.__fudderWin && kind === "fudder") window.__fudderWin(); save(); return prize; },
+  onLose: (kind, silent) => { stats.lastBoss = kind; if (riftIn) return; if (kind === "fudder") { lairCd = 15; if (lairIn) { lairIn = null; lairSeal(false); } } if (!silent) banner("IT GOT AWAY…", kind === "fudder" ? "Head back into the lair to try again" : "Summon it again from the ⚡ LAB"); } };
 const BX = createBosses(THREE, BC), boss = BX.st;
-function cine(on, a, b, tier) { document.body.classList.toggle("cine", !!on); const el = $("bossCard"); if (!el) return; if (on) { el.querySelector("h3").textContent = a || ""; el.querySelector("p").textContent = b || ""; const tg = el.querySelector(".tier"); if (tg) { tg.textContent = tier ? `◈ ${tier.name} RIFT BOSS` : ""; tg.style.display = tier ? "" : "none"; } el.style.setProperty("--tc", tier ? tier.css : "#ff4fd8"); el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); } else el.classList.remove("show"); }
-function summonBoss(kind = "rug", o) { if (boss.on || mp.on) return false; if (riftIn && !(o && o.rift)) return false; if (!(o && o.rift) && inHub()) { pop("Bosses don't spawn in the hub. Walk past the ring.", "#ffd24a"); return false; } if (!o) { if (upg.drill < 2) return false; if (kind === "king" && stats.kills < 1) return false; if (kind === "whale" && stats.kills < 2) return false; }
-  if (!BX.summon(kind, o && o.rift ? o.lvl || 0 : stats.kills, o || {})) return false; sfx.sting(kind); setTimeout(() => sfx.roar(kind), 500); trauma = .5; buzz(120); return true; }
+function cine(on, a, b, tier) { document.body.classList.toggle("cine", !!on); const el = $("bossCard"); if (!el) return; if (on) { el.querySelector("h3").textContent = a || ""; el.querySelector("p").textContent = b || ""; const tg = el.querySelector(".tier"); if (tg) { tg.textContent = tier ? (tier.key === "mythic" ? "◈ MYTHIC LAIR BOSS · THE HARDEST" : `◈ ${tier.name} RIFT BOSS`) : ""; tg.style.display = tier ? "" : "none"; } el.style.setProperty("--tc", tier ? tier.css : "#ff4fd8"); el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); } else el.classList.remove("show"); }
+function summonBoss(kind = "rug", o) { if (boss.on || mp.on) return false; if (kind === "fudder" && fudderDead()) return false; if (riftIn && !(o && o.rift)) return false; if (!(o && (o.rift || o.lair)) && inHub()) { pop("Bosses don't spawn in the hub. Walk past the ring.", "#ffd24a"); return false; } if (!o) { if (upg.drill < 2) return false; if (kind === "king" && stats.kills < 1) return false; if (kind === "whale" && stats.kills < 2) return false; }
+  if (!BX.summon(kind, o && o.lvl != null ? o.lvl : o && o.rift ? 0 : stats.kills, o || {})) return false; sfx.sting(kind); setTimeout(() => sfx.roar(kind), 500); trauma = .5; buzz(120); return true; }
 function updBossBar() { const bb = $("bossbar"); bb.classList.toggle("show", boss.on); if (!boss.on) return; $("bossFill").style.width = (100 * Math.max(0, boss.hp) / boss.max).toFixed(1) + "%"; const TR = boss.tier && boss.tier.key ? boss.tier : null, NP = TR ? TR.phases : 3; $("bossLv").textContent = TR ? `◈ ${TR.name} · ${BOSSES[boss.kind].name}` : `${BOSSES[boss.kind].name} · LV ${stats.kills + 1}`; $("bossLv").style.color = TR ? TR.css : ""; $("bossFill").style.background = TR ? `linear-gradient(90deg,${TR.css},#ffffff)` : "";
   { const bb2 = bb.querySelector(".b"); if (bb2.dataset.n != NP) { bb2.querySelectorAll("i").forEach(q => q.remove()); for (let k = 1; k < NP; k++) { const q = document.createElement("i"); q.style.left = (100 * k / NP).toFixed(1) + "%"; bb2.appendChild(q); } bb2.dataset.n = NP; } }
   const ph = $("bossPh"); if (ph) ph.textContent = "◆".repeat(boss.phase) + "◇".repeat(Math.max(0, NP - boss.phase)) + (boss.expose > 0 ? "  WEAK POINT OPEN!" : ""); bb.classList.toggle("weak", boss.expose > 0); }
@@ -1152,9 +1153,10 @@ function riftOpened(p) { const T = p.tier, i = tierI(T); banner(i === 0 ? "A RIF
   if (i >= 3) { const f = $("flashW"); if (f) { f.style.background = T.css; f.classList.remove("go"); void f.offsetWidth; f.classList.add("go"); } } }
 function askRift(p) { if (riftAsk || uiModal || riftIn || boss.on || mp.on || performance.now() < riftAskT) return; riftAsk = p; uiModal = true; input.mine = false; input.f = input.s = 0; P.vx = P.vz = 0;
   const el = $("riftAsk"), T = p.tier; el.style.setProperty("--tc", T.css); el.querySelector(".tn").textContent = `${T.name} RIFT`; el.querySelector(".bn").textContent = BOSSES[p.kind].name;
-  el.querySelector(".lt").textContent = `Win: ◆${T.loot}+ shards${T.power ? " + a BOSS POWER" : ""}${T.blastDrop >= 1 ? " + MK II BLASTER" : T.blastDrop > 0 ? ` · ${Math.round(T.blastDrop * 100)}% MK II drop` : ""}`;
+  $("riftAskH").textContent = "Enter the rift?"; el.querySelector(".warn").textContent = RIFT_WARN;
+  el.querySelector(".lt").textContent = `Win: ◆${T.loot}+ shards${T.power ? " + a BOSS POWER" : " · no boss power (EPIC/LEGENDARY only)"}${T.blastDrop >= 1 ? " + MK II BLASTER" : T.blastDrop > 0 ? ` · ${Math.round(T.blastDrop * 100)}% MK II drop` : ""}`;
   el.classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); sfx.click(); }
-function riftAnswer(go) { const p = riftAsk; if (!p) return; riftAsk = null; uiModal = false; $("riftAsk").classList.remove("show"); riftAskT = performance.now() + 600;
+function riftAnswer(go) { if (lairAsk) return lairAnswer(go); const p = riftAsk; if (!p) return; riftAsk = null; uiModal = false; $("riftAsk").classList.remove("show"); riftAskT = performance.now() + 600;
   if (go && RF.portals.includes(p)) { enterRift(p); } else if (p) { const dx = P.x - p.x, dz = P.z - p.z, d = Math.hypot(dx, dz) || 1; for (let k = 0; k < 13; k++) { moveAxis(0, dx / d * .2); moveAxis(2, dz / d * .2); } p.cd = 4; pop("Not now. The rift waits… for a while", "#cfd8ff"); }
   if (!IS_TOUCH && running && !window.__SB_TEST && !uiModal) try { canvas.requestPointerLock(); } catch (e) {} }
 function riftPlace() { if (!RIFT_A) return; P.x = RIFT_A.x; P.z = RIFT_A.z + RIFT_A.r - 3.2; P.y = RIFT_A.floorY + .02; P.vx = P.vy = P.vz = 0; P.yaw = 0; P.pitch = -.05; }
@@ -1170,18 +1172,25 @@ function riftTick(dt, time) { RF.update(dt, time, running && !photo && !boss.on 
   if (!R.sealed && R.t > 2.9) { R.sealed = true; banner("THE RIFT HAS SEALED.", "Defeat the boss to escape!", R.tier.key); sfx.seal(); trauma = Math.max(trauma, .3); }
   if (P.y < RIFT_A.floorY - 5 || Math.hypot(P.x - RIFT_A.x, P.z - RIFT_A.z) > RIFT_A.r + .5) riftPlace();
   if (!R.won) { if (!boss.on) { R.nb += dt; if (R.nb > 4) { R.nb = 0; if (!summonBoss(R.kind, { rift: true, tier: R.tier, lvl: R.tier.lvl, arena: { ...RIFT_A }, at: [RIFT_A.x, RIFT_A.floorY + 6, RIFT_A.z - 6] })) { R.won = true; RF.openExit(); pop("The rift is unstable. PORTAL HOME open", "#fff2b0"); } } } else R.nb = 0; }
-  else { R.wonT += dt; const A = RF.arena(); if (A && A.exit && R.wonT > 2.6 && Math.hypot(P.x - RIFT_A.x, P.z - RIFT_A.z) < 1.5 && P.y < RIFT_A.floorY + 2.6) exitRift(); } }
+  else { R.wonT += dt; const A = RF.arena(), ag = RF.againPos(); if (A && A.exit && R.wonT > 2.6 && Math.hypot(P.x - RIFT_A.x, P.z - RIFT_A.z) < 1.5 && P.y < RIFT_A.floorY + 2.6) exitRift();
+    else if (ag && R.wonT > 2.6 && Math.hypot(P.x - ag[0], P.z - ag[1]) < 1.5 && P.y < RIFT_A.floorY + 2.6) riftAgain(); } }
+// v0.9.7: FIGHT AGAIN. Same tier, a fresh boss from that tier, same rules (sealed until it drops; dying wipes carried loot + powers).
+function riftAgain() { const R = riftIn; if (!R || !R.won || boss.on) return; const T = R.tier; R.kind = T.bosses[(Math.random() * T.bosses.length) | 0]; R.won = false; R.sealed = false; R.t = 0; R.nb = 0; R.wonT = 0; R.round = (R.round | 0) + 1;
+  try { localStorage.setItem(RIFT_KEY, JSON.stringify({ tier: T.key, kind: R.kind, at: Date.now() })); } catch (e) {} RF.closeExits(); BX.clearFx(); CB.clear(); riftPlace(); P.hp = maxHp(); updHP(); stats.riftAgain = (stats.riftAgain | 0) + 1;
+  banner(`${T.name} RIFT · ROUND ${R.round + 1}`, "Same tier, fresh boss. Board points drop for repeat kills of the same boss.", T.key); sfx.riftEnter(); trauma = Math.max(trauma, .35);
+  const M = BX.make(R.kind); summonBoss(R.kind, { rift: true, tier: T, lvl: T.lvl, arena: { ...RIFT_A }, at: [RIFT_A.x, RIFT_A.floorY + (M.ground ? 0 : 7), RIFT_A.z - 6] }); save(); }
 function riftWin(kind) { const R = riftIn; if (!R || R.won) return; R.won = true; R.wonT = 0; try { localStorage.removeItem(RIFT_KEY); } catch (e) {} const T = R.tier;
   const loot = Math.round(T.loot * (1 + Math.random() * .25)); const bp = boss.g ? boss.g.position : new THREE.Vector3(P.x, P.y + 2, P.z); spawnOrbs(bp.x, bp.y + 1, bp.z, loot, T.col);
   stats.riftWins = (stats.riftWins | 0) + 1; stats["rift_" + T.key] = (stats["rift_" + T.key] | 0) + 1; stats["k_" + kind] = (stats["k_" + kind] | 0) + 1; LB.kill(kind, T.key, T.key === "legendary"); charJoy = 1;
-  banner(`${T.name} RIFT CLEARED!`, `◆+${loot} SOL shards (in-game, no cash value) · the PORTAL HOME is opening`, T.key); sfx.win(); buzz(200);
+  banner(`${T.name} RIFT CLEARED!`, `◆+${loot} SOL shards (in-game, no cash value)${T.power ? "" : " · no boss power (EPIC/LEGENDARY only)"} · PORTAL HOME or FIGHT AGAIN`, T.key); sfx.win(); buzz(200);
   let drop = false; if ((upg.blast | 0) < 2 && (Math.random() < T.blastDrop || Q.get("drop") === "mk2")) { upg.blast = 2; drop = true; setTimeout(() => { pop("🔫 PRISM BLASTER MK II DROPPED! (rift loot)", "#ff7ad0"); sfx.powerGet(); }, 1300); }
-  const pid = T.power ? Object.keys(POWERS).find(k => POWERS[k].from === kind) : null; if (pid) { upg.powers = upg.powers || {}; upg.powers[pid] = 1; if (!upg.power) upg.power = pid; setTimeout(() => powerUnlock(pid, kind), 1700); }
-  setTimeout(() => { if (riftIn === R) { RF.openExit(); pop("✦ PORTAL HOME OPEN · step into the centre", "#fff2b0"); sfx.riftOpen(0); } }, 2200); maybeGunDrop(T.key); updWpnHud(); save(); }
+  const pid = T.power ? Object.keys(POWERS).find(k => POWERS[k].from === kind) : null; if (pid) { upg.powers = upg.powers || {}; const had = !!upg.powers[pid]; upg.powers[pid] = 1; if (!upg.power || !upg.powers[upg.power]) upg.power = pid; stats.powerGets = (stats.powerGets | 0) + 1; setTimeout(() => powerUnlock(pid, kind, had), 1700); }
+  else if (T.power) console.warn("no power mapped for", kind);
+  setTimeout(() => { if (riftIn === R) { RF.openExit(true); pop("✦ PORTAL HOME (centre) · ⚔ FIGHT AGAIN (same tier, ahead)", "#fff2b0"); sfx.riftOpen(0); } }, 2200); maybeGunDrop(T.key); updWpnHud(); save(); }
 function riftCleanup() { if (boss.on) bossEnd(false, true); BX.clearFx(); CB.clear(); wolves().clear(); RF.leaveArena(); RIFT_A = null; riftIn = null; riftDarkT = 0; bT = 0;
   if (savedFog) { scene.fog.near = savedFog.n; scene.fog.far = savedFog.f; savedFog = null; } camera.far = 500; camera.updateProjectionMatrix(); hemi.groundColor.setHex(0x201030); P.hp = maxHp(); updHP(); }
-function exitRift() { const R = riftIn; if (!R) return; const p = R.p; riftCleanup(); if (p) RF.close(p, "won"); const c = dryLand(p ? p.x : plaza.x, p ? p.z : plaza.z);
-  if (c) { P.x = c[0] + .5; P.y = c[1] + 1; P.z = c[2] + .5; } else respawn(); P.vx = P.vy = P.vz = 0; banner("BACK IN THE WORLD", "Loot secured. Rifts keep opening: watch the compass", R.tier.key); sfx.riftEnter(); save(); }
+function exitRift() { const R = riftIn; if (!R) return; const p = R.p; riftCleanup(); if (p && RF.portals.includes(p)) RF.rearm(p); const c = dryLand(p ? p.x + 3.5 : plaza.x, p ? p.z : plaza.z);
+  if (c) { P.x = c[0] + .5; P.y = c[1] + 1; P.z = c[2] + .5; } else respawn(); P.vx = P.vy = P.vz = 0; banner("BACK IN THE WORLD", `Loot secured. This ${R.tier.name} rift stays open a while: step back in to run it again`, R.tier.key); sfx.riftEnter(); save(); }
 function wipeLoot() { const W = RIFT_CFG.wipe, lost = { shards: 0, blast: false, powers: [], lab: [], pets: [] };
   if (W.shards) { lost.shards = shards; shards = 0; updShards(); }
   if (W.blaster && (upg.blast | 0) >= 2) { upg.blast = 1; lost.blast = true; }
@@ -1192,8 +1201,9 @@ function wipeLoot() { const W = RIFT_CFG.wipe, lost = { shards: 0, blast: false,
 function riftDeath() { const R = riftIn; if (!R) return; const p = R.p, lost = wipeLoot(); try { localStorage.removeItem(RIFT_KEY); } catch (e) {} riftCleanup();
   if (p && RF.portals.includes(p)) { p.busy = false; p.life = Math.max(p.life, RIFT_CFG.retryLife); p.cd = 3; }
   respawn(); stats.riftLosses = (stats.riftLosses | 0) + 1; save(); sfx.riftLost(); showLost(lost, { tier: R.tier.key, kind: R.kind }, false); }
-function showLost(lost, info, reload) { const el = $("riftLost"), L = el.querySelector(".ll"), T = RIFT_CFG.tiers.find(t => t.key === (info && info.tier)) || RIFT_CFG.tiers[0]; el.style.setProperty("--tc", T.css);
-  el.querySelector(".why").textContent = reload ? "You left the rift mid-fight. A reload counts as a loss." : `${BOSSES[info && info.kind] ? BOSSES[info.kind].name : "The boss"} (${T.name} rift) won this time.`;
+function showLost(lost, info, reload) { const el = $("riftLost"), L = el.querySelector(".ll"), isLair = !!(info && info.tier === "mythic"), T = isLair ? FUD_TIER : RIFT_CFG.tiers.find(t => t.key === (info && info.tier)) || RIFT_CFG.tiers[0]; el.style.setProperty("--tc", T.css);
+  el.querySelector(".tn").textContent = isLair ? "LAIR LOST" : "RIFT LOST"; $("riftLostH").textContent = isLair ? "YOUR LOOT WAS LOST IN THE LAIR" : "YOUR LOOT WAS LOST TO THE RIFT";
+  el.querySelector(".why").textContent = reload ? (isLair ? "You left the lair mid-fight. A reload counts as a loss." : "You left the rift mid-fight. A reload counts as a loss.") : isLair ? "THE TROGLODYTE FUDDER won this time. He is still down there." : `${BOSSES[info && info.kind] ? BOSSES[info.kind].name : "The boss"} (${T.name} rift) won this time.`;
   const rows = []; if (lost.shards) rows.push(`◆ ${lost.shards} SOL shards (in-game)`); if (lost.blast) rows.push("🔫 PRISM BLASTER MK II"); for (const id of lost.powers) rows.push(`${POWERS[id].icon} Boss power: ${POWERS[id].name}`); for (const k of lost.lab) rows.push(`⚙ Lab upgrade: ${k}`); for (const k of lost.pets) rows.push(`🐾 Companion: ${k}`);
   L.innerHTML = ""; if (!rows.length) rows.push("Nothing was carried. Nothing lost!"); for (const r of rows) { const li = document.createElement("li"); li.textContent = r; L.appendChild(li); }
   uiModal = true; input.mine = false; el.classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
@@ -1242,15 +1252,15 @@ function renderGuns() { const el = $("gunL"); if (!el) return; const live = burn
   el.innerHTML = h; }
 // ---------------- powers / weapons HUD ----------------
 let powT = 0;
-function powerUnlock(id, kind) { const D = POWERS[id], el = $("powCard"); if (!el) return; el.style.setProperty("--pc", D.css); el.querySelector(".pi").textContent = D.icon; el.querySelector("h3").textContent = `YOU ABSORBED THE POWER OF ${BOSSES[kind] ? BOSSES[kind].name : "THE BOSS"}!`;
+function powerUnlock(id, kind, had) { const D = POWERS[id], el = $("powCard"); if (!el) return; el.style.setProperty("--pc", D.css); el.querySelector(".pi").textContent = D.icon; el.querySelector("h3").textContent = had ? `POWER RECHARGED: ${BOSSES[kind] ? BOSSES[kind].name : "THE BOSS"}` : `YOU ABSORBED THE POWER OF ${BOSSES[kind] ? BOSSES[kind].name : "THE BOSS"}!`;
   el.querySelector(".pn").textContent = D.name; el.querySelector(".pd").textContent = D.desc; el.querySelector(".pk").textContent = IS_TOUCH ? `Tap the ${D.icon} button to use · ${D.cd}s cooldown` : `Press F to use · ${D.cd}s cooldown · equip in the ⚡ LAB`;
   el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); sfx.powerGet(); buzz([40, 30, 120]); trauma = Math.max(trauma, .4); clearTimeout(powT); powT = setTimeout(() => el.classList.remove("show"), 6500); updWpnHud(); }
 $("powCard").addEventListener("click", () => $("powCard").classList.remove("show"));
-function renderPowers() { const L = $("powL"); if (!L) return; const own = upg.powers || {}; let h = `<div class="ph">BOSS POWERS <small>rift loot: a rift death wipes them</small></div>`;
-  for (const [id, D] of Object.entries(POWERS)) { const o = !!own[id], eq = upg.power === id; h += `<div class="row${o ? "" : " lock"}"><span class="pi" style="color:${D.css}">${D.icon}</span><span class="pt"><b>${D.name}</b><small>${o ? D.desc : `Beat ${BOSSES[D.from].name} in an EPIC/LEGENDARY rift`} · ${D.cd}s</small></span>${o ? `<button class="btn sm" type="button" data-pow="${id}" ${eq ? "disabled" : ""}>${eq ? "EQUIPPED" : "EQUIP"}</button>` : `<span class="lk">🔒</span>`}</div>`; }
+function renderPowers() { const L = $("powL"); if (!L) return; const own = upg.powers || {}; let h = `<div class="ph">BOSS POWERS <small>Only EPIC and LEGENDARY rift bosses grant a power (plus top Guild contracts). Common/Rare rifts, Lab bosses and the Fudder never do. A rift or lair death wipes them.</small></div>`;
+  for (const [id, D] of Object.entries(POWERS)) { const o = !!own[id], eq = upg.power === id; h += `<div class="row${o ? "" : " lock"}"><span class="pi" style="color:${D.css}">${D.icon}</span><span class="pt"><b>${D.name}</b><small>${o ? D.desc : `Beat ${BOSSES[D.from].name} in ${D.from === "moth" ? "a LEGENDARY" : "an EPIC"} rift`} · ${D.cd}s</small></span>${o ? `<button class="btn sm" type="button" data-pow="${id}" ${eq ? "disabled" : ""}>${eq ? "EQUIPPED" : "EQUIP"}</button>` : `<span class="lk">🔒</span>`}</div>`; }
   L.innerHTML = h; }
 function setWeapon(i) { if (uiModal) return; const w = CB.setWeapon(i); input.mine = false; updWpnHud(); sfx.equip(); pop(`${w.icon} ${w.name}${w.id === "blaster" && (upg.blast | 0) >= 2 ? " MK II" : ""}`, w.id === "tool" ? "#ffd24a" : "#28dcff"); }
-function usePower() { if (uiModal || !running) return; const id = upg.power; if (!id || !(upg.powers || {})[id]) { pop("No boss power yet: beat an EPIC or LEGENDARY rift", "#cfd8ff"); return; } if (boss.on && boss.intro > 0) return; if (CB.power(id)) { stats.powerUses = (stats.powerUses | 0) + 1; $("bPow").classList.add("fire"); setTimeout(() => $("bPow").classList.remove("fire"), 300); } }
+function usePower() { if (uiModal || !running) return; const id = upg.power; if (!id || !(upg.powers || {})[id]) { pop("No boss power yet: beat an EPIC or LEGENDARY rift boss (Common/Rare never grant one)", "#cfd8ff"); return; } if (boss.on && boss.intro > 0) return; if (CB.power(id)) { stats.powerUses = (stats.powerUses | 0) + 1; $("bPow").classList.add("fire"); setTimeout(() => $("bPow").classList.remove("fire"), 300); } }
 let wpnKey = "";
 function updWpnHud() { const w = WEAPONS[CB.S.weapon], el = $("wpn"); if (!el) return; const g = GUNS[upg.gun] || GUNS.blaster, ranged = w.id === "blaster", mk = ranged && g.id === "blaster" && (upg.blast | 0) >= 2, pid = upg.power && (upg.powers || {})[upg.power] ? upg.power : "", D = pid ? POWERS[pid] : null;
   const k = CB.S.weapon + "|" + (ranged ? g.id : "") + "|" + mk + "|" + pid; if (k === wpnKey) return; wpnKey = k; el.dataset.w = ranged ? "blaster" : w.id;
@@ -1273,26 +1283,67 @@ function updRadar(dt) { if (!radarX || (radarT -= dt) > 0) return; radarT = .1; 
   const toS = (wx, wz) => { const dx = wx - P.x, dz = wz - P.z, rx = dx * cy - dz * sy, rz = dx * sy + dz * cy; return [c + rx * sc, c + rz * sc]; };
   const dot = (wx, wz, col, r, clampE) => { let [sx, sz] = toS(wx, wz); const dd = Math.hypot(sx - c, sz - c), m = c - 7; if (dd > m) { if (!clampE) return; sx = c + (sx - c) / dd * m; sz = c + (sz - c) / dd * m; } x.fillStyle = col; x.beginPath(); x.arc(sx, sz, r, 0, 7); x.fill(); };
   if (riftIn) { x.strokeStyle = riftIn.tier.css; x.lineWidth = 2; const [ax, az] = toS(RIFT_A.x, RIFT_A.z); x.beginPath(); x.arc(ax, az, RIFT_A.r * sc, 0, 7); x.stroke(); const A = RF.arena(); if (A && A.exit) dot(RIFT_A.x, RIFT_A.z, "#fff2b0", 4 + Math.sin(t * 6), true); }
-  else { if (lair && lair.ent && (stats.k_fudder | 0) < 1) dot(lair.ent[0], lair.ent[2], "#8cdc3c", 3.5, true); dot(plaza.x, plaza.z, "#ffd24a", 2.5, false);
+  else { if (lair && lair.ent && !fudderDead()) dot(lair.ent[0], lair.ent[2], "#8cdc3c", 3.5, true); dot(plaza.x, plaza.z, "#ffd24a", 2.5, false);
     for (const p of RF.portals) { x.globalAlpha = .35; dot(p.x, p.z, p.tier.css, 7 + Math.sin(t * 5) * 2, true); x.globalAlpha = 1; dot(p.x, p.z, p.tier.css, 4, true); } }
   for (const w of fuds) dot(w.x, w.z, "#b070ff", 2, false); if (boss.on && boss.g) dot(boss.g.position.x, boss.g.position.z, "#ff3a5a", 4.5, true);
   x.restore(); x.fillStyle = "#fff"; x.beginPath(); x.moveTo(c, c - 6); x.lineTo(c + 4.5, c + 5); x.lineTo(c, c + 2.5); x.lineTo(c - 4.5, c + 5); x.closePath(); x.fill();
   x.strokeStyle = "rgba(255,255,255,.35)"; x.lineWidth = 1.5; x.beginPath(); x.arc(c, c, c - 1, 0, 7); x.stroke(); }
-let LZ = null, lairCd = 0, lairMsg = 0, lairArmed = true;
+// ================= v0.9.7: THE TROGLODYTE FUDDER = the HARDEST boss. Lair rules = rift rules. One kill and he is gone for good. =================
+// Walking into the chamber asks first. ENTER seals the lair until he drops. Dying (or reloading mid-fight) wipes carried loot + boss powers.
+// Skins, holder rewards, achievements and builds are always safe. After the first win he never respawns for this player (device + wallet key).
+const RIFT_WARN = "You can't leave until the boss is defeated. If you die, you lose all carried loot and boss powers.";
+const FUD_TIER = { key: "mythic", name: "MYTHIC", col: 0x8cdc3c, css: "#b8ff6a", hp: 2.6, dmg: 2, spd: 1.35, tele: .72, rest: .52, phases: 5, extra: 3, adds: 3, addEvery: 10, loot: 600, lvl: 2, power: false };
+const FUD_DEAD_KEY = "boss_fudder_dead_v1";
+function fudDeadRec() { try { return JSON.parse(localStorage.getItem(FUD_DEAD_KEY) || "null") || {}; } catch (e) { return {}; } }
+let fudDC = null, fudDT = 0;
+function fudderDead() { const now = performance.now(); if (fudDC === true || (fudDC !== null && now < fudDT)) return fudDC; const r = fudDeadRec(); let w = null; try { w = LB.wallet(); } catch (e) {}
+  const dead = (stats.k_fudder | 0) >= 1 || !!r.device || !!(w && Array.isArray(r.wallets) && r.wallets.includes(w));
+  if (dead && w && !(Array.isArray(r.wallets) && r.wallets.includes(w))) markFudderDead(true); fudDC = dead; fudDT = now + 1500; return dead; }
+function markFudderDead(quiet) { fudDC = true; stats.k_fudder = Math.max(1, stats.k_fudder | 0); const r = fudDeadRec(); r.device = 1; r.at = r.at || Date.now(); let w = null; try { w = LB.wallet(); } catch (e) {}
+  if (w) { r.wallets = Array.isArray(r.wallets) ? r.wallets : []; if (!r.wallets.includes(w)) r.wallets.push(w); } try { localStorage.setItem(FUD_DEAD_KEY, JSON.stringify(r)); } catch (e) {} if (!quiet) save(); }
+let LZ = null, lairCd = 0, lairMsg = 0, lairArmed = true, lairIn = null, lairAsk = false, lairQuietT = 0, lairWall = null;
 function lairArena() { const dx = lair.x - lair.throne[0], dz = lair.z - lair.throne[1], d = Math.hypot(dx, dz) || 1; return { x: lair.x, z: lair.z, r: lair.r, floorY: lair.floorY, throne: [lair.throne[0] + dx / d * 1.6, lair.throne[1] + dz / d * 1.6] }; }
+function lairPlace() { P.x = lair.x + Math.cos(lair.ea) * (lair.r - 3.2); P.z = lair.z + Math.sin(lair.ea) * (lair.r - 3.2); P.y = lair.floorY + .02; P.vx = P.vy = P.vz = 0; P.yaw = Math.atan2(Math.cos(lair.ea), Math.sin(lair.ea)); P.pitch = -.05; }
+// a glowing green seal across the tunnel mouth of the chamber while the fight is on
+function lairSeal(on) { if (on && !lairWall) { const g = new THREE.Group(), m = new THREE.MeshBasicMaterial({ color: 0x8cdc3c, transparent: true, opacity: .35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(2.6, 28), m), ring = new THREE.Mesh(new THREE.TorusGeometry(2.6, .12, 8, 36), new THREE.MeshBasicMaterial({ color: 0xb8ff6a })); g.add(disc, ring);
+    g.position.set(lair.x + Math.cos(lair.ea) * (lair.r - .3), lair.floorY + 2, lair.z + Math.sin(lair.ea) * (lair.r - .3)); g.rotation.y = Math.atan2(Math.cos(lair.ea), Math.sin(lair.ea)); scene.add(g); lairWall = g; }
+  else if (!on && lairWall) { scene.remove(lairWall); lairWall.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); lairWall = null; } }
+function askLair() { if (lairAsk || riftAsk || uiModal || riftIn || mp.on) return; lairAsk = true; uiModal = true; input.mine = false; input.f = input.s = 0; P.vx = P.vz = 0;
+  const el = $("riftAsk"); el.style.setProperty("--tc", FUD_TIER.css); el.querySelector(".tn").textContent = "THE FUDDER'S LAIR · MYTHIC"; $("riftAskH").textContent = "Enter the lair?";
+  el.querySelector(".warn").textContent = "You can't leave until THE TROGLODYTE FUDDER is defeated. If you die, you lose all carried loot and boss powers.";
+  el.querySelector(".bn").textContent = "THE TROGLODYTE FUDDER · the hardest boss in the game"; el.querySelector(".lt").textContent = `Win: ◆${FUD_TIER.loot}+ shards + PRISM BLASTER MK II · beat him once and he is gone for good`;
+  el.classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); sfx.click(); }
+function lairAnswer(go) { if (!lairAsk) return; lairAsk = false; uiModal = false; $("riftAsk").classList.remove("show"); riftAskT = performance.now() + 600; lairArmed = false;
+  if (go && !fudderDead()) startLair();
+  else { const c = dryLand(lair.ent[0], lair.ent[2]); if (c) { P.x = c[0] + .5; P.y = c[1] + 1.01; P.z = c[2] + .5; } else respawn(); P.vx = P.vy = P.vz = 0; pop("Not now. The Fudder keeps typing…", "#b8ff6a"); }
+  if (!IS_TOUCH && running && !window.__SB_TEST && !uiModal) try { canvas.requestPointerLock(); } catch (e) {} }
+function startLair() { if (lairIn || riftIn || fudderDead()) return false; if (labOpen) closeLab(true); if (photo) setPhoto(false);
+  if (boss.on) { const nm = BOSSES[boss.kind] ? BOSSES[boss.kind].name : "THE BOSS"; bossEnd(false, true); pop(nm + " FLED · THE FUDDER WAKES", "#b8ff6a"); }
+  const A = lairArena(); let ok = false; lairCd = 2;
+  try { ok = summonBoss("fudder", { lair: true, tier: FUD_TIER, lvl: FUD_TIER.lvl, arena: A, at: [A.throne[0], lair.floorY, A.throne[1]] }); } catch (e) { console.warn("fudder summon failed", e); pop("THE FUDDER IS LOADING…", "#b8ff6a"); }
+  if (!ok) return false; lairIn = { t: 0, sealed: false }; lairArmed = false; try { localStorage.setItem(RIFT_KEY, JSON.stringify({ tier: "mythic", kind: "fudder", lair: 1, at: Date.now() })); } catch (e) {}
+  P.hp = maxHp(); updHP(); CB.setWeapon(2); updWpnHud(); lairSeal(true); stats.lairTries = (stats.lairTries | 0) + 1; save(); return true; }
+function lairWin() { lairIn = null; lairSeal(false); try { localStorage.removeItem(RIFT_KEY); } catch (e) {} markFudderDead(true); stats.lastBoss = "fudder"; LB.kill("fudder", "legendary", false); charJoy = 1;
+  const prize = Math.round(FUD_TIER.loot * (1 + Math.random() * .2)); banner("THE FUDDER IS SILENCED. FOREVER.", `◆+${prize} SOL shards (in-game) · he will never respawn · the lair is yours`, "legendary"); sfx.win(); buzz([120, 60, 220]);
+  if ((upg.blast | 0) < 2) { upg.blast = 2; setTimeout(() => { pop("🔫 PRISM BLASTER MK II · Fudder loot", "#ff7ad0"); sfx.powerGet(); }, 1500); } maybeGunDrop("legendary"); updWpnHud();
+  if (window.__fudderWin) window.__fudderWin(); save(); return prize; }
+function lairDeath() { const lost = wipeLoot(); try { localStorage.removeItem(RIFT_KEY); } catch (e) {} lairIn = null; lairSeal(false); if (boss.on) bossEnd(false, true); BX.clearFx(); wolves().clear();
+  lairCd = 15; lairArmed = false; P.hp = maxHp(); updHP(); respawn(); stats.lairLosses = (stats.lairLosses | 0) + 1; save(); sfx.riftLost(); showLost(lost, { tier: "mythic", kind: "fudder" }, false); }
 function lairTick(dt, time) { if (!lair.ent) return; if (!LZ) LZ = createLair(THREE, { scene, L: lair, toon: BX.toon, add: BX.add, glow: BX.glow, IS_TOUCH });
-  const d = Math.hypot(P.x - lair.x, P.z - lair.z), inside = d < lair.r - .5 && P.y < lair.floorY + 6, dm = Math.hypot(P.x - lair.ent[0], P.z - lair.ent[2]);
-  LZ.tick(time, d < lair.r + 22, dm, P.y < lair.floorY + 9 && d < lair.r + 6); lairCd -= dt; lairMsg -= dt; if (d > lair.r + 8 || P.y > lair.floorY + 9) lairArmed = true;
-  if (inside && !stats.lair) { stats.lair = 1; banner("THE FUDDER'S LAIR", "Something is typing very loudly…"); save(); }
-  // v0.9.2: entering the lair ALWAYS wakes the Fudder. (v0.9 silently refused without Drill MK II, or while another boss was still alive.)
-  if (inside && lairCd <= 0 && lairArmed && !mp.on && !(boss.on && boss.kind === "fudder")) {
-    if (boss.on) { if (boss.dying || boss.intro > 0) return; const nm = BOSSES[boss.kind] ? BOSSES[boss.kind].name : "THE BOSS"; bossEnd(false, true); pop(nm + " FLED · THE FUDDER WAKES", "#b8ff6a"); }
-    const A = lairArena(); lairCd = 2; let ok = false;
-    try { ok = summonBoss("fudder", { arena: A, at: [A.throne[0], lair.floorY, A.throne[1]] }); } catch (e) { console.warn("fudder summon failed", e); pop("THE FUDDER IS LOADING…", "#b8ff6a"); }
-    if (ok) { lairArmed = false; if (upg.drill < 2 && lairMsg <= 0) { lairMsg = 60; setTimeout(() => pop("TIP: DRILL MK II (⚡ LAB) HITS HARDER", "#ffd24a"), 4500); } } } }
+  const d = Math.hypot(P.x - lair.x, P.z - lair.z), inside = d < lair.r - .5 && P.y < lair.floorY + 6, dm = Math.hypot(P.x - lair.ent[0], P.z - lair.ent[2]), dead = fudderDead();
+  LZ.tick(time, d < lair.r + 22, dm, P.y < lair.floorY + 9 && d < lair.r + 6); if (dead) { LZ.beam.visible = false; LZ.mark.visible = false; }
+  lairCd -= dt; lairMsg -= dt; lairQuietT -= dt; if (d > lair.r + 8 || P.y > lair.floorY + 9) lairArmed = true;
+  if (lairWall) { lairWall.children[0].material.opacity = .25 + .12 * Math.sin(time * 5); lairWall.rotation.z = 0; }
+  if (lairIn) { lairIn.t += dt; if (!lairIn.sealed && lairIn.t > 2.9) { lairIn.sealed = true; banner("THE LAIR HAS SEALED.", "Defeat THE TROGLODYTE FUDDER to escape!", "legendary"); sfx.seal && sfx.seal(); trauma = Math.max(trauma, .3); }
+    if (!boss.on || boss.kind !== "fudder") { if (!boss.dying) { lairIn = null; lairSeal(false); try { localStorage.removeItem(RIFT_KEY); } catch (e) {} } return; }
+    if (d > lair.r - 1.2 || P.y > lair.floorY + 6 || P.y < lair.floorY - 4) lairPlace(); return; }
+  if (inside && !stats.lair) { stats.lair = 1; banner("THE FUDDER'S LAIR", dead ? "Quiet now. The chair is empty." : "Something is typing very loudly…"); save(); }
+  if (dead) { if (inside && lairArmed) { lairArmed = false; if (lairQuietT <= 0) { lairQuietT = 30; banner("THE LAIR IS QUIET", "You beat THE TROGLODYTE FUDDER. He's gone for good."); } } return; }
+  if (inside && lairCd <= 0 && lairArmed && !mp.on && !riftIn && !(boss.on && boss.kind === "fudder")) { if (boss.on && (boss.dying || boss.intro > 0)) return; askLair(); } }
 // lair compass: a top-of-screen waypoint to the cave mouth (or straight to the chamber once you're underground), until you've beaten the Fudder
 function updLairNav() { const el = $("lairNav"); if (!el) return; const d0 = Math.hypot(P.x - lair.x, P.z - lair.z), inside = d0 < lair.r + 2 && P.y < lair.floorY + 8;
-  const show = !!lair.ent && !boss.on && !mp.on && !inside && (stats.k_fudder | 0) < 1 && !riftNavOn && !riftIn; el.classList.toggle("show", show); if (!show) return;
+  const show = !!lair.ent && !boss.on && !mp.on && !inside && !fudderDead() && !riftNavOn && !riftIn; el.classList.toggle("show", show); if (!show) return;
   const deep = topH[Math.floor(P.x) + Math.floor(P.z) * SX] > P.y + 3 || Math.hypot(P.x - lair.ent[0], P.z - lair.ent[2]) < 4, tg = deep ? [lair.x, lair.z] : [lair.ent[0], lair.ent[2]], dd = Math.hypot(tg[0] - P.x, tg[1] - P.z);
   const ang = Math.atan2(-(tg[0] - P.x), -(tg[1] - P.z)) - P.yaw; $("lairAr").style.transform = `rotate(${(-ang * 180 / Math.PI).toFixed(1)}deg)`; $("lairD").textContent = (deep ? "▼ " : "") + dd.toFixed(0) + "m"; }
 let barT = 0, navT = 0; function updBoss(dt, time) { lairTick(dt, time); if ((navT -= dt) <= 0) { navT = .1; updRiftNav(); updLairNav(); } BX.update(dt, time); if (boss.on && (barT -= dt) <= 0) { barT = .2; updBossBar(); } }
@@ -1755,6 +1806,40 @@ function bcTick() { if (mp.on) return; bcEnsure(); if (bc.done) return; const v 
   if (v >= q.n) { const y = new Date(Date.now() - 864e5), yk = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`; bc.streak = bc.last === yk ? bc.streak + 1 : 1; bc.last = bc.key; bc.done = true; bc.wins = (bc.wins | 0) + 1;
     gainShards(30); banner("BUILD CHALLENGE COMPLETE!", `${q.t} · ◆+30 (in-game) · streak ${bc.streak} 🏗`); sfx.quest(); fireworks(P.x, P.y + 1, P.z); charJoy = 1; save(); } }
 
+// ---------------- v0.9.7 GUILD CONTRACTS: three tasks pinned on the board by the Guild House. Claim at the board for extra ◆ (top ones pay a BOSS POWER) ----------------
+const RW = s => (s.rift_rare | 0) + (s.rift_epic | 0) + (s.rift_legendary | 0), EW = s => (s.rift_epic | 0) + (s.rift_legendary | 0);
+const GUILD_POOL = [
+  { id: "wolves", t: "Wolf Cull", h: "Zap 5 FUD wolves", v: s => s.fud | 0, n: 5, sh: 60 },
+  { id: "veins", t: "Vein Run", h: "Mine 10 SOL veins", v: s => s.veins | 0, n: 10, sh: 50 },
+  { id: "build", t: "Builder's Bond", h: "Place 40 pieces", v: s => s.placed | 0, n: 40, sh: 40 },
+  { id: "rifts", t: "Rift Runner", h: "Clear 2 rifts (any tier)", v: s => s.riftWins | 0, n: 2, sh: 120 },
+  { id: "again", t: "Run It Back", h: "Step into FIGHT AGAIN after a rift win", v: s => s.riftAgain | 0, n: 1, sh: 90 },
+  { id: "rare", t: "Rare Hunt", h: "Clear a RARE or better rift", v: RW, n: 1, sh: 150 },
+  { id: "lab", t: "Lab Brawl", h: "Beat a boss summoned from the ⚡ LAB", v: s => s.kills | 0, n: 1, sh: 90 },
+  { id: "powuse", t: "Power Trip", h: "Use a boss power 6 times", v: s => s.powerUses | 0, n: 6, sh: 90 },
+  { id: "epic", t: "Epic Bounty", h: "Clear an EPIC or LEGENDARY rift", v: EW, n: 1, sh: 250, power: true },
+  { id: "legend", t: "Legend Contract", h: "Clear a LEGENDARY rift", v: s => s.rift_legendary | 0, n: 1, sh: 500, power: true },
+];
+let guild = { posted: [], done: 0 };
+function guildDef(id) { return GUILD_POOL.find(q => q.id === id) || null; }
+function guildPick(not) { const used = new Set(guild.posted.map(q => q.id).concat(not || [])); const pool = GUILD_POOL.filter(q => !used.has(q.id)); const hasPow = guild.posted.some(q => (guildDef(q.id) || {}).power);
+  const want = !hasPow && Math.random() < .6 ? pool.filter(q => q.power) : pool.filter(q => !q.power); const from = want.length ? want : pool; return from[(Math.random() * from.length) | 0]; }
+function guildPost(q) { guild.posted.push({ id: q.id, base: q.v(stats) }); }
+function guildEnsure() { guild.posted = (guild.posted || []).filter(q => guildDef(q.id)); while (guild.posted.length < 3) { const q = guildPick(); if (!q) break; guildPost(q); } }
+function guildView() { return guild.posted.map(p => { const q = guildDef(p.id), v = Math.max(0, Math.min(q.n, q.v(stats) - (p.base | 0))); return { id: q.id, t: q.t, h: q.h, n: q.n, v, sh: q.sh, power: !!q.power, done: v >= q.n }; }); }
+function guildClaim(id) { const i = guild.posted.findIndex(p => p.id === id); if (i < 0) return null; const c = guildView()[i]; if (!c || !c.done) { pop("Not done yet: " + (c ? c.h : ""), "#cfd8ff"); return null; }
+  gainShards(c.sh); guild.done = (guild.done | 0) + 1; stats.guildDone = guild.done; let got = null;
+  if (c.power) { const lack = Object.keys(POWERS).filter(k => !(upg.powers || {})[k]); if (lack.length) { got = lack[(Math.random() * lack.length) | 0]; upg.powers = upg.powers || {}; upg.powers[got] = 1; if (!upg.power || !upg.powers[upg.power]) upg.power = got; setTimeout(() => powerUnlock(got, POWERS[got].from, false), 700); }
+    else { gainShards(150); pop("You own every power: +◆150 instead", "#ffd24a"); } }
+  banner("CONTRACT COMPLETE!", `${c.t} · ◆+${c.sh}${got ? " + " + POWERS[got].name : ""} (in-game, no cash value)`); sfx.quest(); buzz(60);
+  guild.posted.splice(i, 1); const nq = guildPick([id]); if (nq) guild.posted.splice(i, 0, { id: nq.id, base: nq.v(stats) }); updWpnHud(); save(); renderGuild(); HUB.refresh(); return { id, sh: c.sh, power: got }; }
+function renderGuild() { const el = $("guildL"); if (!el) return; const L = guildView(); let h = "";
+  for (const c of L) h += `<div class="gq${c.done ? " done" : ""}"><div class="gt"><b>${c.t}</b><small>${c.h}</small><div class="gb"><i style="width:${(100 * c.v / c.n).toFixed(0)}%"></i></div><small>${c.v} / ${c.n} · reward ◆${c.sh}${c.power ? " + a BOSS POWER" : ""}</small></div><button class="btn sm" type="button" data-gq="${c.id}" ${c.done ? "" : "disabled"}>${c.done ? "CLAIM" : "IN PROGRESS"}</button></div>`;
+  el.innerHTML = h; $("guildN").textContent = "Contracts done: " + (guild.done | 0); }
+let guildOpen = false;
+function openGuild() { guildOpen = true; uiModal = true; input.mine = false; input.f = input.s = 0; renderGuild(); $("guild").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
+function closeGuild() { guildOpen = false; uiModal = false; $("guild").classList.remove("show"); }
+function signRanks() { const rows = LB.ranked(), you = LB.me(), rank = LB.youRank(rows); return { rows: rows.slice(0, 5).map(r => ({ name: r.name, score: r.score, you: r.id === you.id })), you: "YOU · " + you.name + " · " + you.score + (rank ? " · #" + rank : "") }; }
 // ---------------- boot ----------------
 const saved = load();
 let riftReload = null; try { if (Q.has("reset")) localStorage.removeItem(RIFT_KEY); riftReload = JSON.parse(localStorage.getItem(RIFT_KEY) || "null"); } catch (e) {}
@@ -1762,13 +1847,15 @@ let migrated = false;
 let newWorld = false; if (saved && !saved.migr && (saved.wv | 0) !== WORLD_V) { newWorld = true; saved.edits = {}; saved.p = null; }
 upg.guns = Object.assign({ blaster: 1 }, upg.guns || {}); if (!upg.guns[upg.gun]) upg.gun = "blaster";
 if (saved && !saved.migr) { seed = saved.seed; edits = saved.edits || {}; shards = saved.shards | 0; sel = saved.sel | 0; tod = saved.tod ?? tod;
-  if (saved.upg) Object.assign(upg, saved.upg); if (saved.stats) Object.assign(stats, saved.stats); Qi = saved.Qi | 0; if (!saved.qv && Qi >= 7) Qi++; if ((saved.qv | 0) < 3 && Qi >= 12) { Qi = 12; saved.qBase = {}; } qBase = saved.qBase || {}; P.hp = saved.hp || maxHp();
+  if (saved.upg) Object.assign(upg, saved.upg); if (saved.stats) Object.assign(stats, saved.stats); if (saved.guild && Array.isArray(saved.guild.posted)) guild = saved.guild; Qi = saved.Qi | 0; if (!saved.qv && Qi >= 7) Qi++; if ((saved.qv | 0) < 3 && Qi >= 12) { Qi = 12; saved.qBase = {}; } qBase = saved.qBase || {}; P.hp = saved.hp || maxHp();
   view = saved.tp ? (saved.view ?? 1) : 1; if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; lookMul = saved.set.look || 1; } if (saved.daily) Object.assign(daily, saved.daily); if (saved.bc) Object.assign(bc, saved.bc); if (saved.dex) fish.dex = saved.dex; if (saved.ach) ach = saved.ach; if (saved.char) charId = saved.char; if (skinKind(charId) === 1 && !skinHeld(charId)) charId = STARTER; introDone = saved.intro !== false; if (introDone) met.t = 150 + Math.random() * 120; }
 else { seed = parseInt(Q.get("seed")) || 1337; if (saved && saved.migr) { shards = saved.shards; migrated = true; } qStart(); }
-const HUB = createHub(THREE, { scene, toon: BX.toon, plaza: () => plaza, px: () => P.x, pz: () => P.z, onOpen: v => { hubOpen = !!v; input.mine = false; if (v && document.pointerLockElement) document.exitPointerLock(); }, onShop: () => openLab(), onClaim: () => claimNftSkins() });
+const HUB = createHub(THREE, { scene, toon: BX.toon, plaza: () => plaza, px: () => P.x, pz: () => P.z, onOpen: v => { hubOpen = !!v; input.mine = false; if (v && document.pointerLockElement) document.exitPointerLock(); }, onShop: () => openLab(), onClaim: () => claimNftSkins(), onQuests: () => openGuild(), onRanks: () => openBoard(), ranks: () => signRanks(), quests: () => guildView() });
 generate(seed); applyEdits(); for (const t of trees) if (get(t.x, t.y + 1, t.z) !== 27 || !get(t.x, t.y, t.z)) { t.dead = true; for (let y = t.y + 1; y <= t.y + t.h; y++) if (get(t.x, y, t.z) === 27) world[idx(t.x, y, t.z)] = 0; } const tris = buildAll(); visY = P.y;
 respawn(); if (saved && saved.p && !riftReload) { [P.x, P.y, P.z, P.yaw, P.pitch] = saved.p; if (P.y > SY + 2 || collides(P.x, P.y, P.z)) respawn(); }
 if (riftReload) { const lost = wipeLoot(); try { localStorage.removeItem(RIFT_KEY); } catch (e) {} respawn(); stats.riftLosses = (stats.riftLosses | 0) + 1; setTimeout(() => showLost(lost, riftReload, true), 700); setTimeout(save, 50); }
+if ((stats.k_fudder | 0) >= 1) markFudderDead(true); else fudderDead();
+guildEnsure();
 updWpnHud();
 if (Q.has("fp")) view = 0; buildPools(); buildCharPicker(); if (upg.pet) setPet(upg.pet); setChar(Q.get("char") || charId, true); buildPalette(); updShards(); resize(); updQuest(); dailyEnsure(); updDaily(); menuStats(); updHP(); updSetBtns(); syncLookBtn(); orientCheck(); if (migrated) setTimeout(() => banner("BIGGER WORLD!", "Your SOL shards carried over to the new map"), 600); if (newWorld) setTimeout(() => banner("A BIGGER, WILDER WORLD!", "Rolling hills, rock arches, glowing trees · your shards, upgrades + skins carried over"), 900);
 // Phase-2 hook is for LOCAL testing only: only localhost servers are accepted.
@@ -1794,6 +1881,10 @@ $("hubNext").addEventListener("click", e => { e.stopPropagation(); HUB.next(); }
 $("hubBye").addEventListener("click", e => { e.stopPropagation(); HUB.close(); });
 $("hubShop").addEventListener("click", e => { e.stopPropagation(); HUB.shopOpen(); });
 $("hubClaim").addEventListener("click", e => { e.stopPropagation(); HUB.claim(); });
+$("hubQuests").addEventListener("click", e => { e.stopPropagation(); HUB.quests(); });
+$("hubRanks").addEventListener("click", e => { e.stopPropagation(); HUB.ranks(); });
+$("guildClose").addEventListener("click", () => closeGuild());
+$("guildL").addEventListener("click", e => { const b = e.target.closest("button[data-gq]"); if (b && !b.disabled) guildClaim(b.dataset.gq); });
 $("lbOpen").addEventListener("click", () => openBoard());
 $("lbClose").addEventListener("click", () => closeBoard());
 $("lbName").addEventListener("change", e => { LB.setName(e.target.value); renderBoard(); });
@@ -1801,6 +1892,7 @@ $("lbPhantom").addEventListener("click", async () => { try { const a = await con
 $("lbReset").addEventListener("click", () => { if (!LB.resetAllowed()) return; if (!confirm("Reset Season 1 scores saved on this device?")) return; LB.resetSeason(); renderBoard(); });
 $("gunL").addEventListener("click", e => { const b = e.target.closest("button[data-gun]"); if (b && !b.disabled) { ownGun(b.dataset.gun) ? equipGun(b.dataset.gun) : buyGun(b.dataset.gun); renderGuns(); return; } if (e.target.closest("button[data-drink]")) { drinkPotion(); return; } if (e.target.closest("button[data-tease]")) { pop("Sealed. Not for sale here.", "#cfd8ff"); return; } const br = e.target.closest("button[data-burn]"); if (br) tryBurn(br.dataset.burn); });
 window.addEventListener("keydown", e => { if (lbOpen && e.code === "Escape" && document.activeElement !== $("lbName")) closeBoard(); });
+window.addEventListener("keydown", e => { if (guildOpen && e.code === "Escape") closeGuild(); });
 
 // test / debug hooks (harmless; used by automated checks)
 window.__SB = { world: () => { let t0 = 0, t1 = 0, c0 = 0, c1 = 0, pr = 0, vis = 0; for (const q of sm) { if (q.m0) { c0++; if (q.m0.visible) t0 += q.m0.geometry.index.count / 3; } if (q.m1) { c1++; if (q.m1.visible) t1 += q.m1.geometry.index.count / 3; } if (q.pr && q.pr.visible) pr += q.pr.geometry.index.count / 3; if (q.vis) vis++; } return { smooth: SMOOTH, lod0: c0, lod1: c1, tris0: t0, tris1: t1, props: pr, visChunks: vis, trees: trees.filter(t => !t.dead).length, SX, SZ }; }, chunkLod: (x, z) => { const q = sm[Math.floor(x / CS) + Math.floor(z / CS) * NCX]; return q && { lod: q.lod, m0: !!(q.m0 && q.m0.visible), m1: !!(q.m1 && q.m1.visible), d: q.d }; }, visY: () => visY, visGround: () => visGround(P.x, P.y, P.z), trees: () => trees.filter(t => !t.dead).map(t => ({ ...t })), fell: i => fellTree(trees.filter(t => !t.dead)[i]), SX: () => SX, SZ: () => SZ, gemInfo: () => ({ cut: Object.fromEntries(Object.entries(GEM.SPEC).map(([k, v]) => [k, v.cut])), glow: GEM.mat.fragmentShader.includes("inner"), sparkle: GEM.pmat.vertexShader.includes("aK") }), gems: () => { let n = 0, f = 0, t = 0; for (const g of gemL) if (g) { n++; f += g.faces; t += g.tris; } return { chunks: n, faces: f, tris: t }; }, pools: () => pools.map(q => ({ x: q.x, y: q.y, z: q.z, rx: q.rx, rz: q.rz })), stuck: () => ({ ...stuck, swim: !!P.swim, wet: !!P.wet }), dryLand, audio: () => ({ state: AC ? AC.state : "none", snd: sndOn, mus: musOn, n: { ...sfxN }, unlock: unlockN, lvl: audioLevel(), hud: $("sndHud").textContent, amb: amb.wind ? { wind: +amb.wind.gain.value.toFixed(3), water: +amb.water.gain.value.toFixed(3), cave: +amb.cave.gain.value.toFixed(3), poolD: +amb.poolD.toFixed(1) } : null }), sfx: (k, ...a) => sfx[k](...a), toggleSound, ambMute: v => { if (ambG) ambG.gain.value = v ? 0 : AMB_V; }, setSnd: (a, b) => { sndOn = a; musOn = b; updSetBtns(); }, bossMusic: () => ({ on: !!(boss.on && !boss.dying && musOn && running), tier: bossTierNow, notes: bossNotes, mus: musOn, musGain: musG ? musG.gain.value : 0 }), noiseN: () => sfxN.noise | 0, audioSuspend: () => AC && AC.suspend(), bc: () => ({ ...bc, def: bcDef(), v: bcVal(), line: bcLine() }), bcForce: i => { bcForceI = i; }, setPhoto, photo: () => ({ on: photo, pose: POSES[poseI], filter: FILTERS[filtI][0], zoom: photoZoom }), setChar: id => setChar(id, true), thumbs: () => ({ left: thumbQ.length, n: Object.keys(charThumb).length, r3: document.querySelectorAll("#chars .ch.r3").length }), rig: () => ({ vis: rig.visible, yaw: rigYaw, legL: CM ? CM.legL.rotation.x : 0, armR: CM ? CM.armR.rotation.x : 0, kneeL: CM ? CM.kneeL.rotation.x : 0, elbowR: CM ? CM.elbowR.rotation.x : 0, expr: CM ? CM.expr : "", dressed: rigFor, info: rig.userData.info }), petClick, pet: () => ({ ...pet, id: upg.pet, vis: petSpr.visible, px: petSpr.position.x }), FISH: () => FISH.map(f => f.n), roll: (n, z) => rollFish(n, z).n, brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, qDefAt: i => qDef(i), achs: () => ({ ...ach }), introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
@@ -1828,4 +1920,10 @@ Object.assign(window.__SB, {
   burn: () => ({ configured: burnConfigured(), live: burnLive(), enabled: BURN.enabled, mint: BURN.mint, server: BURN.serverUrl, program: BURN.tokenProgram, prices: { ...BURN.prices }, sendsSol: false }),
   aimAt: (x, y, z) => { const dx = x - P.x, dy = y - (P.y + P.eye), dz = z - P.z; P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); },
   hurtMe: n => hurt(n), hp: () => P.hp, bossTier: () => boss.on ? { ...boss.tier } : null,
+  // v0.9.7
+  fudderDead: () => fudderDead(), fudderRec: () => fudDeadRec(), lairIn: () => lairIn ? { ...lairIn } : null, lairAskOpen: () => lairAsk && $("riftAsk").classList.contains("show"), lairAnswer, startLair, lairSealed: () => !!lairWall,
+  askLairText: () => $("riftAsk").innerText, lairPlace, riftAgain, againPos: () => RF.againPos(), exitPos: () => RF.exitPos(),
+  guild: () => ({ view: guildView(), done: guild.done | 0, open: guildOpen }), guildClaim, openGuild, closeGuild, hubSign: () => HUB.signKey(), hubQuests: () => HUB.quests(), hubRanks: () => HUB.ranks(),
+  nextPts: (k, t, l) => LB.nextPoints(k, t, !!l), labPowHtml: () => { renderPowers(); return $("powL").innerHTML; },
+  guildSet: ids => { guild.posted = ids.map(id => ({ id, base: guildDef(id).v(stats) })); HUB.refresh(); return guildView(); },
 });

@@ -1,11 +1,17 @@
 // $BOSS Sandbox Season 1 board. One score from bosses, shards earned, and legendary rift wins.
 // Saved on this device only. Multiplayer / hosting stays off. This file never sends SOL.
 // Prize figures are a display stub Noah can fund later from creator fees (separate from the runner board).
+// v0.9.7 anti-farm: Legendary/Epic weigh heavily, Common is nearly worthless, and every repeat kill of the SAME boss pays less.
 
-export const POINTS = { common: 100, rare: 250, epic: 600, legendary: 1500 };
-export const SHARD_PER_POINT = 10;   // 1 point per 10 ◆ earned this season (not what you are carrying)
-export const LEG_BONUS = 400;        // extra on top of the Legendary boss points, per legendary rift win
-export const BOSS_TIER = { rug: "common", whale: "common", jelly: "rare", king: "epic", colossus: "epic", fudder: "epic", moth: "legendary" };
+export const POINTS = { common: 5, rare: 60, epic: 600, legendary: 2000 };
+export const SHARD_PER_POINT = 50;   // 1 point per 50 ◆ earned this season (not what you are carrying)
+export const LEG_BONUS = 500;        // extra on top of the Legendary boss points, per legendary rift win (also diminishes on repeats)
+export const REPEAT_DECAY = 0.7;     // each repeat kill of the same boss pays 70% of the one before
+export const REPEAT_FLOOR = 0.05;    // ...down to 5% of full value, never less
+// Lab-summoned bosses are not rift bosses: they score as Common. The Troglodyte Fudder can only die once, so he scores as Legendary.
+export const BOSS_TIER = { rug: "common", whale: "common", jelly: "rare", king: "common", colossus: "epic", fudder: "legendary", moth: "legendary" };
+export function repeatMult(n) { return Math.max(REPEAT_FLOOR, Math.pow(REPEAT_DECAY, Math.max(0, (n | 0) - 1))); }
+export function killPoints(tier, nth, leg) { return Math.round(((POINTS[tier] || 0) + (leg ? LEG_BONUS : 0)) * repeatMult(nth)); }
 export const TIERS = ["common", "rare", "epic", "legendary"];
 
 // Same top-5 split as the runner prize config (rules v1.2). This pot is NOT that pot:
@@ -24,7 +30,7 @@ export const PRIZE = {
   sends: false,
 };
 
-export const FORMULA_TEXT = "SCORE = boss points + floor(◆ earned this season ÷ 10) + legendary rift wins × 400. Boss points per kill: Common 100 · Rare 250 · Epic 600 · Legendary 1,500. ◆ SOL shards are in-game items with no cash value. Dying in a rift wipes what you are carrying, not the shards you already earned this season.";
+export const FORMULA_TEXT = "SCORE = boss points + floor(◆ earned this season ÷ 50). Boss points per kill: Common 5 · Rare 60 · Epic 600 · Legendary 2,000 (+500 for a legendary rift win). Farming the same boss pays less every time: each repeat is worth 70% of the last, down to 5%. Lab bosses count as Common. The Troglodyte Fudder can only be beaten once and counts as Legendary. ◆ SOL shards are in-game items with no cash value. Dying in a rift wipes what you are carrying, not the shards you already earned this season.";
 
 export const PRIZE_TEXT = "Prize SOL, if a round is paid out, comes only from creator fees: 10% of fees received go to this Sandbox pot (the runner board's pot is separate, at 20%). Top 5 share that pot 40% / 25% / 15% / 12% / 8%. Under 0.05 SOL, nothing is paid and the pot rolls over. Unfilled places roll over too. This game does not send SOL. The pot is not funded yet.";
 
@@ -34,8 +40,9 @@ export function scoreOf(e) {
   if (!e) return 0;
   const k = e.kills || {};
   let pts = 0;
-  for (const t of TIERS) pts += (k[t] | 0) * POINTS[t];
-  return pts + Math.floor((e.shards | 0) / SHARD_PER_POINT) + (e.legs | 0) * LEG_BONUS;
+  if (e.pts != null) pts = e.pts | 0;   // v0.9.7: points banked per kill with repeat decay
+  else { for (const t of TIERS) pts += (k[t] | 0) * POINTS[t]; pts += (e.legs | 0) * LEG_BONUS; }   // older rows / seeded rivals
+  return pts + Math.floor((e.shards | 0) / SHARD_PER_POINT);
 }
 
 function blankKills() { return { common: 0, rare: 0, epic: 0, legendary: 0 }; }
@@ -132,7 +139,8 @@ export function createBoard() {
   }
 
   return {
-    PRIZE, FORMULA_TEXT, PRIZE_TEXT, POINTS, scoreOf, BOSS_TIER,
+    PRIZE, FORMULA_TEXT, PRIZE_TEXT, POINTS, scoreOf, BOSS_TIER, killPoints, repeatMult,
+    nextPoints: (kind, tierKey, leg) => { const t = TIERS.indexOf(tierKey) >= 0 ? tierKey : (BOSS_TIER[kind] || "common"), e = me(); return killPoints(t, ((e.kk || {})[kind] | 0) + 1, leg); },
     me: () => Object.assign({}, me(), { score: scoreOf(me()) }),
     ranked, youRank, plan,
     name: () => ident().name,
@@ -162,6 +170,9 @@ export function createBoard() {
     kill: (kind, tierKey, leg) => {
       const t = TIERS.indexOf(tierKey) >= 0 ? tierKey : (BOSS_TIER[kind] || "common");
       const e = me();
+      if (e.pts == null) e.pts = scoreOf(Object.assign({}, e, { shards: 0 }));   // bank older kills once, then decay from here
+      e.kk = e.kk || {}; const nth = e.kk[kind] = (e.kk[kind] | 0) + 1;
+      e.last = killPoints(t, nth, leg); e.pts = (e.pts | 0) + e.last;
       e.kills[t] = (e.kills[t] | 0) + 1;
       e.bosses = (e.bosses | 0) + 1;
       if (leg) e.legs = (e.legs | 0) + 1;
@@ -186,7 +197,7 @@ export function createBoard() {
         if (stats.kills) e.kills = Object.assign(blankKills(), stats.kills);
         if (stats.shards != null) e.shards = stats.shards | 0;
         if (stats.legs != null) e.legs = stats.legs | 0;
-        e.bosses = TIERS.reduce((s, t) => s + (e.kills[t] | 0), 0);
+        e.bosses = TIERS.reduce((s, t) => s + (e.kills[t] | 0), 0); delete e.pts; delete e.kk;
       }
       return touchScore(e);
     },

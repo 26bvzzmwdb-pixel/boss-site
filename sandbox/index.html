@@ -294,6 +294,16 @@ body.inmenu #bWpn,body.inmenu #bPow,body.photo #bWpn,body.photo #bPow,body.photo
   body.touch #powCard{padding:10px 14px}body.touch #powCard .pi{font-size:32px}body.touch #powCard .pn{font-size:16px}
 }
 
+/* v0.9.7 guild contracts */
+#guild{position:fixed;inset:0;z-index:16;display:none;align-items:center;justify-content:center;background:rgba(5,6,15,.78);padding:10px;touch-action:auto}
+#guild.show{display:flex}
+#guild .card{max-width:min(560px,96vw);width:100%;max-height:94vh;overflow:auto;text-align:left;padding:14px 14px 12px;border-color:#ffd24a}
+#guild h3{margin:0 0 4px;letter-spacing:2px;color:#ffd24a}#guild .sub{font-size:10px;line-height:1.4;opacity:.9;margin:0 0 8px}
+#guild .gq{display:flex;gap:10px;align-items:center;margin:6px 0;padding:8px 10px;border-radius:12px;background:rgba(255,246,220,.08);border:1px solid rgba(255,210,74,.35)}
+#guild .gq.done{background:rgba(20,241,149,.12);border-color:rgba(20,241,149,.6)}
+#guild .gt{flex:1;min-width:0}#guild .gt b{display:block;color:#ffe27a;font-size:12px;letter-spacing:1px}#guild .gt small{display:block;font-size:10px;opacity:.85;margin-top:2px}
+#guild .gb{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:5px}#guild .gb i{display:block;height:100%;background:linear-gradient(90deg,#ffd24a,#14f195)}
+#guild .btns{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px}#guild .btns small{font-size:10px;opacity:.8}
 /* v0.9.6 season board + armory */
 #gunL{margin:8px 0 4px;font-size:10px}
 #gunL .gh{color:#9df7ff;letter-spacing:1px;font-weight:900}
@@ -460,8 +470,9 @@ window.addEventListener("error",e=>{const d=document.getElementById("err");d.sty
 <div id="riftLost" class="rmod" role="dialog" aria-modal="true" aria-labelledby="riftLostH"><div class="rc"><b class="tn">RIFT LOST</b><h3 id="riftLostH">YOUR LOOT WAS LOST TO THE RIFT</h3><p class="why"></p><ul class="ll"></ul><small>Safe: reward &amp; holder skins, achievements, your builds.</small><div class="rb"><button class="btn" id="lostOk" type="button">BACK TO SPAWN</button></div></div></div>
 <div id="powCard" role="status"><div class="pr"></div><span class="pi">⚡</span><h3>YOU ABSORBED THE POWER!</h3><b class="pn"></b><p class="pd"></p><small class="pk"></small><small class="pw">Boss powers are rift loot: dying in a rift wipes them.</small></div>
 <div id="lb" role="dialog" aria-modal="true" aria-labelledby="lbH"><div class="card"><h3 id="lbH">🏆 SEASON 1</h3><p class="sub" id="lbFormula"></p><p class="sub" id="lbPrize"></p><div id="lbYou"></div><div id="lbNameRow"><label for="lbName">NAME</label><input id="lbName" maxlength="16" autocomplete="off" aria-label="Display name"><button id="lbPhantom" type="button">USE PHANTOM</button></div><div id="lbPot"></div><table><thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BOSSES</th><th>SHARDS</th><th>LEGENDARY</th><th>EST. SOL</th></tr></thead><tbody id="lbRows"></tbody></table><div id="lbRank"></div><div class="btns"><button id="lbReset" class="btn sm" type="button" hidden>RESET SEASON</button><button id="lbClose" class="btn sm" type="button">CLOSE</button></div></div></div>
-<div id="hubDlg" role="dialog" aria-modal="true"><b id="hubWho"></b><p id="hubLine"></p><div class="row"><button id="hubClaim" class="btn sm" type="button" hidden>CLAIM NFT SKINS</button><button id="hubShop" class="btn sm" type="button" hidden>OPEN SHOP</button><button id="hubNext" class="btn sm" type="button">NEXT</button><button id="hubBye" class="btn sm" type="button">BYE</button></div></div>
+<div id="hubDlg" role="dialog" aria-modal="true"><b id="hubWho"></b><p id="hubLine"></p><div class="row"><button id="hubClaim" class="btn sm" type="button" hidden>CLAIM NFT SKINS</button><button id="hubShop" class="btn sm" type="button" hidden>OPEN SHOP</button><button id="hubQuests" class="btn sm" type="button" hidden>📜 CONTRACTS</button><button id="hubRanks" class="btn sm" type="button" hidden>🏆 FULL BOARD</button><button id="hubNext" class="btn sm" type="button">NEXT</button><button id="hubBye" class="btn sm" type="button">BYE</button></div></div>
 <button id="hubTalk" type="button">TALK</button>
-<script type="module" src="./sandbox.js?v=0.9.6"></script>
+<div id="guild" role="dialog" aria-modal="true" aria-labelledby="guildH"><div class="card"><h3 id="guildH">📜 GUILD CONTRACTS</h3><p class="sub">Finish a contract out in the world, then claim it here. Rewards are ◆ SOL shards (in-game items, no cash value). The top contracts also pay a BOSS POWER (dying in a rift or the lair wipes powers). A new contract is pinned after every claim.</p><div id="guildL"></div><div class="btns"><small id="guildN"></small><button id="guildClose" class="btn sm" type="button">CLOSE</button></div></div></div>
+<script type="module" src="./sandbox.js?v=0.9.7"></script>
 </body>
 </html>
