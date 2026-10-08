@@ -28,6 +28,7 @@ export function createCharKit(THREE) {
 
   // ---------------- per-skin specs (hand-tuned from each skin's art) ----------------
   const S = {
+    starter: { skin: 0xe7c4a4, hair: ["short", 0x4a3428], face: "smile", torso: ["shirt", 0x3a3a44, 0x28dcff], upper: 0x3a3a44, lower: 0x3a3a44, glove: "skin", thigh: 0x2c2c34, shin: 0x2c2c34, boot: 0x222228 },
     base_climb: { skin: 0xd9a070, hair: ["shaggy", 0x4b2913], beard: 0x4b2913, face: "grin", torso: ["leopard", 0xc08a4a, 0x4e311c], upper: "skin", lower: "skin", glove: "skin", thigh: 0xb07a3f, shin: "skin", boot: "skin", anklet: 0xf2ead8 },
     base_factory: { skin: 0xe1bb94, hair: ["short", 0x64472d], gear: ["hardhat", 0xf3cd46], face: "smile", torso: ["vest", 0x2f5194, 0xf68d35, 0xf7f3e8], upper: 0x2f5194, lower: "skin", glove: 0xf68d35, thigh: 0x2a57a8, shin: 0x2a57a8, boot: 0x64472d, prop: ["wrench", 0xc8ccd8] },
     base_grave: { skin: 0x9fb744, gear: ["pumpkin", 0xef7512], torso: ["shirt", 0x1d2f1a, 0x311a43], upper: 0x1d2f1a, lower: "skin", glove: "skin", thigh: 0x251b35, shin: 0x251b35, boot: 0x1a1426, cape: 0x602159 },
@@ -178,7 +179,7 @@ export function createCharKit(THREE) {
     for (const [parts, ol] of [[partsO, true], [partsN, false]]) if (parts.length) { const g = mergeParts(parts); merged.push(g); skinned(g, vmat, 0); if (ol) skinned(g, outl, 2); }
     return { geos: merged, skel }; }
   // ---------------- build ----------------
-  function build(id, opt = {}) { const sp = S[id] || S.h_fudder, root = new THREE.Group(), J = { root, sp };
+  function build(id, opt = {}) { const sp = S[id] || S.starter, root = new THREE.Group(), J = { root, sp };
     const skinM = toon(sp.skin), col = v => v === "skin" ? skinM : toon(v);
     const tor = paintTorso(sp), torM = toon(0xffffff, { map: tor.map, ...(tor.em ? { emissiveMap: tor.em, emissive: 0xffffff, emissiveIntensity: .9 } : {}) });
     J.hipY = .66; J.hips = new THREE.Group(); J.hips.position.y = J.hipY; root.add(J.hips); J.chest = new THREE.Group(); J.hips.add(J.chest);
