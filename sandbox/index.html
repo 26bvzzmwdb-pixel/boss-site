@@ -107,7 +107,7 @@ body.touch #target{font-size:9px;top:calc(50% + 22px)}
 #biome{left:50%;top:62%;transform:translateX(-50%);font-size:11px;letter-spacing:4px;color:#cfefff;text-shadow:0 0 10px var(--cyan);opacity:0}#biome.show{animation:bio 3s ease-out forwards}@keyframes bio{0%{opacity:0}15%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
 #shards.bump .n{animation:cb .2s ease-out}
 #lab{position:fixed;inset:0;z-index:15;display:none;align-items:center;justify-content:center;background:rgba(5,6,15,.72);padding:12px;touch-action:auto}#lab.show{display:flex}
-#lab .card{max-width:440px;padding:14px;max-height:94vh;overflow:auto;touch-action:pan-y}#lab h3{margin:0 0 2px;letter-spacing:3px;color:var(--gold)}#lab .sub{font-size:10px;opacity:.75;margin-bottom:8px}
+#lab .card{position:relative;z-index:1;max-width:440px;padding:14px;max-height:94vh;overflow:auto;touch-action:pan-y}#lab h3{margin:0 0 2px;letter-spacing:3px;color:var(--gold)}#lab .sub{font-size:10px;opacity:.75;margin-bottom:8px}
 .upg{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 9px;margin:5px 0;font-size:9.5px}
 .upg b{display:block;font-size:11.5px;color:#fff;margin-bottom:2px}.upg span{opacity:.75}.upg button{flex:0 0 auto;min-width:74px;padding:9px 8px;border-radius:9px;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#aaa;font:900 11px Orbitron,sans-serif;touch-action:manipulation}
 .upg.ok{border-color:rgba(20,241,149,.6)}.upg.ok button{border-color:var(--teal);color:#fff;background:rgba(20,241,149,.2)}.upg.own{opacity:.55}.upg.own button{color:var(--teal)}.upg.lock{opacity:.45}.upg.lock button{font-size:8px}
@@ -293,6 +293,66 @@ body.inmenu #bWpn,body.inmenu #bPow,body.photo #bWpn,body.photo #bPow,body.photo
   body.touch .rmod .rc{padding:12px 16px 12px}body.touch .rmod h3{font-size:16px;margin:6px 0 4px}body.touch .rmod .warn{font-size:11px}
   body.touch #powCard{padding:10px 14px}body.touch #powCard .pi{font-size:32px}body.touch #powCard .pn{font-size:16px}
 }
+
+/* v0.9.6 season board + armory */
+#gunL{margin:8px 0 4px;font-size:10px}
+#gunL .gh{color:#9df7ff;letter-spacing:1px;font-weight:900}
+#gunL .gh small,#gunL .burnNote{display:block;font-weight:700;letter-spacing:0;color:#cfc2ff;opacity:.85;line-height:1.35;margin:3px 0 6px}
+#gunL .burnNote{padding:6px 8px;border-radius:10px;border:1px solid rgba(255,210,74,.45);background:rgba(255,210,74,.08);color:#ffe9a8}
+.gun{display:flex;align-items:center;gap:8px;margin-top:5px;padding:6px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);text-align:left}
+.gun .gi{font-size:22px;flex:0 0 auto}
+.gun .gt{flex:1;min-width:0;display:flex;flex-direction:column}
+.gun .gt b{font:900 11px Orbitron,sans-serif;color:#fff}
+.gun .rr{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:8px;border:1px solid currentColor;font-style:normal;font-size:8px;letter-spacing:1px}
+.gun.r-common{color:#5affb0;border-color:rgba(90,255,176,.35)}
+.gun.r-uncommon{color:#59b4ff;border-color:rgba(89,180,255,.4)}
+.gun.r-rare{color:#c08aff;border-color:rgba(192,138,255,.45)}
+.gun.r-epic{color:#ff7ad0;border-color:rgba(255,122,208,.45)}
+.gun.r-legendary{color:#ffc040;border-color:rgba(255,192,64,.7)}
+.gun .gt small{color:#d7d0ea;font-size:8.5px;line-height:1.3}
+.gun .drop{color:#ffc040}
+.gun .bp{color:#ffe9a8}
+.gun button{flex:0 0 auto;padding:8px 8px;border-radius:10px;border:2px solid #14f195;background:rgba(20,241,149,.14);color:#fff;font:900 10px Orbitron,sans-serif;touch-action:manipulation}
+.gun button.burn{border-color:#ffd24a;background:rgba(255,210,74,.1);color:#ffe9a8}
+.gun button:disabled{opacity:.55}
+#lbOpen{position:sticky;top:0;z-index:2;width:100%;margin:8px 0 4px;background:rgba(18,14,40,.92)}
+#lb{position:fixed;inset:0;z-index:16;display:none;align-items:center;justify-content:center;background:rgba(5,6,15,.78);padding:10px;touch-action:auto}
+#lb.show{display:flex}
+#lb .card{max-width:min(760px,96vw);width:100%;max-height:94vh;overflow:auto;text-align:left;padding:14px 14px 12px}
+#lb h3{margin:0 0 4px;letter-spacing:2px;color:#ffd24a}
+#lb .sub{font-size:10px;line-height:1.4;opacity:.9;margin:0 0 6px}
+#lbYou{font-size:11px;color:#fff;margin:4px 0;padding:6px 8px;border-radius:10px;background:rgba(20,241,149,.12);border:1px solid rgba(20,241,149,.4)}
+#lbNameRow{display:flex;gap:6px;align-items:center;margin:6px 0;font-size:10px}
+#lbName{flex:1;min-width:0;padding:8px;border-radius:8px;border:1px solid rgba(40,220,255,.5);background:rgba(8,6,24,.8);color:#fff;font:700 12px Orbitron,sans-serif;touch-action:manipulation;user-select:text}
+#lbPhantom{padding:8px 10px;border-radius:8px;border:1px solid #9945ff;background:rgba(153,69,255,.2);color:#fff;font:900 10px Orbitron,sans-serif;touch-action:manipulation}
+#lb table{width:100%;border-collapse:collapse;font-size:10px;margin-top:6px}
+#lb th,#lb td{padding:4px 5px;text-align:right;border-bottom:1px solid rgba(255,255,255,.08);white-space:nowrap}
+#lb th:nth-child(2),#lb td:nth-child(2){text-align:left}
+#lb th{color:#cfc2ff;font-size:8px;letter-spacing:.5px}
+#lb tr.you td{color:#fff;background:rgba(255,210,74,.12)}
+#lbPot,#lbRank{font-size:10px;color:#ffe9a8;margin:6px 0}
+#lb .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+body.photo #lb{display:none!important}
+@media (orientation:landscape) and (max-height:540px){
+  body.touch #lb .card{max-height:96vh;padding:8px 10px}
+  body.touch #lb h3{font-size:16px}
+  body.touch #lb .sub{font-size:9px}
+  body.touch #lb table{font-size:9px}
+  body.touch #gunL{grid-column:1 / -1}
+}
+#hubTalk{position:fixed;left:50%;top:62px;transform:translateX(-50%);z-index:6;display:none;padding:8px 14px;border-radius:14px;border:2px solid #28dcff;background:rgba(8,16,36,.82);color:#fff;font:900 12px Orbitron,sans-serif;letter-spacing:1px;touch-action:manipulation}
+#hubTalk.show{display:block}
+body.inmenu #hubTalk,body.photo #hubTalk,body.cine #hubTalk{display:none!important}
+#hubDlg{position:fixed;left:50%;top:104px;transform:translateX(-50%);z-index:14;display:none;width:min(440px,92vw);padding:12px 14px;border-radius:16px;border:2px solid rgba(40,220,255,.7);background:rgba(8,6,24,.92);color:#fff;text-align:left;box-shadow:0 0 24px rgba(40,220,255,.25)}
+#hubDlg.show{display:block}
+#hubDlg b{color:#ffd24a;letter-spacing:1px;font-size:12px}
+#hubDlg p{margin:6px 0 8px;font-size:13px;line-height:1.35}
+#hubDlg .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+#chars .ch.locked{opacity:.45;filter:grayscale(.4)}
+#chars .ch.free{border-color:rgba(20,241,149,.7)}
+.gun.sealed{opacity:.72}
+#skinNote{font-size:10px;opacity:.8;margin-top:4px;line-height:1.35}
+@media (orientation:landscape) and (max-height:540px){#hubTalk{top:8px;padding:6px 10px;font-size:11px}#hubDlg{top:46px;padding:8px 10px}#hubDlg p{font-size:12px}}
 </style>
 </head>
 <body class="inmenu">
@@ -325,6 +385,8 @@ body.inmenu #bWpn,body.inmenu #bPow,body.photo #bWpn,body.photo #bPow,body.photo
 <div class="hud" id="reel"><div class="track"><div id="reelZone"></div><div id="reelFish"></div></div><div class="pb"><div id="reelProg"></div></div></div>
 <div id="flash"></div>
 <div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
+<button id="lbOpen" class="btn sm" type="button">🏆 SEASON 1 BOARD</button>
+<div id="gunL"></div>
 <div id="labList"></div><div id="dailyL" class="dl"></div><div id="buildL" class="dl bl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="powL"></div><div id="petL"></div><div id="achL"></div><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
 <div class="hud" id="badge"><b>$BOSS SANDBOX</b> <span class="bt">BETA</span><br><span>third-person · practice only</span></div>
 <div class="hud" id="clock">--</div>
@@ -362,7 +424,7 @@ body.inmenu #bWpn,body.inmenu #bPow,body.photo #bWpn,body.photo #bPow,body.photo
   <div class="heroRow"><img src="../assets/logo.webp" alt="$BOSS" class="logo"><div class="heroWrap"><img id="charHero" alt="Your character" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></div></div>
   <h1 class="title">$BOSS<br><span>SANDBOX</span></h1>
   <div class="tag">FREE · 3D · DIG · BUILD · BUST THE RUG · FISH · v0.9</div>
-  <div class="charbox"><div class="cl">CHOOSE YOUR CHARACTER</div><div id="chars"></div><div id="charName"></div></div>
+  <div class="charbox"><div class="cl">CHOOSE YOUR CHARACTER</div><div id="chars"></div><div id="charName"></div><div id="skinNote">You start as Rookie, free. Holder skins are NFTs: one tap at Nia after Phantom connects. This game does not mint or spend SOL.</div></div>
   <div id="mStats" class="mstats"></div>
   <div id="dailyM" class="dl"></div><div id="buildM" class="dl bl"></div>
   <button class="btn big" id="playBtn">PLAY</button>
@@ -383,7 +445,7 @@ body.inmenu #bWpn,body.inmenu #bPow,body.photo #bWpn,body.photo #bPow,body.photo
   </div></div>
   <div class="row"><button class="btn sm" id="resetBtn">NEW WORLD</button><a class="btn sm" href="../">$BOSS SITE</a><a class="btn sm pk" href="../game/">RUNNER</a></div>
   <div class="nv2">◆ SOL shards are in-game items with no cash value. They don't connect to any wallet and can't be cashed out.</div>
-  <div class="legal">Single-player. Not part of ranked play, the leaderboard, or prize rounds. Saves on this device. Screenshots save to your device only. Joke game · not financial advice.</div>
+  <div class="legal">Single-player. The Season board saves on this device and is not the ranked runner board. ◆ shards have no cash value. If a round is paid out, prize SOL comes only from creator fees. This game does not send SOL. Joke game · not financial advice.</div>
  </div>
 </div>
 <div id="rotate" aria-live="polite"><div class="rb"><div class="stage"><div class="ar"></div><div class="ph"></div></div><h2>TURN YOUR PHONE<br>SIDEWAYS</h2><p>$BOSS Sandbox plays in landscape · the game is paused</p><button id="rotGo" type="button">ROTATE FOR ME</button><small>Nothing happening? Turn off rotation lock<br>(iPhone: swipe down for Control Center).</small></div></div>
@@ -397,6 +459,9 @@ window.addEventListener("error",e=>{const d=document.getElementById("err");d.sty
 <div id="riftAsk" class="rmod" role="dialog" aria-modal="true" aria-labelledby="riftAskH"><div class="rc"><b class="tn">RIFT</b><h3 id="riftAskH">Enter the rift?</h3><p class="warn">You can't leave until the boss is defeated. If you die, you lose all carried loot and boss powers.</p><p class="bn"></p><p class="lt"></p><small>Safe no matter what: reward &amp; holder skins, achievements, your builds.</small><div class="rb"><button class="btn" id="riftGo" type="button">ENTER</button><button class="btn sm" id="riftNo" type="button">NOT NOW</button></div></div></div>
 <div id="riftLost" class="rmod" role="dialog" aria-modal="true" aria-labelledby="riftLostH"><div class="rc"><b class="tn">RIFT LOST</b><h3 id="riftLostH">YOUR LOOT WAS LOST TO THE RIFT</h3><p class="why"></p><ul class="ll"></ul><small>Safe: reward &amp; holder skins, achievements, your builds.</small><div class="rb"><button class="btn" id="lostOk" type="button">BACK TO SPAWN</button></div></div></div>
 <div id="powCard" role="status"><div class="pr"></div><span class="pi">⚡</span><h3>YOU ABSORBED THE POWER!</h3><b class="pn"></b><p class="pd"></p><small class="pk"></small><small class="pw">Boss powers are rift loot: dying in a rift wipes them.</small></div>
-<script type="module" src="./sandbox.js?v=0.9.5"></script>
+<div id="lb" role="dialog" aria-modal="true" aria-labelledby="lbH"><div class="card"><h3 id="lbH">🏆 SEASON 1</h3><p class="sub" id="lbFormula"></p><p class="sub" id="lbPrize"></p><div id="lbYou"></div><div id="lbNameRow"><label for="lbName">NAME</label><input id="lbName" maxlength="16" autocomplete="off" aria-label="Display name"><button id="lbPhantom" type="button">USE PHANTOM</button></div><div id="lbPot"></div><table><thead><tr><th>#</th><th>NAME</th><th>SCORE</th><th>BOSSES</th><th>SHARDS</th><th>LEGENDARY</th><th>EST. SOL</th></tr></thead><tbody id="lbRows"></tbody></table><div id="lbRank"></div><div class="btns"><button id="lbReset" class="btn sm" type="button" hidden>RESET SEASON</button><button id="lbClose" class="btn sm" type="button">CLOSE</button></div></div></div>
+<div id="hubDlg" role="dialog" aria-modal="true"><b id="hubWho"></b><p id="hubLine"></p><div class="row"><button id="hubClaim" class="btn sm" type="button" hidden>CLAIM NFT SKINS</button><button id="hubShop" class="btn sm" type="button" hidden>OPEN SHOP</button><button id="hubNext" class="btn sm" type="button">NEXT</button><button id="hubBye" class="btn sm" type="button">BYE</button></div></div>
+<button id="hubTalk" type="button">TALK</button>
+<script type="module" src="./sandbox.js?v=0.9.6"></script>
 </body>
 </html>

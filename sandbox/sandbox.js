@@ -1,16 +1,20 @@
 // $BOSS Sandbox: third-person (default) / first-person build & explore (Phase 1, single-player beta).
 // Original content: neon tiles, Rug-Buster drill, SOL shard veins (in-game items, no cash value), FUD wolves.
-// Not connected to ranked play, wallets, or prizes.
-import * as THREE from "./three.module.min.js?v=0.9.5";
-import { createCharKit } from "./chars3d.js?v=0.9.5";
-import { createGems } from "./gems.js?v=0.9.5";
-import { createTerrain } from "./terrain.js?v=0.9.5";
-import { createBosses } from "./bosses.js?v=0.9.5";
-import { createLair } from "./lair.js?v=0.9.5";
-import { createWolves } from "./wolves.js?v=0.9.5";
-import { createAnimals } from "./animals.js?v=0.9.5";
-import { createCombat, POWERS, WEAPONS } from "./combat.js?v=0.9.5";
-import { createRifts, RIFT_CFG, tierOdds } from "./rifts.js?v=0.9.5";
+// Season board is local. Prize SOL is a display stub and is never sent. ◆ shards have no cash value.
+import * as THREE from "./three.module.min.js?v=0.9.6";
+import { createCharKit } from "./chars3d.js?v=0.9.6";
+import { createGems } from "./gems.js?v=0.9.6";
+import { createTerrain } from "./terrain.js?v=0.9.6";
+import { createBosses } from "./bosses.js?v=0.9.6";
+import { createLair } from "./lair.js?v=0.9.6";
+import { createWolves } from "./wolves.js?v=0.9.6";
+import { createAnimals } from "./animals.js?v=0.9.6";
+import { createCombat, POWERS, WEAPONS, GUNS, GUN_ORDER } from "./combat.js?v=0.9.6";
+import { createRifts, RIFT_CFG, tierOdds } from "./rifts.js?v=0.9.6";
+import { createBoard } from "./leaderboard.js?v=0.9.6";
+import { BURN, burnConfigured, burnLive, burnReady, burnFor, connectWallet, burnPrice, wallet } from "./burnshop.js?v=0.9.6";
+import { createHub, SAFE_R } from "./hub.js?v=0.9.6";
+import { STARTER, SKIN_NFT, claimHolderSkins, skinHeld, heldSkins, rememberHeld } from "./skins.js?v=0.9.6";
 
 const Q = new URLSearchParams(location.search);
 const $ = id => document.getElementById(id);
@@ -20,14 +24,14 @@ if (IS_TOUCH) document.body.classList.add("touch");
 const IS_PHONE = IS_TOUCH && Math.min(screen.width || 9999, screen.height || 9999) <= 540 && !Q.has("tablet");
 if (IS_PHONE) document.body.classList.add("phone");
 
-import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools, caches, trees, lair } from "./world.js?v=0.9.5";
+import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools, caches, trees, lair } from "./world.js?v=0.9.6";
 const SAVE_KEY = "boss_sandbox_v2", OLD_KEY = "boss_sandbox_v1", WORLD_V = 3;   // v0.9: WORLD_V 3 = bigger natural world (older saves keep progress, get the new map)
 const DAY_LEN = 480;                               // seconds per full day/night cycle
 let seed = 1337, edits = {}, shards = 0, plaza = { x: 40, y: 20, z: 40 };
 const topH = new Int16Array(SX * SZ);
 function calcTop(x, z) { for (let y = SY - 1; y >= 0; y--) if (world[idx(x, y, z)]) { topH[x + z * SX] = y; return; } topH[x + z * SX] = -1; }
 function calcAllTop() { for (let z = 0; z < SZ; z++) for (let x = 0; x < SX; x++) calcTop(x, z); }
-function generate(sd) { plaza = genWorld(sd); calcAllTop(); if (typeof buildPools === "function") try { buildPools(); } catch (e) {} }
+function generate(sd) { plaza = genWorld(sd); calcAllTop(); if (typeof buildPools === "function") try { buildPools(); } catch (e) {} if (typeof HUB !== "undefined" && HUB) HUB.place(); }
 function applyEdits() { for (const k in edits) world[+k] = edits[k]; calcAllTop(); }
 function setBlock(x, y, z, id, fromNet) {
   if (!inB(x, y, z)) return false; const i = idx(x, y, z); if (world[i] === id) return false;
@@ -259,7 +263,7 @@ new THREE.TextureLoader().load("../assets/logo.webp", t => { t.colorSpace = THRE
 const P = { x: 40, y: 30, z: 40, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, ground: false, r: .3, h: 1.75, eye: 1.6, hurtCD: 0, hp: 10, regenT: 0, dbl: true };
 let spaceWas = false;
 // v0.9.5 rifts: while you are inside a sealed rift arena the world is replaced by a flat floating platform with a round barrier
-let riftIn = null, RIFT_A = null, riftAsk = null, riftDarkT = 0, uiModal = false, savedFog = null;
+let riftIn = null, RIFT_A = null, riftAsk = null, riftDarkT = 0, uiModal = false, lbOpen = false, hubOpen = false, savedFog = null;
 const input = { f: 0, s: 0, jump: false, sprint: false, mine: false, keys: {} };
 function collides(x, y, z) {
   if (RIFT_A) return y < RIFT_A.floorY - .001 || Math.hypot(x - RIFT_A.x, z - RIFT_A.z) > RIFT_A.r - P.r;
@@ -384,7 +388,7 @@ function groundAt(x, y, z) { if (RIFT_A) return Math.hypot(x - RIFT_A.x, z - RIF
 function wolves() { return WOLF || (WOLF = createWolves(THREE, { scene, P, IS_TOUCH, list: fuds, toon: BX.toon, glowTex: shotTex, groundAt, burst, spawnOrbs, gemGeo: id => GEM.pickupGeo(id),
   inArena: (x, z) => !(boss.on && boss.arena) || Math.hypot(x - boss.arena.x, z - boss.arena.z) < boss.arena.r - 1.2,
   sfx: { howl: (x, y, z) => sfx.howl(x, y, z), snarl: (x, y, z, big) => sfx.snarl(x, y, z, big) },
-  bite: (w, hx, hz) => { if (P.hurtCD > 0) return; const dx = P.x - w.x, dz = P.z - w.z, d = Math.hypot(dx, dz) || 1; P.hurtCD = 1.6; P.vx += dx / d * 8; P.vz += dz / d * 8; P.vy = 4.5;
+  bite: (w, hx, hz) => { if (inHub()) return; if (P.hurtCD > 0) return; const dx = P.x - w.x, dz = P.z - w.z, d = Math.hypot(dx, dz) || 1; P.hurtCD = 1.6; P.vx += dx / d * 8; P.vz += dz / d * 8; P.vy = 4.5;
     const lost = upg.shield ? 0 : Math.min(1, shards); shards -= lost; updShards(); pop(lost ? "WOLF BITE! −1 SHARD" : "WOLF BITE!", "#ff6a8a"); sfx.bite(); hurt(1); } })); }
 // ---------------- v0.9.4 animals: deer, rabbits, foxes, bird flocks, pool fish, night owls, neutral wild wolves ----------------
 let ANI = null;
@@ -395,16 +399,17 @@ function animals() { return ANI || (ANI = createAnimals(THREE, { scene, P, IS_TO
   bobber: () => fish.bob ? fish.bob.position : null, wolfModel: () => wolves().makeModel(false),
   sfx: { chirp: (x, y, z) => sfx.chirp(x, y, z), hoot: (x, y, z) => sfx.hoot(x, y, z), rustle: (x, y, z, k) => sfx.rustle(x, y, z, k), growl: (x, y, z) => sfx.snarl(x, y, z) },
   onPet: (a, first) => { burst(a.c.x, a.c.y + .4, a.c.z, ["#ff7ad0", "#ffd0ec", "#ffffff"], IS_TOUCH ? 14 : 26, 2.5); sfx.pet(); stats.pets = (stats.pets | 0) + 1; charJoy = 1;
-    if (first) { shards += 1; updShards(); pop("♥ " + ANI.SP[a.k].name + " · ◆+1", "#ff9ad8"); } else pop("♥ " + ANI.SP[a.k].name, "#ff9ad8"); save(); },
+    if (first) { gainShards(1); pop("♥ " + ANI.SP[a.k].name + " · ◆+1", "#ff9ad8"); } else pop("♥ " + ANI.SP[a.k].name, "#ff9ad8"); save(); },
   provoke: (x, y, z, ry) => { const w = wolves().spawn(x, y, z, { wild: true, yaw: ry }); if (w) pop("THE WILD WOLVES ARE ANGRY!", "#ff8a6a"); } })); }
 function spawnFud(x, y, z) { const W = wolves(), a = Math.random() * 6.28, d = 12 + Math.random() * 6;
   if (x == null && boss.on && boss.arena) { const A = boss.arena; x = A.x + Math.cos(a) * 6; y = A.floorY + 2; z = A.z + Math.sin(a) * 6; }
   if (x == null) { x = P.x + Math.cos(a) * d; z = P.z + Math.sin(a) * d; y = P.y + 4; }
   return W.spawn(x, y, z, { boss: boss.on }); }
 function updFuds(dt, night, time) { const surf = topH[Math.floor(P.x) + Math.floor(P.z) * SX] <= P.y + 2;
-  const want = Q.has("nofud") ? 0 : Math.max(night > .6 && surf && !boss.on && !riftIn ? 2 : 0, boss.on && boss.minions ? 2 : 0);
+  const want = (Q.has("nofud") || inHub()) ? 0 : Math.max(night > .6 && surf && !boss.on && !riftIn ? 2 : 0, boss.on && boss.minions ? 2 : 0);
   fudTimer -= dt; if (want === 0) fudTimer = 2; else if (fuds.length < want && fudTimer <= 0) { spawnFud(); fudTimer = 6 + Math.random() * 6; }
-  if (WOLF || fuds.length) wolves().update(dt, time, { leave: want === 0 && !(boss.on && (boss.kind === "fudder" || riftIn)) }); }
+  if (WOLF || fuds.length) wolves().update(dt, time, { leave: want === 0 && !(boss.on && (boss.kind === "fudder" || riftIn)) });
+  if (!riftIn) for (const w of fuds) { const dx = w.x - plaza.x, dz = w.z - plaza.z, d = Math.hypot(dx, dz) || .01; if (d < SAFE_R) { const k = (SAFE_R + .8) / d; w.x = plaza.x + dx * k; w.z = plaza.z + dz * k; if (w.s) w.s.position.set(w.x, w.s.position.y, w.z); } } }
 
 let mineT = 0, mineKey = "", hit = null, fudHit = null, bossHit = false, critHit = null, aniHit = null;
 const tmpV = new THREE.Vector3(), tmpD = new THREE.Vector3();
@@ -503,6 +508,8 @@ function place() {
 let sel = 0, drillKick = 0; const drillBase = new THREE.Vector3(.3, -.27, -.6);
 function pop(t, c) { const d = document.createElement("div"); d.className = "pop"; d.style.color = c; d.textContent = t; $("pops").appendChild(d); setTimeout(() => d.remove(), 1100); }
 function updShards() { $("shardN").textContent = shards; }
+function earnShards(n) { n = n | 0; if (n > 0) LB.earn(n); }
+function gainShards(n) { shards += n; updShards(); earnShards(n); }
 function buildPalette() {
   const pal = $("palette"); pal.innerHTML = "";
   PALETTE.forEach((id, i) => { const b = document.createElement("button"); b.className = "chip"; b.setAttribute("aria-label", B[id].name);
@@ -526,8 +533,8 @@ function note(f, d, type = "square", v = .08, slide = 0, at = 0, dest = null, lp
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + d); let n = o.connect(g);
   if (lp) { const fl = AC.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = lp; n = g.connect(fl); } n.connect(dest || sfxG); o.start(t); o.stop(t + d + .02); }
 function tone(f, d, type, v, slide) { note(f, d, type, v, slide); }
-function noise(d, f = 1200, v = .15, q = 1, at = 0, dest = null, type = "bandpass") { if (!AC) return; const t = at || tNow(), s = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain(); s.buffer = noiseBuf; s.loop = true; fl.type = type; fl.frequency.value = f; fl.Q.value = q;
-  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); s.connect(fl).connect(g).connect(dest || sfxG); s.start(t, Math.random() * .5); s.stop(t + d + .02); }
+function noise(d, f = 1200, v = .15, q = 1, at = 0, dest = null, type = "bandpass") { if (!AC) return; sfxN.noise = (sfxN.noise | 0) + 1; const t0 = at || tNow(), s = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain(); s.buffer = noiseBuf; s.loop = true; fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+  const a = Math.min(.02, Math.max(.004, d * .35)), end = t0 + Math.max(d, a + .012); g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(.0002, v), t0 + a); g.gain.exponentialRampToValueAtTime(.0001, end); s.connect(fl).connect(g).connect(dest || sfxG); s.start(t0, Math.random() * .5); s.stop(end + .02); }
 // richer building blocks
 function osc(t, type, f, d, v, dest, o = {}) { const n = AC.createOscillator(), g = AC.createGain(); n.type = type; n.frequency.setValueAtTime(f, t); if (o.slide) n.frequency.exponentialRampToValueAtTime(Math.max(20, f + o.slide), t + (o.sd || d)); if (o.det) n.detune.value = o.det;
   const a = o.a || .004; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + d); let last = n.connect(g);
@@ -645,6 +652,13 @@ Object.assign(sfx, {
   seal: () => { const t = tNow(); for (let k = 0; k < 4; k++) osc(t + k * .07, "square", 220 - k * 30, .25, .05, sfxG, { lp: 1200 }); thump(t, 50, .9, .5, sfxG); nz(t, .5, .1, sfxG, { type: "highpass", f: 3000 }); },
   riftLost: () => { const t = tNow(); for (let k = 0; k < 4; k++) osc(t + k * .22, "triangle", mtof(64 - k * 3), .5, .09, sfxG, { lp: 1600 }); nz(t, 1.4, .08, sfxG, { type: "bandpass", f: 1500, f2: 150, q: 1.2 }); },
   blast: (lv = 1) => { const t = tNow(); osc(t, "square", lv >= 2 ? 1300 : 1000, .12, .05, sfxG, { slide: -700, sd: .1, lp: 3200 }); osc(t, "sine", lv >= 2 ? 520 : 400, .1, .06, sfxG, { slide: -250 }); nz(t, .06, .04, sfxG, { type: "highpass", f: 2500 }); },
+  gun: (kind, lv = 1) => { const t = tNow();
+    if (kind === "shotgun") { nz(t, .09, .09, sfxG, { type: "lowpass", f: 1600 }); osc(t, "square", 180, .09, .05, sfxG, { slide: -100 }); }
+    else if (kind === "frost") osc(t, "sine", 740, .22, .05, sfxG, { slide: 420 });
+    else if (kind === "whip") osc(t, "sawtooth", 160, .16, .045, sfxG, { slide: 980, sd: .12, lp: 2600 });
+    else if (kind === "orb") osc(t, "sine", 160, .22, .05, sfxG, { slide: -30 });
+    else if (kind === "rail") { osc(t, "square", 80, .18, .05, sfxG, { slide: 820, sd: .14, lp: 2200 }); nz(t, .1, .05, sfxG, { type: "highpass", f: 2800 }); }
+    else { osc(t, "square", lv >= 2 ? 1300 : 1000, .12, .05, sfxG, { slide: -700, sd: .1, lp: 3200 }); osc(t, "sine", lv >= 2 ? 520 : 400, .1, .06, sfxG, { slide: -250 }); } },
   overheat: () => { const t = tNow(); nz(t, .7, .14, sfxG, { type: "highpass", f: 1800, f2: 5000 }); osc(t, "sawtooth", 300, .5, .05, sfxG, { slide: -220, lp: 900 }); },
   punch: () => { const t = tNow(); thump(t, 140, .18, .35, sfxG); nz(t, .12, .12, sfxG, { type: "bandpass", f: 900, f2: 300 }); osc(t, "sine", 700, .12, .05, sfxG, { slide: 500 }); },
   power: (id) => { const t = tNow(); if (id === "slam") { thump(t, 55, 1, .7, sfxG); nz(t, .8, .25, sfxG, { brown: 1, type: "lowpass", f: 900, f2: 90 }); } else if (id === "storm") { for (let k = 0; k < 3; k++) nz(t + k * .14, .4, .14, sfxG, { type: "highpass", f: 2600, f2: 500 }); } else { osc(t, "sine", 300, .35, .1, sfxG, { slide: 1500, sd: .2 }); nz(t, .3, .1, sfxG, { type: "bandpass", f: 2000, f2: 6000 }); } },
@@ -699,23 +713,31 @@ document.addEventListener("visibilitychange", () => { if (!AC) return; if (docum
 // UI click for every button (deduped with in-game clicks)
 document.addEventListener("click", e => { const b = e.target && e.target.closest && e.target.closest("button"); if (b && b.id !== "sndHud") sfx.ui(); }, true);
 function audioLevel() { if (!meter) return { peak: 0, rms: 0 }; meter.getFloatTimeDomainData(meterBuf); let pk = 0, s = 0; for (const v of meterBuf) { pk = Math.max(pk, Math.abs(v)); s += v * v; } return { peak: pk, rms: Math.sqrt(s / meterBuf.length) }; }
-// music: 4-chord synthwave loop, arps soften at night, drums kick in during the boss fight
+// music: 4-chord synthwave loop. NO hi-hat tick while exploring (that 8 kHz noise was a constant tic).
+// Boss fights replace it with an original synth cue (no samples): a low pulse plus a tense interval. Epic/Legendary are louder and faster.
 const PROG = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], PROG_N = [[57, 60, 64], [53, 57, 60], [55, 58, 62], [52, 55, 59]];
 const LEAD = { "NEON FLATS": "square", "PUMP DUNES": "sawtooth", "SIGNAL GROVE": "triangle", "FROST CHAIN": "sine", "MOON BASIN": "sine", "GLITCH WASTES": "square", "UNDERGROUND": "triangle" };
 const MOTIF = [[0, -1, 2, -1, 4, -1, 2, 1], [4, -1, 3, 2, 0, -1, -1, -1], [2, 4, 5, 4, 2, -1, 0, -1], [0, -1, 0, 2, 4, -1, 7, -1]], SCALE = [0, 2, 3, 5, 7, 9, 10, 12];
-let musStep = 0, musNext = 0, hudT = 0;
+let musStep = 0, musNext = 0, hudT = 0, bossNotes = 0, bossTierNow = "";
+function bossTierKey() { if (boss.tier && boss.tier.key) return boss.tier.key; const k = boss.kind; if (k === "moth") return "legendary"; if (k === "king" || k === "colossus" || k === "fudder") return "epic"; if (k === "jelly") return "rare"; return "common"; }
+function bossCue(at, tier) { const leg = tier === "legendary", epic = leg || tier === "epic", root = leg ? 40 : epic ? 42 : tier === "rare" ? 45 : 48, st = musStep % 16, v = leg ? 1.35 : epic ? 1.12 : tier === "rare" ? .82 : .62;
+  if (st % 4 === 0) { osc(at, "sine", mtof(root - 12), .28, .09 * v, musG, { slide: -30 }); bossNotes++; }
+  if (st === 0) { osc(at, "sawtooth", mtof(root), 1.5, .045 * v, musG, { lp: leg ? 980 : 620 }); osc(at, "triangle", mtof(root + 7), 1.2, .03 * v, musG, { lp: 1400 }); bossNotes++; }
+  if (st % 8 === 4) { osc(at, "triangle", mtof(root + (leg ? 13 : 11)), .42, .034 * v, musG, { lp: leg ? 2200 : 1600 }); bossNotes++; }
+  if (leg && st === 12) { osc(at, "square", mtof(root + 18), .18, .018 * v, musG, { lp: 1500 }); bossNotes++; } }
 function audioTick() { if (!AC) return; const t = tNow(); const dt = applyView.dt || .016; try { ambTick(dt); } catch (e) {} if ((hudT -= dt) <= 0) { hudT = .5; updSndHud(); }
   humG.gain.setTargetAtTime(isFiring && running ? .022 : 0, t, .03); hum.frequency.setTargetAtTime(70 + minePitch * 170 + upg.drill * 14, t, .05); humF.frequency.setTargetAtTime(500 + minePitch * 1800, t, .05);
-  if (!musOn || !running) { musNext = t + .1; return; } if (musNext < t - .5) musNext = t + .05;
-  while (musNext < t + .25) { const at = musNext, bar = Math.floor(musStep / 16) % 4, st = musStep % 16, nt = curNight > .6, ch = (nt ? PROG_N : PROG)[bar], fight = boss.on, phrase = Math.floor(musStep / 64);
+  if (!musOn || !running) { musNext = t + .1; bossTierNow = ""; return; } if (musNext < t - .5) musNext = t + .05;
+  while (musNext < t + .25) { const at = musNext, fight = !!(boss.on && !boss.dying);
+    if (fight) { const tier = bossTierKey(); bossTierNow = tier; bossCue(at, tier); musNext += tier === "legendary" ? .095 : tier === "epic" ? .11 : .125; musStep++; continue; }
+    bossTierNow = "";
+    const bar = Math.floor(musStep / 16) % 4, st = musStep % 16, nt = curNight > .6, ch = (nt ? PROG_N : PROG)[bar], phrase = Math.floor(musStep / 64);
     if (st === 0) for (const m of ch) note(mtof(m), 2.3, "sawtooth", .009, 0, at, musG, nt ? 700 : 1100);
-    if (st % 2 === 0 && phrase % 2 === 1 && !fight) { const mi = MOTIF[(bar + phrase) % 4][st / 2]; if (mi >= 0) note(mtof(ch[0] + 12 + SCALE[mi]), nt ? .5 : .28, LEAD[biomeNow] || "triangle", nt ? .016 : .014, 0, at, musG, 2600); }
-    if (!nt && !fight && st % 2 === 1) noise(.02, 8000, .01, 1, at, musG, "highpass");
+    if (st % 2 === 0 && phrase % 2 === 1) { const mi = MOTIF[(bar + phrase) % 4][st / 2]; if (mi >= 0) note(mtof(ch[0] + 12 + SCALE[mi]), nt ? .5 : .28, LEAD[biomeNow] || "triangle", nt ? .016 : .014, 0, at, musG, 2600); }
     if (st % 4 === 0) note(mtof(ch[0] - 24), .32, "sawtooth", .05, 0, at, musG, 420);
     if (st % 2 === 0) note(mtof(ch[(st / 2) % 3] + (bar % 2 ? 12 : 0)), .14, "triangle", .022, 0, at, musG);
     if (st === 0) note(mtof(ch[2] + 12), 1.6, "sine", .02, 0, at, musG);
-    if (fight) { if (st % 4 === 0) note(130, .14, "sine", .14, -90, at, musG); if (st % 8 === 4) noise(.12, 1800, .06, .8, at, musG); if (st % 2 === 1) noise(.03, 7000, .02, 1, at, musG, "highpass"); }
-    musNext += fight ? .11 : curNight > .6 ? .17 : .15; musStep++; } }
+    musNext += curNight > .6 ? .17 : .15; musStep++; } }
 function updSndHud() { const b = $("sndHud"); if (!b) return; const muted = !sndOn && !musOn, blocked = !muted && (!AC || AC.state !== "running"); const s = muted ? "🔇" : blocked ? "🔈" : "🔊"; if (b.textContent !== s) b.textContent = s; b.classList.toggle("off", muted); b.classList.toggle("blocked", blocked && running); b.setAttribute("aria-label", muted ? "Sound off: tap to turn on" : blocked ? "Tap to start sound" : "Sound on: tap to mute"); }
 function updSetBtns() { const a = $("sndBtn"), b = $("musBtn"); if (a) a.textContent = "SFX: " + (sndOn ? "ON" : "OFF"); if (b) b.textContent = "MUSIC: " + (musOn ? "ON" : "OFF");
   if (sfxG) sfxG.gain.value = sndOn ? 1 : 0; if (ambG) ambG.gain.value = sndOn ? AMB_V : 0; if (musG) musG.gain.value = musOn ? MUS_V : 0; updSndHud(); }
@@ -733,8 +755,8 @@ function startGame() { try { document.activeElement && document.activeElement.bl
   maybeShowTip();
   if (!IS_TOUCH && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } if (IS_PHONE) orientCheck(); }
 function pause() { if (photo) setPhoto(false); running = false; document.body.classList.add("inmenu"); input.mine = false; $("menu").classList.remove("hide"); $("playBtn").textContent = "RESUME"; menuStats(); save(); if (document.pointerLockElement) document.exitPointerLock(); }
-document.addEventListener("pointerlockchange", () => { locked = document.pointerLockElement === canvas; if (!locked && running && !IS_TOUCH && !window.__SB_TEST && !labOpen && !uiModal) pause(); });
-canvas.addEventListener("mousedown", e => { if (IS_TOUCH) return; if (!running || labOpen || uiModal) return; if (!locked && canvas.requestPointerLock && !window.__SB_TEST) { startGame(); return; }
+document.addEventListener("pointerlockchange", () => { locked = document.pointerLockElement === canvas; if (!locked && running && !IS_TOUCH && !window.__SB_TEST && !labOpen && !uiModal && !lbOpen && !hubOpen) pause(); });
+canvas.addEventListener("mousedown", e => { if (IS_TOUCH) return; if (!running || labOpen || uiModal || hubOpen) return; if (!locked && canvas.requestPointerLock && !window.__SB_TEST) { startGame(); return; }
   if (e.button === 0) input.mine = true; else if (e.button === 2) place(); });
 window.addEventListener("mouseup", e => { if (e.button === 0) input.mine = false; });
 canvas.addEventListener("contextmenu", e => e.preventDefault());
@@ -742,7 +764,7 @@ document.addEventListener("mousemove", e => { if (!locked) return; if (Math.abs(
 window.addEventListener("wheel", e => { if (!running || uiModal) return; const d = e.deltaY || e.deltaX; if (!d) return; if (e.shiftKey) setWeapon(CB.S.weapon + (d > 0 ? 1 : -1)); else select(sel + (d > 0 ? 1 : -1)); }, { passive: true });
 window.addEventListener("keydown", e => { input.keys[e.code] = true; if (e.code === "Space") e.preventDefault();
   if (/^Digit[0-9]$/.test(e.code)) select((+e.code[5] + 9) % 10); if (running && !e.repeat && !uiModal) { if (e.code === "KeyZ") setWeapon(0); else if (e.code === "KeyX") setWeapon(1); else if (e.code === "KeyC") setWeapon(2); else if (e.code === "KeyF") usePower(); } if ((e.code === "KeyU" || e.code === "Tab") && running) { e.preventDefault(); labOpen ? closeLab() : openLab(); } if (e.code === "KeyQ") select(sel - 1); if (e.code === "KeyE") select(sel + 1);
-  if (e.code === "KeyR" && running) respawn(); if (e.code === "KeyG" && mp.on && mp.ws) mp.ws.send(JSON.stringify({ t: "emote", k: 0 })); if ((e.code === "KeyP") && running) pause(); if (e.code === "KeyK" && running) wantShot = true; if (e.code === "KeyJ" && running && lastShot) { if (document.pointerLockElement) document.exitPointerLock(); shareShot(); } if (e.code === "KeyV" && running) cycleView(); });
+  if (e.code === "KeyR" && running) respawn(); if (e.code === "KeyG" && mp.on && mp.ws) mp.ws.send(JSON.stringify({ t: "emote", k: 0 })); else if (e.code === "KeyG" && running && !e.repeat && !riftIn) { const n = HUB.nearest(P.x, P.z); if (hubOpen) HUB.next(); else if (n) HUB.talk(n.id); } if ((e.code === "KeyP") && running) pause(); if (e.code === "KeyK" && running) wantShot = true; if (e.code === "KeyJ" && running && lastShot) { if (document.pointerLockElement) document.exitPointerLock(); shareShot(); } if (e.code === "KeyV" && running) cycleView(); });
 window.addEventListener("keyup", e => { input.keys[e.code] = false; });
 window.addEventListener("blur", () => { input.keys = {}; input.mine = false; });
 let lookMul = 1;
@@ -760,7 +782,7 @@ function overUI(x, y) {
   // Don't start look/joystick on HUD buttons, palette, tip, or pause.
   const el = document.elementFromPoint(x, y);
   if (!el || el === $("touch") || el === $("game") || el === $("lookPad") || el === document.body) return false;
-  return !!(el.closest && el.closest(".tbtn, #palette, #pauseBtn, #labBtn, #lab, #lookSlow, #tip, #menu, .chip, #shards, #photoBar, #photoBtn, #viewBtn, #shotBtn, #shareBtn, #sndHud"));
+  return !!(el.closest && el.closest(".tbtn, #palette, #pauseBtn, #labBtn, #lab, #lb, #hubDlg, #hubTalk, #lookSlow, #tip, #menu, .chip, #shards, #photoBar, #photoBtn, #viewBtn, #shotBtn, #shareBtn, #sndHud"));
 }
 function landPhone() { return IS_TOUCH && innerWidth > innerHeight && innerHeight <= 540; }
 function inLookZone(x, y) {
@@ -956,7 +978,8 @@ function updMP(dt) { if (!mp.on) return; mp.sendT -= dt;
 
 // ---------------- progression: drill tiers, upgrades, stats ----------------
 const SPEED = [0, 1, 1.6, 2.4, 3.5], REACH = [0, 5, 6, 7, 8], DMG = [0, 9, 15, 24, 38], LASER = [0, 0x14f195, 0x28dcff, 0xffd24a, 0xff4fd8];
-const upg = { drill: 1, boots: 0, shield: 0, hp: 0, rod: 1, pets: {}, pet: "", blast: 1, powers: {}, power: "" };
+const LB = createBoard();
+const upg = { drill: 1, boots: 0, shield: 0, hp: 0, rod: 1, pets: {}, pet: "", blast: 1, powers: {}, power: "", guns: { blaster: 1 }, gun: "blaster", potions: 0, armor: 0 };
 const stats = { mined: 0, veins: 0, placed: 0, prisms: 0, golds: 0, cores: 0, fud: 0, kills: 0, combos: 0, dj: 0, lair: 0, k_fudder: 0 };
 const maxHp = () => 10 + upg.hp * 4;
 let trauma = 0;
@@ -984,7 +1007,7 @@ function buyUpg(id) { const u = UPG.find(q => q.id === id); if (!u || u.have() |
   if (shards < c) { pop(`NEED ◆${c}`, "#ff6a8a"); sfx.hurt(); return false; } shards -= c; u.buy(); updShards(); sfx.buy(); buzz(20); banner(u.name, "UNLOCKED"); renderLab(); save(); qTick(); return true; }
 function renderPets() { const el = $("petL"); if (!el) return; el.innerHTML = `<b>🐾 COMPANIONS</b>` + PETS.map(([id, nm, d, c]) => { const own = upg.pets && upg.pets[id], on = upg.pet === id;
   return `<div class="pet"><img src="${petTex[id].image.toDataURL()}" alt=""><div><b>${nm}</b><small>${d}</small></div><button type="button" data-pet="${id}" class="${on ? "on" : ""}">${on ? "WITH YOU" : own ? "BRING" : "◆" + c}</button></div>`; }).join(""); }
-function openLab() { labOpen = true; input.mine = false; input.f = input.s = 0; renderLab(); renderPets(); $("lab").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
+function openLab() { labOpen = true; input.mine = false; input.f = input.s = 0; renderLab(); renderGuns(); renderPets(); $("lab").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
 function closeLab(quiet) { if (!labOpen) return; labOpen = false; $("lab").classList.remove("show"); if (!quiet && !IS_TOUCH && running && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
 $("labList").addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if (b) buyUpg(b.dataset.id); });
 $("powL").addEventListener("click", e => { const b = e.target.closest("button[data-pow]"); if (b && upg.powers && upg.powers[b.dataset.pow]) { upg.power = b.dataset.pow; updWpnHud(); renderLab(); save(); sfx.equip(); } });
@@ -1020,7 +1043,7 @@ function qDef(i) { if (i < QUESTS.length) return QUESTS[i]; const j = i - QUESTS
     { t: "Hit a ×10 combo", h: "Mine tiles fast, no pauses", k: "combos", n: 1, r: 8 * lv }, { t: `Bust THE RUG PULLER (LV ${stats.kills + 1})`, h: "It gets tougher every time", k: "kills", n: 1, r: 30 + 10 * lv }][j % 4]; }
 function qVal(q) { const v = q.abs ? (q.k === "drill" ? upg.drill : upg[q.k] ? 1 : 0) : stats[q.k] - (qBase[q.k] || 0); return Math.max(0, Math.min(q.n, v)); }
 function qStart() { qBase = {}; for (const k in stats) qBase[k] = stats[k]; updQuest(); }
-function qTick() { dailyTick(); const q = qDef(Qi); if (qVal(q) >= q.n) { shards += q.r; updShards(); banner("QUEST COMPLETE", `${q.t} · ◆+${q.r}`); sfx.quest(); buzz(40); burst(P.x, P.y + 1.2, P.z, [0xffd24a, 0x14f195, 0xff4fd8], 40, 5); Qi++; qStart(); save(); } else updQuest(); }
+function qTick() { dailyTick(); const q = qDef(Qi); if (qVal(q) >= q.n) { gainShards(q.r); banner("QUEST COMPLETE", `${q.t} · ◆+${q.r}`); sfx.quest(); buzz(40); burst(P.x, P.y + 1.2, P.z, [0xffd24a, 0x14f195, 0xff4fd8], 40, 5); Qi++; qStart(); save(); } else updQuest(); }
 let lastQ = "";
 function updQuest() { const q = qDef(Qi), v = qVal(q), key = Qi + ":" + v; if (key === lastQ) return; lastQ = key;
   $("qN").textContent = (Qi < QUESTS.length ? `QUEST ${Qi + 1}/${QUESTS.length}` : "BONUS QUEST") + (q.n > 1 ? ` · ${v}/${q.n}` : ""); $("qT").textContent = q.t; $("qH").textContent = q.h; $("qR").textContent = `◆+${q.r}`;
@@ -1032,7 +1055,9 @@ let banT = null;
 function banner(a, b, tier) { const el = $("banner"); if (tier) el.dataset.tier = tier; else delete el.dataset.tier; el.querySelector("h2").textContent = a; el.querySelector("p").textContent = b || ""; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); clearTimeout(banT); banT = setTimeout(() => el.classList.remove("show"), 2600); }
 let hpKey = "";
 function updHP() { const m = maxHp(), k = P.hp + "/" + m; if (k === hpKey) return; hpKey = k; const el = $("hp"); let h = ""; for (let i = 0; i < m; i++) h += `<i class="${i < P.hp ? "on" : ""}"></i>`; el.innerHTML = h; el.classList.toggle("low", P.hp <= 3); }
-function hurt(n) { P.hp -= n; P.regenT = 5; updHP(); trauma = Math.max(trauma, .5); buzz(60); sfx.hurt(); $("hurt").style.opacity = 1; setTimeout(() => $("hurt").style.opacity = 0, 250);
+let hubSafeT = 0;
+function inHub(x = P.x, z = P.z) { return !riftIn && Math.hypot(x - plaza.x, z - plaza.z) < SAFE_R; }
+function hurt(n) { if (inHub()) { if (performance.now() > hubSafeT) { hubSafeT = performance.now() + 1600; pop("SAFE HUB", "#9df7ff"); } return; } if (upg.armor && n > 0) { n -= 1; pop("ARMOR SOAKED 1", "#9df7ff"); if (n <= 0) return; } P.hp -= n; P.regenT = 5; updHP(); trauma = Math.max(trauma, .5); buzz(60); sfx.hurt(); $("hurt").style.opacity = 1; setTimeout(() => $("hurt").style.opacity = 0, 250);
   if (P.hp <= 0 && riftIn) { riftDeath(); return; }
   if (P.hp <= 0) { banner("REKT", "Back to the plaza. Your shards are safe."); if (boss.on) bossEnd(false); P.hp = maxHp(); updHP(); respawn(); } }
 
@@ -1045,7 +1070,7 @@ let pickN = 0;
 function updOrbs(dt) { for (let i = orbs.length - 1; i >= 0; i--) { const b = orbs[i], o = b.o; b.t += dt; o.rotation.y += dt * 8; o.rotation.x += dt * 5;
   if (b.t < .35) { b.vy -= 9 * dt; o.position.x += b.vx * dt; o.position.y += b.vy * dt; o.position.z += b.vz * dt; continue; }
   const tx = P.x - o.position.x, ty = P.y + 1.1 - o.position.y, tz = P.z - o.position.z, d = Math.hypot(tx, ty, tz), sp = Math.min(40, 6 + b.t * 30);
-  if (d < .5 || b.t > 4) { scene.remove(o); orbs.splice(i, 1); shards += b.v; updShards(); pickN++; sfx.pick(pickN % 15); const n = $("shards"); n.classList.remove("bump"); void n.offsetWidth; n.classList.add("bump"); continue; }
+  if (d < .5 || b.t > 4) { scene.remove(o); orbs.splice(i, 1); gainShards(b.v); pickN++; sfx.pick(pickN % 15); const n = $("shards"); n.classList.remove("bump"); void n.offsetWidth; n.classList.add("bump"); continue; }
   o.position.x += tx / d * sp * dt; o.position.y += ty / d * sp * dt; o.position.z += tz / d * sp * dt; } if (!orbs.length) pickN = 0; }
 
 // ---------------- debris cubes ----------------
@@ -1089,11 +1114,11 @@ const BC = { scene, P, IS_TOUCH, rugTex, glowTex: shotTex, get, SX, SZ, BOSSES, 
   hurt: n => hurt(n), pop: (t, c) => pop(t, c), banner: (a, b) => banner(a, b), shake: v => { trauma = Math.max(trauma, v); }, roar: () => sfx.roar(boss.kind), gemGeo: id => GEM.pickupGeo(id),
   bar: () => updBossBar(), cine: (on, a, b, t) => cine(on, a, b, t),
   iframes: () => CB.iframes(), dark: t => { riftDarkT = t; },
-  onWin: (kind, p) => { if (riftIn) return riftWin(kind); stats.kills++; stats["k_" + kind] = (stats["k_" + kind] | 0) + 1; stats.lastBoss = kind; charJoy = 1; const prize = 40 + 10 * stats.kills + (kind === "fudder" ? 60 : 0); banner(BOSS_TXT[kind][0], `◆+${prize} SOL shards (in-game) · next one is tougher`); sfx.win(); buzz(200); if (window.__fudderWin && kind === "fudder") window.__fudderWin(); save(); return prize; },
+  onWin: (kind, p) => { if (riftIn) return riftWin(kind); stats.kills++; stats["k_" + kind] = (stats["k_" + kind] | 0) + 1; stats.lastBoss = kind; LB.kill(kind, null, false); charJoy = 1; const prize = 40 + 10 * stats.kills + (kind === "fudder" ? 60 : 0); banner(BOSS_TXT[kind][0], `◆+${prize} SOL shards (in-game) · next one is tougher`); sfx.win(); buzz(200); if (window.__fudderWin && kind === "fudder") window.__fudderWin(); save(); return prize; },
   onLose: (kind, silent) => { stats.lastBoss = kind; if (riftIn) return; if (kind === "fudder") lairCd = 15; if (!silent) banner("IT GOT AWAY…", kind === "fudder" ? "Head back into the lair to try again" : "Summon it again from the ⚡ LAB"); } };
 const BX = createBosses(THREE, BC), boss = BX.st;
 function cine(on, a, b, tier) { document.body.classList.toggle("cine", !!on); const el = $("bossCard"); if (!el) return; if (on) { el.querySelector("h3").textContent = a || ""; el.querySelector("p").textContent = b || ""; const tg = el.querySelector(".tier"); if (tg) { tg.textContent = tier ? `◈ ${tier.name} RIFT BOSS` : ""; tg.style.display = tier ? "" : "none"; } el.style.setProperty("--tc", tier ? tier.css : "#ff4fd8"); el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); } else el.classList.remove("show"); }
-function summonBoss(kind = "rug", o) { if (boss.on || mp.on) return false; if (riftIn && !(o && o.rift)) return false; if (!o) { if (upg.drill < 2) return false; if (kind === "king" && stats.kills < 1) return false; if (kind === "whale" && stats.kills < 2) return false; }
+function summonBoss(kind = "rug", o) { if (boss.on || mp.on) return false; if (riftIn && !(o && o.rift)) return false; if (!(o && o.rift) && inHub()) { pop("Bosses don't spawn in the hub. Walk past the ring.", "#ffd24a"); return false; } if (!o) { if (upg.drill < 2) return false; if (kind === "king" && stats.kills < 1) return false; if (kind === "whale" && stats.kills < 2) return false; }
   if (!BX.summon(kind, o && o.rift ? o.lvl || 0 : stats.kills, o || {})) return false; sfx.sting(kind); setTimeout(() => sfx.roar(kind), 500); trauma = .5; buzz(120); return true; }
 function updBossBar() { const bb = $("bossbar"); bb.classList.toggle("show", boss.on); if (!boss.on) return; $("bossFill").style.width = (100 * Math.max(0, boss.hp) / boss.max).toFixed(1) + "%"; const TR = boss.tier && boss.tier.key ? boss.tier : null, NP = TR ? TR.phases : 3; $("bossLv").textContent = TR ? `◈ ${TR.name} · ${BOSSES[boss.kind].name}` : `${BOSSES[boss.kind].name} · LV ${stats.kills + 1}`; $("bossLv").style.color = TR ? TR.css : ""; $("bossFill").style.background = TR ? `linear-gradient(90deg,${TR.css},#ffffff)` : "";
   { const bb2 = bb.querySelector(".b"); if (bb2.dataset.n != NP) { bb2.querySelectorAll("i").forEach(q => q.remove()); for (let k = 1; k < NP; k++) { const q = document.createElement("i"); q.style.left = (100 * k / NP).toFixed(1) + "%"; bb2.appendChild(q); } bb2.dataset.n = NP; } }
@@ -1110,12 +1135,12 @@ function killWolf(w) { if (!fuds.includes(w)) return; const p = wolves().kill(w)
 function aimRay() { const o = new THREE.Vector3(P.x, P.y + P.eye, P.z), cp = Math.cos(P.pitch), d = new THREE.Vector3(-Math.sin(P.yaw) * cp, Math.sin(P.pitch), -Math.cos(P.yaw) * cp);
   if (view === 1 && tpCam.ok && !photo) { d.copy(tpCam.dir); const ex = P.x - tpCam.pos.x, ey = P.y + P.eye - tpCam.pos.y, ez = P.z - tpCam.pos.z; o.copy(tpCam.pos).addScaledVector(d, Math.max(0, ex * d.x + ey * d.y + ez * d.z - .35)); } return { o, d }; }
 const CB = createCombat(THREE, { scene, camera, P, IS_TOUCH, toon: BX.toon, add: BX.add, boss, BX, fuds, get critters() { return critters; }, wolves, killWolf, zapCritter, ANI: () => ANI, get, burst, sfx, pop,
-  shake: v => { trauma = Math.max(trauma, v); }, buzz, bolt: (x, z, c) => BX.bolt(x, z, c), blastLv: () => upg.blast || 1, view: () => view, showGear: () => !photo && !document.body.classList.contains("inmenu"),
+  shake: v => { trauma = Math.max(trauma, v); }, buzz, bolt: (x, z, c) => BX.bolt(x, z, c), blastLv: () => upg.blast || 1, gunId: () => (upg.guns && upg.guns[upg.gun]) ? upg.gun : "blaster", view: () => view, showGear: () => !photo && !document.body.classList.contains("inmenu"),
   aimRay, rayT: (o, d, m) => { const h = raycast(o, d, m); return h ? h.t : null; }, nudge: (dy, dp) => { P.yaw += dy; P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch + dp)); },
   move: (dx, dz) => { moveAxis(0, dx); moveAxis(2, dz); }, bossCenter: () => { const M = BX.make(boss.kind); return M.ground ? M.center : 0; }, bossR: () => BX.make(boss.kind).hitR });
 const tierI = t => RIFT_CFG.tiers.indexOf(t);
 function riftSpot(x, z) { const X = Math.floor(x), Z = Math.floor(z); if (X < 6 || Z < 6 || X >= SX - 6 || Z >= SZ - 6) return null; if (inPool(x, z) || pools.some(q => ((x - q.x) / (q.rx + 3)) ** 2 + ((z - q.z) / (q.rz + 3)) ** 2 < 1)) return null;
-  if (lair && Math.hypot(x - lair.x, z - lair.z) < (lair.r || 8) + 8) return null; if (Math.hypot(x - plaza.x, z - plaza.z) < 6) return null; if (trees.some(t => !t.dead && Math.hypot(t.x + .5 - x, t.z + .5 - z) < 3.4)) return null;
+  if (lair && Math.hypot(x - lair.x, z - lair.z) < (lair.r || 8) + 8) return null; if (Math.hypot(x - plaza.x, z - plaza.z) < SAFE_R + 3) return null; if (trees.some(t => !t.dead && Math.hypot(t.x + .5 - x, t.z + .5 - z) < 3.4)) return null;
   const t = topH[X + Z * SX]; if (t < 1 || t > SY - 6 || !get(X, t, Z)) return null; for (let k = 1; k <= 4; k++) if (get(X, t + k, Z)) return null;
   for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (Math.abs(topH[X + dx + (Z + dz) * SX] - t) > 1) return null; return [X + .5, t + 1, Z + .5]; }
 const RF = createRifts(THREE, { scene, P, IS_TOUCH, SX, SZ, toon: BX.toon, grad: BX.grad, force: Q.get("rift"), spot: riftSpot, onOpen: riftOpened, onTouch: askRift,
@@ -1148,11 +1173,11 @@ function riftTick(dt, time) { RF.update(dt, time, running && !photo && !boss.on 
   else { R.wonT += dt; const A = RF.arena(); if (A && A.exit && R.wonT > 2.6 && Math.hypot(P.x - RIFT_A.x, P.z - RIFT_A.z) < 1.5 && P.y < RIFT_A.floorY + 2.6) exitRift(); } }
 function riftWin(kind) { const R = riftIn; if (!R || R.won) return; R.won = true; R.wonT = 0; try { localStorage.removeItem(RIFT_KEY); } catch (e) {} const T = R.tier;
   const loot = Math.round(T.loot * (1 + Math.random() * .25)); const bp = boss.g ? boss.g.position : new THREE.Vector3(P.x, P.y + 2, P.z); spawnOrbs(bp.x, bp.y + 1, bp.z, loot, T.col);
-  stats.riftWins = (stats.riftWins | 0) + 1; stats["rift_" + T.key] = (stats["rift_" + T.key] | 0) + 1; stats["k_" + kind] = (stats["k_" + kind] | 0) + 1; charJoy = 1;
+  stats.riftWins = (stats.riftWins | 0) + 1; stats["rift_" + T.key] = (stats["rift_" + T.key] | 0) + 1; stats["k_" + kind] = (stats["k_" + kind] | 0) + 1; LB.kill(kind, T.key, T.key === "legendary"); charJoy = 1;
   banner(`${T.name} RIFT CLEARED!`, `◆+${loot} SOL shards (in-game, no cash value) · the PORTAL HOME is opening`, T.key); sfx.win(); buzz(200);
   let drop = false; if ((upg.blast | 0) < 2 && (Math.random() < T.blastDrop || Q.get("drop") === "mk2")) { upg.blast = 2; drop = true; setTimeout(() => { pop("🔫 PRISM BLASTER MK II DROPPED! (rift loot)", "#ff7ad0"); sfx.powerGet(); }, 1300); }
   const pid = T.power ? Object.keys(POWERS).find(k => POWERS[k].from === kind) : null; if (pid) { upg.powers = upg.powers || {}; upg.powers[pid] = 1; if (!upg.power) upg.power = pid; setTimeout(() => powerUnlock(pid, kind), 1700); }
-  setTimeout(() => { if (riftIn === R) { RF.openExit(); pop("✦ PORTAL HOME OPEN · step into the centre", "#fff2b0"); sfx.riftOpen(0); } }, 2200); updWpnHud(); save(); }
+  setTimeout(() => { if (riftIn === R) { RF.openExit(); pop("✦ PORTAL HOME OPEN · step into the centre", "#fff2b0"); sfx.riftOpen(0); } }, 2200); maybeGunDrop(T.key); updWpnHud(); save(); }
 function riftCleanup() { if (boss.on) bossEnd(false, true); BX.clearFx(); CB.clear(); wolves().clear(); RF.leaveArena(); RIFT_A = null; riftIn = null; riftDarkT = 0; bT = 0;
   if (savedFog) { scene.fog.near = savedFog.n; scene.fog.far = savedFog.f; savedFog = null; } camera.far = 500; camera.updateProjectionMatrix(); hemi.groundColor.setHex(0x201030); P.hp = maxHp(); updHP(); }
 function exitRift() { const R = riftIn; if (!R) return; const p = R.p; riftCleanup(); if (p) RF.close(p, "won"); const c = dryLand(p ? p.x : plaza.x, p ? p.z : plaza.z);
@@ -1175,6 +1200,46 @@ function showLost(lost, info, reload) { const el = $("riftLost"), L = el.querySe
 $("riftGo").addEventListener("click", () => riftAnswer(true)); $("riftNo").addEventListener("click", () => riftAnswer(false));
 $("lostOk").addEventListener("click", () => { $("riftLost").classList.remove("show"); uiModal = !!riftAsk; P.hp = maxHp(); updHP(); if (!IS_TOUCH && running && !window.__SB_TEST) try { canvas.requestPointerLock(); } catch (e) {} });
 window.addEventListener("keydown", e => { if (riftAsk) { if (e.code === "Enter") { e.preventDefault(); riftAnswer(true); } else if (e.code === "Escape" || e.code === "KeyN") riftAnswer(false); } else if ($("riftLost").classList.contains("show") && (e.code === "Enter" || e.code === "Space")) { e.preventDefault(); $("lostOk").click(); } });
+const GUN_DROP = { common: [["shotgun", .12]], rare: [["frost", .16], ["shotgun", .1]], epic: [["whip", .2], ["orb", .14], ["frost", .08]], legendary: [["rail", .7], ["orb", .3]] };
+function ownGun(id) { upg.guns = upg.guns || { blaster: 1 }; return !!upg.guns[id]; }
+function grantGun(id, why) { const g = GUNS[id]; if (!g || ownGun(id)) return false; upg.guns[id] = 1; pop(g.icon + " " + g.name + " · " + (why || "earned"), g.rarity === "legendary" ? "#ffc040" : "#9df7ff"); sfx.powerGet && sfx.powerGet(); return true; }
+function maybeGunDrop(tierKey) {
+  if ((stats.riftWins | 0) >= 3) grantGun("shotgun", "earned free · 3 rifts");
+  const force = Q.get("dropgun"); if (force && GUNS[force] && grantGun(force, "rift drop")) return force;
+  const table = GUN_DROP[tierKey] || [];
+  for (const [id, p0] of table) if (!ownGun(id) && Math.random() < p0) { grantGun(id, tierKey + " rift drop"); return id; }
+  if (tierKey === "legendary") { const left = ["rail", "orb", "whip", "frost", "shotgun"].find(id => !ownGun(id)); if (left) { grantGun(left, "legendary rift drop"); return left; } }
+  return null;
+}
+function equipGun(id) { if (!ownGun(id)) return false; upg.gun = id; CB.setWeapon(2); wpnKey = ""; updWpnHud(); sfx.equip(); save(); return true; }
+function buyGun(id) { const g = GUNS[id]; if (!g || g.dropOnly || !(g.shards > 0)) { pop(g && g.dropOnly ? "DROP ONLY · not sold" : "Not for sale", "#ffd24a"); return false; } if (ownGun(id)) return equipGun(id); if (shards < g.shards) { pop("NEED ◆" + g.shards + " (in-game)", "#ff6a8a"); return false; } shards -= g.shards; updShards(); grantGun(id, "head start"); equipGun(id); banner(g.name, "Optional head start · you can also earn it free"); renderGuns(); return true; }
+const SUPPLIES = [{ id: "potion", name: "HEALTH POTION", icon: "🧪", burn: 80, desc: "Drink to restore 6 hearts. Used up." }, { id: "armor", name: "NEON ARMOR", icon: "🛡️", burn: 200, desc: "Worn. Softens one heart off a hit. Stays on you." }];
+const TEASERS = [{ id: "veil", name: "VEILED CROWN", icon: "👑" }, { id: "quiet", name: "QUIET JACKET", icon: "🧥" }, { id: "unlit", name: "UNLIT HALO", icon: "◯" }];
+function buySupply() { pop("Not for ◆ shards. Potions and armor are a $BOSS burn from your wallet only. No refunds. The burn shop is off, so nothing was burned.", "#ffd24a"); return false; }
+function drinkPotion() { if (!(upg.potions > 0)) { pop("No health potion. Burn-only, and the burn shop is off.", "#cfd8ff"); return false; } upg.potions--; P.hp = Math.min(maxHp(), P.hp + 6); updHP(); pop("POTION · +6", "#14f195"); sfx.buy(); save(); renderGuns(); return true; }
+async function claimNftSkins() { let w = ""; try { const p = wallet(); if (p && p.publicKey) w = p.publicKey.toBase58 ? p.publicKey.toBase58() : String(p.publicKey); if (!w) w = await connectWallet(); LB.noteWallet(w); } catch (e) { const msg = (e && e.message) || "Phantom isn't available. Open this in the Phantom browser."; pop(msg, "#cfd8ff"); return { ok: false, claimed: [], mints: false, sendsSol: false, reason: msg }; } const res = claimHolderSkins(w); pop(res.reason, "#9df7ff"); return res; }
+async function tryBurn(id) { const price = burnPrice(id); const supply = SUPPLIES.find(s => s.id === id); if (!price) { pop(TEASERS.some(s => s.id === id) ? "Sealed. Not for sale." : "Not in the burn shop", "#cfd8ff"); return; } if (!burnConfigured()) { pop(supply ? (supply.name + " is not sold for ◆ shards. The burn shop is OFF. A burn would destroy $BOSS from your own wallet and is not refundable. Nothing was burned.") : "BURN SHOP IS OFF · earn it free, or spend ◆ shards. Nothing was burned.", "#cfd8ff"); return; }
+  try { const owner = await connectWallet(); LB.noteWallet(owner); const res = await burnFor(owner, id, m => pop(m, "#ffd24a")); if (res && GUNS[id]) { grantGun(id, "burned from your wallet · no refund"); equipGun(id); } else if (id === "potion") { upg.potions = (upg.potions | 0) + 1; pop("HEALTH POTION · burned from your wallet. No refund.", "#ffd24a"); } else if (id === "armor") { upg.armor = 1; pop("NEON ARMOR · burned from your wallet. No refund.", "#ffd24a"); } else if (id === "blast2") { upg.blast = 2; wpnKey = ""; updWpnHud(); } else if (id === "drill2" && upg.drill < 2) upg.drill = 2; else if (id === "boots") upg.boots = 1; else if (id === "shield") upg.shield = 1; save(); renderGuns(); renderLab(); } catch (e) { pop((e && e.message) || "Burn cancelled", "#ff8a8a"); } }
+function renderGuns() { const el = $("gunL"); if (!el) return; const live = burnLive();
+  let h = `<div class="gh">🔫 ARMORY <small>◆ shards are in-game items with no cash value. Paying shards, or burning $BOSS later, is only a head start. Every weapon can be earned free.</small></div>`;
+  h += `<div class="burnNote">${live ? "Burn shop is ON. A burn destroys $BOSS from your own wallet. No refunds. This game never holds the tokens and does not send SOL." : "Burn shop is OFF until Noah turns it on. Nothing is burned. Prices below are what it would cost from your own wallet."}</div>`;
+  for (const id of GUN_ORDER) { const g = GUNS[id], own = ownGun(id), eq = upg.gun === id && own; const bp = BURN.prices[id] || 0;
+    h += `<div class="gun r-${g.rarity}"><span class="gi">${g.icon}</span><div class="gt"><b>${g.name}</b> <i class="rr">${g.rarity.toUpperCase()}</i><small>${g.desc}</small>${g.dropOnly ? `<small class="drop">DROP ONLY · legendary rift. Not sold for shards. Not in the burn shop.</small>` : bp ? `<small class="bp">Optional burn later: ${bp} $BOSS from your wallet${live ? "" : " · shop off"}</small>` : ""}</div>`;
+    if (g.free) h += `<button type="button" data-gun="${id}" ${eq ? "disabled" : ""}>${eq ? "EQUIPPED" : own ? "EQUIP" : "FREE"}</button>`;
+    else if (g.dropOnly) h += own ? `<button type="button" data-gun="${id}" ${eq ? "disabled" : ""}>${eq ? "EQUIPPED" : "EQUIP"}</button>` : `<button type="button" disabled>DROP ONLY</button>`;
+    else h += `<button type="button" data-gun="${id}">${eq ? "EQUIPPED" : own ? "EQUIP" : "◆" + g.shards}</button>`;
+    if (bp) h += `<button type="button" class="burn" data-burn="${id}">BURN ${bp}</button>`;
+    h += `</div>`; }
+  h += `<div class="gh">🧪 SUPPLIES <small>Not for ◆ shards. The only buy is a burn of $BOSS you already hold, from your Phantom wallet. A burn destroys them. No refunds. This game never holds the tokens and does not send SOL.</small></div>`;
+  h += `<div class="burnNote">Burn shop is OFF. Potion and armor prices are what a burn would cost later. Nothing is burned now.</div>`;
+  for (const s of SUPPLIES) { const own = s.id === "potion" ? (upg.potions | 0) : (upg.armor ? 1 : 0);
+    h += `<div class="gun r-rare"><span class="gi">${s.icon}</span><div class="gt"><b>${s.name}</b> <i class="rr">BURN ONLY</i><small>${s.desc}</small><small class="bp">Burn ${s.burn} $BOSS from your wallet · no refund · not for shards${own ? " · you have " + own : ""}</small></div>`;
+    h += `<button type="button" class="burn" data-burn="${s.id}">BURN ${s.burn}</button>`;
+    if (s.id === "potion" && own) h += `<button type="button" data-drink="1">DRINK</button>`;
+    h += `</div>`; }
+  h += `<div class="gh">✦ SEALED LOOKS <small>Not for sale. Not for shards. Not a burn. Nothing to claim yet.</small></div>`;
+  for (const s of TEASERS) h += `<div class="gun r-legendary sealed"><span class="gi">${s.icon}</span><div class="gt"><b>${s.name}</b> <i class="rr">SEALED</i><small>A look that does not belong to this game yet.</small></div><button type="button" data-tease="${s.id}" disabled>SEALED</button></div>`;
+  el.innerHTML = h; }
 // ---------------- powers / weapons HUD ----------------
 let powT = 0;
 function powerUnlock(id, kind) { const D = POWERS[id], el = $("powCard"); if (!el) return; el.style.setProperty("--pc", D.css); el.querySelector(".pi").textContent = D.icon; el.querySelector("h3").textContent = `YOU ABSORBED THE POWER OF ${BOSSES[kind] ? BOSSES[kind].name : "THE BOSS"}!`;
@@ -1187,11 +1252,11 @@ function renderPowers() { const L = $("powL"); if (!L) return; const own = upg.p
 function setWeapon(i) { if (uiModal) return; const w = CB.setWeapon(i); input.mine = false; updWpnHud(); sfx.equip(); pop(`${w.icon} ${w.name}${w.id === "blaster" && (upg.blast | 0) >= 2 ? " MK II" : ""}`, w.id === "tool" ? "#ffd24a" : "#28dcff"); }
 function usePower() { if (uiModal || !running) return; const id = upg.power; if (!id || !(upg.powers || {})[id]) { pop("No boss power yet: beat an EPIC or LEGENDARY rift", "#cfd8ff"); return; } if (boss.on && boss.intro > 0) return; if (CB.power(id)) { stats.powerUses = (stats.powerUses | 0) + 1; $("bPow").classList.add("fire"); setTimeout(() => $("bPow").classList.remove("fire"), 300); } }
 let wpnKey = "";
-function updWpnHud() { const w = WEAPONS[CB.S.weapon], el = $("wpn"); if (!el) return; const mk = w.id === "blaster" && (upg.blast | 0) >= 2, pid = upg.power && (upg.powers || {})[upg.power] ? upg.power : "", D = pid ? POWERS[pid] : null;
-  const k = CB.S.weapon + "|" + mk + "|" + pid; if (k === wpnKey) return; wpnKey = k; el.dataset.w = w.id;
-  el.querySelector(".wi").textContent = w.icon; el.querySelector(".wn").textContent = w.name + (mk ? " MK II" : ""); el.querySelector(".wk").textContent = IS_TOUCH ? "" : "Z · X · C";
+function updWpnHud() { const w = WEAPONS[CB.S.weapon], el = $("wpn"); if (!el) return; const g = GUNS[upg.gun] || GUNS.blaster, ranged = w.id === "blaster", mk = ranged && g.id === "blaster" && (upg.blast | 0) >= 2, pid = upg.power && (upg.powers || {})[upg.power] ? upg.power : "", D = pid ? POWERS[pid] : null;
+  const k = CB.S.weapon + "|" + (ranged ? g.id : "") + "|" + mk + "|" + pid; if (k === wpnKey) return; wpnKey = k; el.dataset.w = ranged ? "blaster" : w.id;
+  el.querySelector(".wi").textContent = ranged ? g.icon : w.icon; el.querySelector(".wn").textContent = (ranged ? g.name : w.name) + (mk ? " MK II" : ""); el.querySelector(".wk").textContent = IS_TOUCH ? "" : "Z · X · C";
   const pe = el.querySelector(".wp"); pe.style.display = D ? "" : "none"; if (D) { pe.textContent = (IS_TOUCH ? "" : "F ") + D.icon + " " + D.name; pe.style.color = D.css; }
-  $("bWpn").textContent = w.icon; $("bWpn").dataset.w = w.id; $("bMine").textContent = w.id === "tool" ? "MINE" : w.id === "melee" ? "PUNCH" : "FIRE"; $("bMine").dataset.w = w.id;
+  $("bWpn").textContent = ranged ? g.icon : w.icon; $("bWpn").dataset.w = w.id; $("bMine").textContent = w.id === "tool" ? "MINE" : w.id === "melee" ? "PUNCH" : "FIRE"; $("bMine").dataset.w = ranged ? "blaster" : w.id;
   const bp = $("bPow"); bp.style.display = IS_TOUCH && D ? "block" : "none"; if (D) { bp.querySelector(".i").textContent = D.icon; bp.style.setProperty("--pc", D.css); } document.body.dataset.w = w.id; }
 let wpnT = 0;
 function wpnTick(dt) { if ((wpnT -= dt) > 0) return; wpnT = .08; updWpnHud(); const S = CB.S, h = $("heat"); if (h) { h.style.width = S.heat.toFixed(0) + "%"; h.className = S.over > 0 ? "over" : S.heat > 70 ? "hot" : ""; }
@@ -1264,7 +1329,7 @@ function landCheck() { if (!P.ground) { if (P.vy < -14) wasAir = true; return; }
 const met = { t: 9999, on: false, s: null, from: null, to: null, k: 0, crater: null, craterT: 0 };
 const metMat = new THREE.SpriteMaterial({ map: null, color: 0xfff2b0, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
 function launchMeteor() { const a = P.yaw + (Math.random() - .5) * .9, d = 11 + Math.random() * 6; let x = Math.round(P.x - Math.sin(a) * d), z = Math.round(P.z - Math.cos(a) * d);
-  x = Math.max(4, Math.min(SX - 5, x)); z = Math.max(4, Math.min(SZ - 5, z)); if (Math.abs(x - plaza.x) < 8 && Math.abs(z - plaza.z) < 8) { x = Math.round(plaza.x + (x > plaza.x ? 9 : -9)); }
+  x = Math.max(4, Math.min(SX - 5, x)); z = Math.max(4, Math.min(SZ - 5, z)); if (Math.hypot(x - plaza.x, z - plaza.z) < SAFE_R + 2) { const ox = x - plaza.x, oz = z - plaza.z, od = Math.hypot(ox, oz) || 1; x = Math.round(plaza.x + ox / od * (SAFE_R + 3)); z = Math.round(plaza.z + oz / od * (SAFE_R + 3)); }
   const y = topH[x + z * SX] + .5; metMat.map = shotTex; met.s = new THREE.Sprite(metMat); met.s.scale.set(3, 3, 1); scene.add(met.s);
   met.to = new THREE.Vector3(x + .5, y, z + .5); met.from = met.to.clone().add(new THREE.Vector3(26, 46, -14)); met.k = 0; met.on = true;
   banner("SOL METEOR INCOMING!", "Look up! ☄️"); noise(2.4, 800, .12, .5); note(900, 2.4, "sawtooth", .03, -800, 0, null, 2000); }
@@ -1331,7 +1396,7 @@ function dailyVal() { const q = dailyDef(); return Math.max(0, Math.min(q.n, (st
 function dailyReward() { return 20 + Math.min(6, daily.streak) * 5; }
 function dailyLine() { if (mp.on) return ""; dailyEnsure(); const q = dailyDef(); return daily.done ? `☀ DAILY DONE · streak ${daily.streak} · new one tomorrow` : `☀ DAILY: ${q.t} ${dailyVal()}/${q.n} · ◆+${dailyReward()}`; }
 function dailyTick() { bcTick(); if (mp.on) return; dailyEnsure(); if (!daily.done && dailyVal() >= dailyDef().n) { const y = new Date(Date.now() - 864e5), yk = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
-    daily.streak = daily.last === yk ? daily.streak + 1 : 1; daily.last = daily.key; const r = dailyReward(); daily.done = true; shards += r; updShards(); banner("DAILY COMPLETE!", `◆+${r} · streak ${daily.streak} 🔥`); sfx.quest(); save(); } updDaily(); }
+    daily.streak = daily.last === yk ? daily.streak + 1 : 1; daily.last = daily.key; const r = dailyReward(); daily.done = true; gainShards(r); banner("DAILY COMPLETE!", `◆+${r} · streak ${daily.streak} 🔥`); sfx.quest(); save(); } updDaily(); }
 
 // ---------------- screenshot: saves a PNG on this device (never uploaded) ----------------
 let wantShot = false, lastShotInfo = null;
@@ -1429,11 +1494,11 @@ function updWater(dt, time, night) { waterU.uT.value = time; waterU.uNight.value
 
 // ---------------- characters ($BOSS runner + holder skins) and camera views ----------------
 const CHARS = [
-  ["base_climb", "Cave Climber", 0], ["base_factory", "Factory Worker", 0], ["base_grave", "Pumpkin Head", 0], ["base_moon", "Astronaut", 0], ["base_surf", "Surfer", 0],
+  [STARTER, "Rookie", 0], ["base_climb", "Cave Climber", 0], ["base_factory", "Factory Worker", 0], ["base_grave", "Pumpkin Head", 0], ["base_moon", "Astronaut", 0], ["base_surf", "Surfer", 0],
   ["h_fudder", "Troglodyte Fudder", 1], ["h_pumpkin", "Pumpkin King", 1], ["h_reaper", "Grim Reaper", 1], ["h_hardhat", "Gold Foreman", 1], ["h_gearcrown", "Molten Mech", 1], ["h_moonhalo", "Moon Walker", 1],
   ["h_liftoff", "Rocketeer", 1], ["h_sharkfin", "Shark Surfer", 1], ["h_tidal", "Tide King", 1], ["h_fossil", "Cave Chief", 1], ["h_volcano", "Lava Warlord", 1],
   ["m_survivor_3", "3-Round Survivor", 2], ["m_survivor_5", "5-Round Survivor", 2], ["m_survivor_10", "10-Round Survivor", 2], ["m_slayer_ohio", "Boss Slayer: Ohio", 2], ["m_slayer_moon", "Boss Slayer: Moon", 2], ["m_score_50k", "High Score 50K", 2] ];
-let charId = "h_fudder", view = 1; const VIEWS = ["FIRST-PERSON", "THIRD-PERSON", "SELFIE"];
+let charId = STARTER, view = 1; const VIEWS = ["FIRST-PERSON", "THIRD-PERSON", "SELFIE"];
 const charMat = new THREE.SpriteMaterial({ transparent: true, alphaTest: .05 }); const charSpr = new THREE.Sprite(charMat); charSpr.scale.set(2.1, 2.1, 1); charSpr.visible = false; scene.add(charSpr);
 const rimMat = new THREE.SpriteMaterial({ color: 0x28dcff, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }); const rimSpr = new THREE.Sprite(rimMat); rimSpr.visible = false; scene.add(rimSpr);
 const shTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d"), gr = g.createRadialGradient(32, 32, 2, 32, 32, 30); gr.addColorStop(0, "rgba(0,0,0,.6)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
@@ -1441,8 +1506,10 @@ const shadowM = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), new THREE.Mesh
 let chSq = 0, chWasG = true, chFace = 1;
 const texLoader = new THREE.TextureLoader(), charTex = {}, charThumb = {};
 const loadCharTex = id => charTex[id] || (charTex[id] = texLoader.load(`../assets/chars/${id}.webp`, tt => { tt.colorSpace = THREE.SRGBColorSpace; }));
-function setChar(id, quiet) { if (!CHARS.find(c => c[0] === id)) id = "h_fudder"; charId = id; if (!RIG) { const t = loadCharTex(id); charMat.map = t; charMat.needsUpdate = true; rimMat.map = t; rimMat.needsUpdate = true; } else wantThumb(id, true); { const cc = CHARS.find(c => c[0] === id); rimMat.color.setHex(cc && cc[2] === 1 ? 0xffd24a : cc && cc[2] === 2 ? 0xc69bff : 0x28dcff); } const hero = $("charHero"); if (hero) { if (charThumb[id] || !RIG) hero.src = charThumb[id] || `../assets/chars/${id}.webp`; hero.classList.toggle("r3", !!charThumb[id]); } const se = document.querySelector(`#chars .ch[data-id="${id}"]`), ce = $("chars"); if (se && ce && quiet) ce.scrollLeft = Math.max(0, se.offsetLeft - ce.offsetLeft - ce.clientWidth / 2 + se.offsetWidth / 2); document.querySelectorAll("#chars .ch").forEach(e => e.classList.toggle("sel", e.dataset.id === id)); const c = CHARS.find(c => c[0] === id); $("charName").textContent = c[1] + (c[2] === 1 ? " · HOLDER SKIN" : c[2] === 2 ? " · MEDAL SKIN" : ""); if (!quiet) { sfx.click(); save(); } }
-function buildCharPicker() { const el = $("chars"); el.innerHTML = ""; for (const [id, nm, k] of CHARS) { const b = document.createElement("button"); b.type = "button"; b.className = "ch" + (k ? " h" + k : ""); b.dataset.id = id; b.title = nm; b.innerHTML = RIG ? `<img alt="${nm}">` : `<img src="../assets/chars/${id}.webp" alt="${nm}" loading="lazy">`; b.addEventListener("click", () => setChar(id)); el.appendChild(b); }
+function skinKind(id) { const c = CHARS.find(x => x[0] === id); return c ? c[2] : -1; }
+function skinFree(id) { return skinKind(id) !== 1 || skinHeld(id); }
+function setChar(id, quiet) { if (!CHARS.find(c => c[0] === id)) id = STARTER; charId = id; if (!RIG) { const t = loadCharTex(id); charMat.map = t; charMat.needsUpdate = true; rimMat.map = t; rimMat.needsUpdate = true; } else wantThumb(id, true); { const cc = CHARS.find(c => c[0] === id); rimMat.color.setHex(cc && cc[2] === 1 ? 0xffd24a : cc && cc[2] === 2 ? 0xc69bff : 0x28dcff); } const hero = $("charHero"); if (hero) { if (charThumb[id] || !RIG) hero.src = charThumb[id] || `../assets/chars/${id}.webp`; hero.classList.toggle("r3", !!charThumb[id]); } const se = document.querySelector(`#chars .ch[data-id="${id}"]`), ce = $("chars"); if (se && ce && quiet) ce.scrollLeft = Math.max(0, se.offsetLeft - ce.offsetLeft - ce.clientWidth / 2 + se.offsetWidth / 2); document.querySelectorAll("#chars .ch").forEach(e => e.classList.toggle("sel", e.dataset.id === id)); const c = CHARS.find(c => c[0] === id); $("charName").textContent = c[1] + (c[0] === STARTER ? " · FREE STARTER" : c[2] === 1 ? (skinHeld(c[0]) ? " · HOLDER NFT" : " · HOLDER NFT · CLAIM AT NIA") : c[2] === 2 ? " · MEDAL" : " · FREE"); if (!quiet) { sfx.click(); save(); } }
+function buildCharPicker() { const el = $("chars"); el.innerHTML = ""; for (const [id, nm, k] of CHARS) { const b = document.createElement("button"); b.type = "button"; const locked = k === 1 && !skinHeld(id); b.className = "ch" + (k ? " h" + k : "") + (id === STARTER ? " free" : "") + (locked ? " locked" : ""); b.dataset.id = id; b.title = locked ? nm + " · holder NFT" : nm; b.innerHTML = RIG ? `<img alt="${nm}">` : `<img src="../assets/chars/${id}.webp" alt="${nm}" loading="lazy">`; b.addEventListener("click", () => { if (locked) { pop("Holder NFT. Talk to Nia at spawn and tap CLAIM. Nothing is minted.", "#ffd24a"); return; } setChar(id); }); el.appendChild(b); }
   if (RIG) { if ("IntersectionObserver" in window) { const io = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) { wantThumb(e.target.dataset.id); io.unobserve(e.target); } }, { root: el, rootMargin: "0px 140px" }); el.querySelectorAll(".ch").forEach(b => io.observe(b)); } else CHARS.forEach(c => wantThumb(c[0])); } }
 function cycleView() { view = (view + 1) % 3; pop("VIEW: " + VIEWS[view], "#28dcff"); sfx.click(); save(); }
 const camOff = new THREE.Vector3();
@@ -1541,7 +1608,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; const time = now / 1000; thumbTick(dt);
   const night = updSky(running && !photo ? dt : 0); riftEnv(); curNight = night; updWater(dt, time, night);
-  if (running && !photo) { stuck.clock += dt; if (uiModal) { P.vx = P.vz = 0; input.mine = false; } else if (boss.on && boss.intro > 0) { P.vx = P.vz = 0; } else { updPlayer(dt); landCheck(); updMining(dt, time); } updFuds(dt, night, time); if (!Q.has("noani") && !mp.on && !riftIn) animals().update(dt, time, night); riftTick(dt, time); CB.update(dt, input.mine && !uiModal, !uiModal); wpnTick(dt); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); if (!riftIn) { updMeteor(dt, time); updCritters(dt, night); updEvents(dt, night); updRain(dt); } toyTick(dt); updPet(dt, time); }
+  if (running && !photo) { stuck.clock += dt; if (HUB) HUB.tick(time, !riftIn); if (uiModal || lbOpen || hubOpen) { P.vx = P.vz = 0; input.mine = false; } else if (boss.on && boss.intro > 0) { P.vx = P.vz = 0; } else { updPlayer(dt); landCheck(); updMining(dt, time); } updFuds(dt, night, time); if (!Q.has("noani") && !mp.on && !riftIn) animals().update(dt, time, night); riftTick(dt, time); CB.update(dt, input.mine && !uiModal && !lbOpen && !hubOpen, !uiModal && !lbOpen && !hubOpen); wpnTick(dt); updBoss(dt, time); updOrbs(dt); updCombo(dt); qT -= dt; if (qT <= 0) { qT = .25; qTick(); } bTick(dt); updScan(dt); if (!riftIn) { updMeteor(dt, time); updCritters(dt, night); updEvents(dt, night); updRain(dt); } toyTick(dt); updPet(dt, time); }
   else menuCam(dt);
   updRadar(dt);
   updMotes(dt, time, night); skyU.uTime.value = time; skyU.uAur.value += ((ev.k === "aurora" ? 1 : night > .6 ? .3 : 0) - skyU.uAur.value) * Math.min(1, dt * .8); updMP(dt); updParts(dt); updDebris(dt); audioTick(); adaptRes(dt);
@@ -1588,7 +1655,7 @@ function updEvents(dt, night) { if (mp.on) return; const chip = $("evChip");
 const rainMat = new THREE.SpriteMaterial({ map: null, color: 0x9df7ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }); const rain = [];
 function updRain(dt) { rainMat.map = shotTex; for (let i = rain.length - 1; i >= 0; i--) { const r = rain[i], p = r.s.position; const gy = topH[Math.max(0, Math.min(SX - 1, Math.floor(p.x))) + Math.max(0, Math.min(SZ - 1, Math.floor(p.z))) * SX] + 1.3;
     if (p.y > gy) { p.y += r.vy * dt; if (p.y < gy) p.y = gy; } else r.life -= dt; { const hx = P.x - p.x, hz = P.z - p.z, hd = Math.hypot(hx, hz); if (hd < 4.5 && hd > .01) { const k = Math.min(1, dt * (p.y <= gy + .01 ? 5 : 1.6)); p.x += hx * k; p.z += hz * k; if (p.y <= gy + .01) p.y += (P.y + 1 - p.y) * k; } } r.s.material.rotation += dt * 3;
-    if (Math.hypot(p.x - P.x, p.z - P.z) < 1.4 && p.y > P.y - .6 && p.y < P.y + 2.6) { scene.remove(r.s); rain.splice(i, 1); shards++; updShards(); stats.rain = (stats.rain | 0) + 1; pickN++; sfx.pick(pickN % 15); burst(p.x, p.y, p.z, [0x9df7ff, 0xffffff], 6, 2); continue; }
+    if (Math.hypot(p.x - P.x, p.z - P.z) < 1.4 && p.y > P.y - .6 && p.y < P.y + 2.6) { scene.remove(r.s); rain.splice(i, 1); gainShards(1); stats.rain = (stats.rain | 0) + 1; pickN++; sfx.pick(pickN % 15); burst(p.x, p.y, p.z, [0x9df7ff, 0xffffff], 6, 2); continue; }
     if (r.life <= 0) { scene.remove(r.s); rain.splice(i, 1); } } }
 // floating neon motes around the player (world ambience)
 const MOTE_N = IS_TOUCH ? 70 : 150, moteGeo = new THREE.BufferGeometry(), moteP = new Float32Array(MOTE_N * 3), moteS = new Float32Array(MOTE_N);
@@ -1614,7 +1681,7 @@ const ACH = [
   ["drill", "🔩", "BOSS DRILL", "Build the BOSS DRILL MK IV", () => upg.drill >= 4], ["event", "🌌", "WEATHER WATCHER", "Live through a world event", () => (stats.events | 0) >= 1],
   ["streak", "🔥", "ON A STREAK", "3-day daily streak", () => (daily.streak | 0) >= 3], ["pet", "🐾", "BEST FRIEND", "Adopt a companion", () => (stats.petsGot | 0) >= 1], ["builder", "🏗", "MASTER BUILDER", "Finish a daily Build Challenge", () => (bc.wins | 0) >= 1], ["photo", "📷", "PHOTOGRAPHER", "Snap a picture in Photo Mode", () => (stats.photoSnaps | 0) >= 1], ["zfish", "🗺", "ZONE ANGLER", "Catch 3 zone-only fish", () => FISH.filter(f => f.z && fish.dex[f.n]).length >= 3] ];
 let ach = {}, achT = 0;
-function achTick() { if (mp.on || !running) return; for (const a of ACH) if (!ach[a[0]] && a[4]()) { ach[a[0]] = Date.now(); shards += 5; updShards(); const el = $("ach"); $("achN").textContent = `${a[1]} ${a[2]}`; $("achD").textContent = `${a[3]} · ◆+5 (in-game)`; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); clearTimeout(achT); achT = setTimeout(() => el.classList.remove("show"), 3600); sfx.ach(); charJoy = 1; buzz(40); save(); break; } }
+function achTick() { if (mp.on || !running) return; for (const a of ACH) if (!ach[a[0]] && a[4]()) { ach[a[0]] = Date.now(); gainShards(5); const el = $("ach"); $("achN").textContent = `${a[1]} ${a[2]}`; $("achD").textContent = `${a[3]} · ◆+5 (in-game)`; el.classList.remove("show"); void el.offsetWidth; el.classList.add("show"); clearTimeout(achT); achT = setTimeout(() => el.classList.remove("show"), 3600); sfx.ach(); charJoy = 1; buzz(40); save(); break; } }
 function achHTML() { return `<b>🏆 ACHIEVEMENTS ${Object.keys(ach).length}/${ACH.length}</b><div class="achg">` + ACH.map(a => `<span class="${ach[a[0]] ? "on" : ""}" title="${a[2]}: ${a[3]}">${a[1]}<i>${ach[a[0]] ? a[2] : "???"}</i></span>`).join("") + "</div>"; }
 
 // ---------------- v0.8: companions (original pets, local only) ----------------
@@ -1652,7 +1719,7 @@ function updPet(dt, time) { if (!upg.pet || mp.on) return; pet.t += dt; const id
   if (fly && Math.random() < dt * 6) burst(pet.x, pet.y + .2, pet.z, [0x14f195, 0x9945ff], 1, .6);
   if (id === "pup") { pet.barkT -= dt; if (pet.barkT <= 0) { pet.barkT = 2.5; for (const c of caches) { if (get(c[0], c[1], c[2]) !== 23) continue; const cd = Math.hypot(c[0] - P.x, c[1] - P.y, c[2] - P.z); if (cd < 12) { sfx.bark(); pet.vy = 6; const k = c.join(); if (!pet.barked[k]) { pet.barked[k] = 1; pop("🐶 WOOF! SOMETHING SHINY IS NEAR", "#ffd24a"); } break; } } } }
   if (id === "crab") { for (const c of critters) if (c.s.position.distanceTo(petSpr.position) < 1.3) { pop("🦀 PINCH!", "#ff7a3a"); zapCritter(c); break; }
-    for (let i = rain.length - 1; i >= 0; i--) { const r = rain[i].s.position; if (Math.hypot(r.x - pet.x, r.z - pet.z) < 1.6 && r.y < pet.y + 2) { scene.remove(rain[i].s); rain.splice(i, 1); shards++; updShards(); stats.rain = (stats.rain | 0) + 1; burst(r.x, r.y, r.z, [0x9df7ff], 4, 1.5); sfx.pick(3); } } } }
+    for (let i = rain.length - 1; i >= 0; i--) { const r = rain[i].s.position; if (Math.hypot(r.x - pet.x, r.z - pet.z) < 1.6 && r.y < pet.y + 2) { scene.remove(rain[i].s); rain.splice(i, 1); gainShards(1); stats.rain = (stats.rain | 0) + 1; burst(r.x, r.y, r.z, [0x9df7ff], 4, 1.5); sfx.pick(3); } } } }
 $("petL").addEventListener("click", e => { const b = e.target.closest("button[data-pet]"); if (b) petClick(b.dataset.pet); });
 
 // ---------------- v0.8: PHOTO MODE (local only: pictures save to your device or open your own share sheet) ----------------
@@ -1686,17 +1753,19 @@ function bcLine() { if (mp.on) return ""; bcEnsure(); const q = bcDef(); return 
 let bcLast = -1;
 function bcTick() { if (mp.on) return; bcEnsure(); if (bc.done) return; const v = bcVal(), q = bcDef(); if (v !== bcLast && bcLast >= 0 && v > bcLast && v < q.n) pop(`🏗 ${q.t} ${v}/${q.n}`, "#14f195"); bcLast = v;
   if (v >= q.n) { const y = new Date(Date.now() - 864e5), yk = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`; bc.streak = bc.last === yk ? bc.streak + 1 : 1; bc.last = bc.key; bc.done = true; bc.wins = (bc.wins | 0) + 1;
-    shards += 30; updShards(); banner("BUILD CHALLENGE COMPLETE!", `${q.t} · ◆+30 (in-game) · streak ${bc.streak} 🏗`); sfx.quest(); fireworks(P.x, P.y + 1, P.z); charJoy = 1; save(); } }
+    gainShards(30); banner("BUILD CHALLENGE COMPLETE!", `${q.t} · ◆+30 (in-game) · streak ${bc.streak} 🏗`); sfx.quest(); fireworks(P.x, P.y + 1, P.z); charJoy = 1; save(); } }
 
 // ---------------- boot ----------------
 const saved = load();
 let riftReload = null; try { if (Q.has("reset")) localStorage.removeItem(RIFT_KEY); riftReload = JSON.parse(localStorage.getItem(RIFT_KEY) || "null"); } catch (e) {}
 let migrated = false;
 let newWorld = false; if (saved && !saved.migr && (saved.wv | 0) !== WORLD_V) { newWorld = true; saved.edits = {}; saved.p = null; }
+upg.guns = Object.assign({ blaster: 1 }, upg.guns || {}); if (!upg.guns[upg.gun]) upg.gun = "blaster";
 if (saved && !saved.migr) { seed = saved.seed; edits = saved.edits || {}; shards = saved.shards | 0; sel = saved.sel | 0; tod = saved.tod ?? tod;
   if (saved.upg) Object.assign(upg, saved.upg); if (saved.stats) Object.assign(stats, saved.stats); Qi = saved.Qi | 0; if (!saved.qv && Qi >= 7) Qi++; if ((saved.qv | 0) < 3 && Qi >= 12) { Qi = 12; saved.qBase = {}; } qBase = saved.qBase || {}; P.hp = saved.hp || maxHp();
-  view = saved.tp ? (saved.view ?? 1) : 1; if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; lookMul = saved.set.look || 1; } if (saved.daily) Object.assign(daily, saved.daily); if (saved.bc) Object.assign(bc, saved.bc); if (saved.dex) fish.dex = saved.dex; if (saved.ach) ach = saved.ach; if (saved.char) charId = saved.char; introDone = saved.intro !== false; if (introDone) met.t = 150 + Math.random() * 120; }
+  view = saved.tp ? (saved.view ?? 1) : 1; if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; lookMul = saved.set.look || 1; } if (saved.daily) Object.assign(daily, saved.daily); if (saved.bc) Object.assign(bc, saved.bc); if (saved.dex) fish.dex = saved.dex; if (saved.ach) ach = saved.ach; if (saved.char) charId = saved.char; if (skinKind(charId) === 1 && !skinHeld(charId)) charId = STARTER; introDone = saved.intro !== false; if (introDone) met.t = 150 + Math.random() * 120; }
 else { seed = parseInt(Q.get("seed")) || 1337; if (saved && saved.migr) { shards = saved.shards; migrated = true; } qStart(); }
+const HUB = createHub(THREE, { scene, toon: BX.toon, plaza: () => plaza, px: () => P.x, pz: () => P.z, onOpen: v => { hubOpen = !!v; input.mine = false; if (v && document.pointerLockElement) document.exitPointerLock(); }, onShop: () => openLab(), onClaim: () => claimNftSkins() });
 generate(seed); applyEdits(); for (const t of trees) if (get(t.x, t.y + 1, t.z) !== 27 || !get(t.x, t.y, t.z)) { t.dead = true; for (let y = t.y + 1; y <= t.y + t.h; y++) if (get(t.x, y, t.z) === 27) world[idx(t.x, y, t.z)] = 0; } const tris = buildAll(); visY = P.y;
 respawn(); if (saved && saved.p && !riftReload) { [P.x, P.y, P.z, P.yaw, P.pitch] = saved.p; if (P.y > SY + 2 || collides(P.x, P.y, P.z)) respawn(); }
 if (riftReload) { const lost = wipeLoot(); try { localStorage.removeItem(RIFT_KEY); } catch (e) {} respawn(); stats.riftLosses = (stats.riftLosses | 0) + 1; setTimeout(() => showLost(lost, riftReload, true), 700); setTimeout(save, 50); }
@@ -1708,8 +1777,33 @@ $("load").remove();
 setInterval(save, 5000);
 requestAnimationFrame(frame);
 
+function renderBoard() { const el = $("lb"); if (!el) return; LB.refresh(); const rows = LB.ranked(), you = LB.me(), rank = LB.youRank(rows), plan = LB.plan(rows), w = LB.wallet();
+  $("lbFormula").textContent = LB.FORMULA_TEXT; $("lbPrize").textContent = LB.PRIZE_TEXT;
+  $("lbYou").textContent = "You · " + you.name + " · score " + you.score + (rank ? " · rank " + rank : "") + " · bosses " + (you.bosses | 0) + " · ◆ earned " + (you.shards | 0) + " · legendary wins " + (you.legs | 0);
+  const inp = $("lbName"); inp.value = w ? you.name : (LB.dump().name || ""); inp.disabled = !!w; $("lbPhantom").textContent = w ? "PHANTOM LINKED" : "USE PHANTOM";
+  const tb = $("lbRows"); tb.innerHTML = ""; rows.slice(0, 20).forEach((e, i) => { const leg = plan.legs[i]; const est = !leg ? "" : (plan.belowMinimum || !leg.filled ? leg.pct + "% · rolls over" : leg.pct + "% · " + leg.sol.toFixed(3) + " SOL");
+    const tr = document.createElement("tr"); if (e.id === you.id) tr.className = "you"; tr.innerHTML = `<td>${i + 1}</td><td>${e.name}</td><td>${e.score}</td><td>${e.bosses | 0}</td><td>${e.shards | 0}</td><td>${e.legs | 0}</td><td>${i < 5 ? est : ""}</td>`; tb.appendChild(tr); });
+  if (!rows.length) tb.innerHTML = '<tr><td colspan="7">No scores yet this season.</td></tr>';
+  $("lbRank").textContent = rank ? "Your rank " + rank + " of " + rows.length : "";
+  $("lbPot").textContent = "Pot " + plan.potSol.toFixed(3) + " SOL · " + (plan.belowMinimum ? "under 0.05, so it would roll over" : "top 5 would split this") + " · nothing is sent from this game.";
+  $("lbReset").hidden = !LB.resetAllowed(); }
+function openBoard() { if (riftAsk) return; lbOpen = true; input.mine = false; input.f = input.s = 0; renderBoard(); $("lb").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
+function closeBoard() { lbOpen = false; $("lb").classList.remove("show"); }
+$("hubTalk").addEventListener("click", e => { e.stopPropagation(); const n = HUB.nearest(P.x, P.z); if (n) HUB.talk(n.id); });
+$("hubNext").addEventListener("click", e => { e.stopPropagation(); HUB.next(); });
+$("hubBye").addEventListener("click", e => { e.stopPropagation(); HUB.close(); });
+$("hubShop").addEventListener("click", e => { e.stopPropagation(); HUB.shopOpen(); });
+$("hubClaim").addEventListener("click", e => { e.stopPropagation(); HUB.claim(); });
+$("lbOpen").addEventListener("click", () => openBoard());
+$("lbClose").addEventListener("click", () => closeBoard());
+$("lbName").addEventListener("change", e => { LB.setName(e.target.value); renderBoard(); });
+$("lbPhantom").addEventListener("click", async () => { try { const a = await connectWallet(); LB.noteWallet(a); renderBoard(); pop("Board key is your wallet · nothing was spent", "#9df7ff"); } catch (err) { pop(err.message || "Phantom isn't available. Type a name instead.", "#cfd8ff"); } });
+$("lbReset").addEventListener("click", () => { if (!LB.resetAllowed()) return; if (!confirm("Reset Season 1 scores saved on this device?")) return; LB.resetSeason(); renderBoard(); });
+$("gunL").addEventListener("click", e => { const b = e.target.closest("button[data-gun]"); if (b && !b.disabled) { ownGun(b.dataset.gun) ? equipGun(b.dataset.gun) : buyGun(b.dataset.gun); renderGuns(); return; } if (e.target.closest("button[data-drink]")) { drinkPotion(); return; } if (e.target.closest("button[data-tease]")) { pop("Sealed. Not for sale here.", "#cfd8ff"); return; } const br = e.target.closest("button[data-burn]"); if (br) tryBurn(br.dataset.burn); });
+window.addEventListener("keydown", e => { if (lbOpen && e.code === "Escape" && document.activeElement !== $("lbName")) closeBoard(); });
+
 // test / debug hooks (harmless; used by automated checks)
-window.__SB = { world: () => { let t0 = 0, t1 = 0, c0 = 0, c1 = 0, pr = 0, vis = 0; for (const q of sm) { if (q.m0) { c0++; if (q.m0.visible) t0 += q.m0.geometry.index.count / 3; } if (q.m1) { c1++; if (q.m1.visible) t1 += q.m1.geometry.index.count / 3; } if (q.pr && q.pr.visible) pr += q.pr.geometry.index.count / 3; if (q.vis) vis++; } return { smooth: SMOOTH, lod0: c0, lod1: c1, tris0: t0, tris1: t1, props: pr, visChunks: vis, trees: trees.filter(t => !t.dead).length, SX, SZ }; }, chunkLod: (x, z) => { const q = sm[Math.floor(x / CS) + Math.floor(z / CS) * NCX]; return q && { lod: q.lod, m0: !!(q.m0 && q.m0.visible), m1: !!(q.m1 && q.m1.visible), d: q.d }; }, visY: () => visY, visGround: () => visGround(P.x, P.y, P.z), trees: () => trees.filter(t => !t.dead).map(t => ({ ...t })), fell: i => fellTree(trees.filter(t => !t.dead)[i]), SX: () => SX, SZ: () => SZ, gemInfo: () => ({ cut: Object.fromEntries(Object.entries(GEM.SPEC).map(([k, v]) => [k, v.cut])), glow: GEM.mat.fragmentShader.includes("inner"), sparkle: GEM.pmat.vertexShader.includes("aK") }), gems: () => { let n = 0, f = 0, t = 0; for (const g of gemL) if (g) { n++; f += g.faces; t += g.tris; } return { chunks: n, faces: f, tris: t }; }, pools: () => pools.map(q => ({ x: q.x, y: q.y, z: q.z, rx: q.rx, rz: q.rz })), stuck: () => ({ ...stuck, swim: !!P.swim, wet: !!P.wet }), dryLand, audio: () => ({ state: AC ? AC.state : "none", snd: sndOn, mus: musOn, n: { ...sfxN }, unlock: unlockN, lvl: audioLevel(), hud: $("sndHud").textContent, amb: amb.wind ? { wind: +amb.wind.gain.value.toFixed(3), water: +amb.water.gain.value.toFixed(3), cave: +amb.cave.gain.value.toFixed(3), poolD: +amb.poolD.toFixed(1) } : null }), sfx: (k, ...a) => sfx[k](...a), toggleSound, ambMute: v => { if (ambG) ambG.gain.value = v ? 0 : AMB_V; }, setSnd: (a, b) => { sndOn = a; musOn = b; updSetBtns(); }, audioSuspend: () => AC && AC.suspend(), bc: () => ({ ...bc, def: bcDef(), v: bcVal(), line: bcLine() }), bcForce: i => { bcForceI = i; }, setPhoto, photo: () => ({ on: photo, pose: POSES[poseI], filter: FILTERS[filtI][0], zoom: photoZoom }), setChar: id => setChar(id, true), thumbs: () => ({ left: thumbQ.length, n: Object.keys(charThumb).length, r3: document.querySelectorAll("#chars .ch.r3").length }), rig: () => ({ vis: rig.visible, yaw: rigYaw, legL: CM ? CM.legL.rotation.x : 0, armR: CM ? CM.armR.rotation.x : 0, kneeL: CM ? CM.kneeL.rotation.x : 0, elbowR: CM ? CM.elbowR.rotation.x : 0, expr: CM ? CM.expr : "", dressed: rigFor, info: rig.userData.info }), petClick, pet: () => ({ ...pet, id: upg.pet, vis: petSpr.visible, px: petSpr.position.x }), FISH: () => FISH.map(f => f.n), roll: (n, z) => rollFish(n, z).n, brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, qDefAt: i => qDef(i), achs: () => ({ ...ach }), introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
+window.__SB = { world: () => { let t0 = 0, t1 = 0, c0 = 0, c1 = 0, pr = 0, vis = 0; for (const q of sm) { if (q.m0) { c0++; if (q.m0.visible) t0 += q.m0.geometry.index.count / 3; } if (q.m1) { c1++; if (q.m1.visible) t1 += q.m1.geometry.index.count / 3; } if (q.pr && q.pr.visible) pr += q.pr.geometry.index.count / 3; if (q.vis) vis++; } return { smooth: SMOOTH, lod0: c0, lod1: c1, tris0: t0, tris1: t1, props: pr, visChunks: vis, trees: trees.filter(t => !t.dead).length, SX, SZ }; }, chunkLod: (x, z) => { const q = sm[Math.floor(x / CS) + Math.floor(z / CS) * NCX]; return q && { lod: q.lod, m0: !!(q.m0 && q.m0.visible), m1: !!(q.m1 && q.m1.visible), d: q.d }; }, visY: () => visY, visGround: () => visGround(P.x, P.y, P.z), trees: () => trees.filter(t => !t.dead).map(t => ({ ...t })), fell: i => fellTree(trees.filter(t => !t.dead)[i]), SX: () => SX, SZ: () => SZ, gemInfo: () => ({ cut: Object.fromEntries(Object.entries(GEM.SPEC).map(([k, v]) => [k, v.cut])), glow: GEM.mat.fragmentShader.includes("inner"), sparkle: GEM.pmat.vertexShader.includes("aK") }), gems: () => { let n = 0, f = 0, t = 0; for (const g of gemL) if (g) { n++; f += g.faces; t += g.tris; } return { chunks: n, faces: f, tris: t }; }, pools: () => pools.map(q => ({ x: q.x, y: q.y, z: q.z, rx: q.rx, rz: q.rz })), stuck: () => ({ ...stuck, swim: !!P.swim, wet: !!P.wet }), dryLand, audio: () => ({ state: AC ? AC.state : "none", snd: sndOn, mus: musOn, n: { ...sfxN }, unlock: unlockN, lvl: audioLevel(), hud: $("sndHud").textContent, amb: amb.wind ? { wind: +amb.wind.gain.value.toFixed(3), water: +amb.water.gain.value.toFixed(3), cave: +amb.cave.gain.value.toFixed(3), poolD: +amb.poolD.toFixed(1) } : null }), sfx: (k, ...a) => sfx[k](...a), toggleSound, ambMute: v => { if (ambG) ambG.gain.value = v ? 0 : AMB_V; }, setSnd: (a, b) => { sndOn = a; musOn = b; updSetBtns(); }, bossMusic: () => ({ on: !!(boss.on && !boss.dying && musOn && running), tier: bossTierNow, notes: bossNotes, mus: musOn, musGain: musG ? musG.gain.value : 0 }), noiseN: () => sfxN.noise | 0, audioSuspend: () => AC && AC.suspend(), bc: () => ({ ...bc, def: bcDef(), v: bcVal(), line: bcLine() }), bcForce: i => { bcForceI = i; }, setPhoto, photo: () => ({ on: photo, pose: POSES[poseI], filter: FILTERS[filtI][0], zoom: photoZoom }), setChar: id => setChar(id, true), thumbs: () => ({ left: thumbQ.length, n: Object.keys(charThumb).length, r3: document.querySelectorAll("#chars .ch.r3").length }), rig: () => ({ vis: rig.visible, yaw: rigYaw, legL: CM ? CM.legL.rotation.x : 0, armR: CM ? CM.armR.rotation.x : 0, kneeL: CM ? CM.kneeL.rotation.x : 0, elbowR: CM ? CM.elbowR.rotation.x : 0, expr: CM ? CM.expr : "", dressed: rigFor, info: rig.userData.info }), petClick, pet: () => ({ ...pet, id: upg.pet, vis: petSpr.visible, px: petSpr.position.x }), FISH: () => FISH.map(f => f.n), roll: (n, z) => rollFish(n, z).n, brk: (x, y, z) => { const id = get(x, y, z); if (id) breakBlock(x, y, z, id); return id; }, topH: (x, z) => topH[x + z * SX], ACH: () => ACH.map(a => a[0]), ach: () => ({ ...ach }), startEvent, ev: () => ({ k: ev.k, t: ev.t, rain: rain.length }), caches: () => caches.map(c => [...c, get(c[0], c[1], c[2])]), cachesFound, biomeNow: () => biomeNow, setBlock: (x, y, z, id) => setBlock(x, y, z, id), sky: () => skyU.uAur.value, joy: () => charJoy, P, input, charSpr, bossPos: () => boss.on && boss.g.position.toArray(), bossKind: () => boss.kind, quests: () => QUESTS.length, qDefAt: i => qDef(i), achs: () => ({ ...ach }), introFx: () => introFx, spawnDia: () => spawnCritter("dia"), crits: () => critters.map(c => ({ dia: !!c.dia })), zapNearest: () => { const c = critters[0]; if (c) zapCritter(c); return !!c; }, shareShown: () => $("shareBtn").classList.contains("show"), shareClick: () => $("shareBtn").click(), shared: () => window.__shared | 0, get: (x, y, z) => get(x, y, z), setBlock, place: () => { aim(); place(); }, aim: () => { aim(); return hit && { ...hit }; }, start: startGame, pause, look,
   state: () => ({ x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, ground: P.ground, shards, sel, running, tris, fps: Math.round(fps), fuds: fuds.length, tod, mp: mp.on ? { id: mp.id, rejects: mp.rejects || 0, lastEmote: mp.lastEmote || null, others: [...mp.others.values()].map(o => ({ name: o.p.name, x: o.p.x, y: o.p.y, z: o.p.z })) } : null, info: renderer.info.render }),
   select, respawn, save, lookSlow: () => lookSlow, setLookSlow: v => { lookSlow = !!v; const b = $("lookSlow"); if (b) { b.classList.toggle("on", lookSlow); b.textContent = lookSlow ? "LOOK: SLOW" : "LOOK: NORM"; } }, trySoftTapMine, overUI, upg, stats, quest: () => ({ i: Qi, ...qDef(Qi), v: qVal(qDef(Qi)) }), boss: () => ({ on: boss.on, hp: boss.hp, max: boss.max, phase: boss.phase }), summon: k => summonBoss(k), daily: () => ({ ...daily, line: dailyLine() }), meteor: () => { met.t = 0; }, met: () => ({ on: met.on, crater: met.crater }), critters: () => critters.map(c => ({ x: c.s.position.x, y: c.s.position.y, z: c.s.position.z })), spawnCritter: () => spawnCritter(true), lookAtCrit: () => { const c = critters.slice().sort((a, b) => a.s.position.distanceTo(camera.position) - b.s.position.distanceTo(camera.position))[0]; if (!c) return false; const o = c.s.position, dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return true; }, shot: () => { wantShot = true; }, lastShot: () => lastShotInfo, lastShotUrl: () => lastShot && lastShot.url, touchLook: (dx, dy) => touchLook(dx, dy), setLookMul: v => { lookMul = v; }, mem: () => ({ geo: renderer.info.memory.geometries, tex: renderer.info.memory.textures, heap: performance.memory ? performance.memory.usedJSHeapSize : 0, scene: scene.children.length, orbs: orbs.length, fuds: fuds.length, shots: boss.shots.length, crit: critters.length }), fishSt: () => ({ st: fish.st, prog: fish.prog, sp: fish.sp && fish.sp.n, dex: fish.dex, n: stats.fish || 0 }), pools: () => pools, setView: v => { view = v; }, rigObj: () => rig, rinfo: () => ({ calls: renderer.info.render.calls, tris: renderer.info.render.triangles }), headPNG: id => { const J = KIT.build(id); const u = J.headCanvas.toDataURL(); J.dispose(); return u; }, charPNG: (id, size, yaw) => new Promise(res => { const go = () => { const u = renderRigPNG(id, size || 384, yaw ?? .42); if (u) res(u); else setTimeout(go, 50); }; go(); }), view: () => view, tpCam: () => ({ ok: tpCam.ok, d: tpCam.d, sh: tpCam.sh, pos: tpCam.pos.toArray(), dir: tpCam.dir.toArray() }), aimHit: () => hit && { x: hit.x, y: hit.y, z: hit.z }, setChar: id => setChar(id, true), charId: () => charId, chars: () => CHARS.map(c => c[0]), aimState: () => ({ pool: !!poolHit, boss: bossHit, crit: !!critHit, fud: !!fudHit }), lookAtBoss: () => { if (!boss.on) return; const o = boss.g.position.clone(); if (boss.kind === "fudder") o.y += 2.2; const dx = o.x - P.x, dz = o.z - P.z, dy = o.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); }, bossDamage: (n, w) => bossDamage(n, w), bossX: () => ({ on: boss.on, kind: boss.kind, hp: boss.hp, max: boss.max, phase: boss.phase, intro: boss.intro, act: boss.act && boss.act.n, actS: boss.act && boss.act.s, expose: boss.expose, minions: boss.minions, dying: boss.dying, fx: BX.fx.length, haz: BX.haz.length, shots: BX.shots.length, pos: boss.on ? boss.g.position.toArray() : null, weak: boss.on ? boss.eye.getWorldPosition(new THREE.Vector3()).toArray() : null, cine: document.body.classList.contains("cine") }), bossAct: n => { if (boss.on) { boss.intro = 0; cine(false); BX.clearFx(); boss.lidShut = false; boss.wind = 0; boss.act = { n, t: 0, s: 0 }; } }, bossSkipIntro: () => { boss.intro = 0; cine(false); }, bossAim: (o, d) => BX.aim(new THREE.Vector3(...o), new THREE.Vector3(...d).normalize(), 40), bossModels: () => Object.keys(BX.models()), bossModel: k => BX.make(k).g, lair: () => { const A = lairArena(), vx = lair.x + Math.cos(lair.ea) * 7, vz = lair.z + Math.sin(lair.ea) * 7; return { ...lair, arena: A, props: !!LZ, view: [vx, lair.floorY, vz, Math.atan2(-(lair.throne[0] - vx), -(lair.throne[1] - vz)), .12] }; }, lairProps: () => LZ, lairFight: () => { const A = lairArena(); P.x = lair.x + Math.cos(lair.ea) * 6; P.z = lair.z + Math.sin(lair.ea) * 6; P.y = lair.floorY; P.vx = P.vy = P.vz = 0; lairCd = 0; lairArmed = true; return true; }, bossEnd: (w, s) => bossEnd(w, s), openLab, closeLab, buy: id => buyUpg(id), hp: () => P.hp, biome: () => biomeName(P.x, P.z), give: n => { shards += n; updShards(); }, setTod: t => { tod = t; }, dpr: () => renderer.getPixelRatio(), combo: () => comboN, inLookZone, inMoveZone, showTip: () => { try { localStorage.removeItem(TIP_KEY); } catch(e){} $("tip").classList.add("show"); }, hideTip: () => { $("tip").classList.remove("show"); try { localStorage.setItem(TIP_KEY,"1"); } catch(e){} }, emote: k => mp.ws && mp.ws.send(JSON.stringify({ t: "emote", k })), tp: (x, y, z) => { P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }, B, plaza: () => plaza, animals: () => ANI ? ANI.counts() : null, aniList: () => ANI ? ANI.land.map(a => ({ k: a.k, st: a.st, x: a.x, y: a.y, z: a.z, d: Math.hypot(a.x - P.x, a.z - P.z) })) : [], spawnAnimal: (k, x, z) => !!animals().spawnLand(k, x, z), aniAim: () => aniHit ? aniHit.k : null, lookAtAnimal: i => { const a = ANI && ANI.land[i | 0]; if (!a) return false; if (view === 1 && tpCam.ok && !photo) { const dx = a.c.x - tpCam.pos.x, dy = a.c.y - tpCam.pos.y, dz = a.c.z - tpCam.pos.z, d = tpCam.dir; let e = Math.atan2(-dx, -dz) - Math.atan2(-d.x, -d.z); e = Math.atan2(Math.sin(e), Math.cos(e)); P.yaw += e; P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch + Math.atan2(dy, Math.hypot(dx, dz)) - Math.asin(Math.max(-1, Math.min(1, d.y))))); return true; } const dx = a.c.x - P.x, dz = a.c.z - P.z, dy = a.c.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return true; }, placeNow: () => place(), owlsList: () => ANI ? ANI.owls.map(o => o.m.root.position.toArray()) : [], birdPos: () => { if (!ANI || !ANI.birds.length) return null; const c = [0, 0, 0]; for (const b of ANI.birds) { const p = b.m.root.position; c[0] += p.x; c[1] += p.y; c[2] += p.z; } return c.map(v => v / ANI.birds.length); }, orient: () => ({ phone: IS_PHONE, land: landPhone(), portrait: document.body.classList.contains("portrait-phone"), rotPaused, running, rest: $("stick").classList.contains("rest"), canLock: document.body.classList.contains("can-lock") }), orientCheck, joy: () => ({ ...joy }), night: () => curNight, wolves: () => fuds.map(w => ({ st: w.st, x: w.x, y: w.y, z: w.z, hp: w.hp, c: w.c.toArray() })), spawnWolf: (x, y, z) => !!spawnFud(x, y, z), wolfFx: () => WOLF ? WOLF.fx.length : 0, lookAtWolf: () => { const w = fuds[0]; if (!w) return false; const dx = w.c.x - P.x, dz = w.c.z - P.z, dy = w.c.y - (P.y + P.eye); P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); return true; }, lairNav: () => ({ show: $("lairNav").classList.contains("show"), d: $("lairD").textContent }), lairBeacon: () => LZ ? { beam: LZ.beam.visible, mark: LZ.mark.visible } : null };
 
@@ -1727,6 +1821,11 @@ Object.assign(window.__SB, {
   fireOnce: () => { CB.fire(); }, punchOnce: () => CB.punch(),
   powers: () => ({ owned: Object.keys(upg.powers || {}), eq: upg.power, blast: upg.blast | 0 }), givePower: id => { upg.powers = upg.powers || {}; upg.powers[id] = 1; upg.power = id; updWpnHud(); }, usePower, powerCard: () => $("powCard").classList.contains("show"),
   setShards: n => { shards = n; updShards(); }, setBlast: n => { upg.blast = n; updWpnHud(); },
+  lb: () => ({ you: LB.me(), rank: LB.youRank(), rows: LB.ranked().slice(0, 20), plan: LB.plan(), formula: LB.FORMULA_TEXT, prize: LB.PRIZE_TEXT }),
+  lbKill: (kind, tier, leg) => LB.kill(kind, tier, !!leg), lbEarn: n => LB.earn(n), lbSetName: n => LB.setName(n), lbWallet: a => LB.noteWallet(a), lbSeed: (n, s) => LB.seed(n, s), lbReset: () => LB.resetSeason(), lbSetPot: n => LB.setPot(n),
+  openBoard, closeBoard, boardOpen: () => lbOpen, renderBoard, inHub: () => inHub(), safeR: () => SAFE_R, hub: () => HUB.info(), hubTalk: id => HUB.talk(id), hubNext: () => HUB.next(), hubClose: () => HUB.close(), skins: () => ({ starter: STARTER, id: charId, held: heldSkins(), nft: SKIN_NFT, free: skinFree(charId) }), claimSkins: () => claimNftSkins(), rememberHeld, buySupply, drinkPotion, supplies: () => ({ potions: upg.potions | 0, armor: upg.armor | 0 }),
+  guns: () => ({ own: { ...upg.guns }, eq: upg.gun, name: (GUNS[upg.gun] || {}).name }), buyGun, equipGun, grantGun, liveBolts: () => CB.liveBolts(), gunCfg: () => CB.gunCfg(),
+  burn: () => ({ configured: burnConfigured(), live: burnLive(), enabled: BURN.enabled, mint: BURN.mint, server: BURN.serverUrl, program: BURN.tokenProgram, prices: { ...BURN.prices }, sendsSol: false }),
   aimAt: (x, y, z) => { const dx = x - P.x, dy = y - (P.y + P.eye), dz = z - P.z; P.yaw = Math.atan2(-dx, -dz); P.pitch = Math.atan2(dy, Math.hypot(dx, dz)); },
   hurtMe: n => hurt(n), hp: () => P.hp, bossTier: () => boss.on ? { ...boss.tier } : null,
 });
