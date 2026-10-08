@@ -1,6 +1,6 @@
 // v0.9.7 spawn hub. The plaza is a safe zone: no damage, and bosses / rifts / wolves do not spawn inside SAFE_R.
 // Original toon NPCs, the GUILD HOUSE (shop) with a hanging GUILD sign, the Guild contract board, and a big Season 1 rank sign.
-// The rank sign shows scores saved on this device. Live SOL prizes stay OFF until Noah says go.
+// v0.9.8: the rank sign shows the LIVE shared Season board (top 5 for everyone, from the $BOSS score server). Falls back to this device if offline.
 export const SAFE_R = 11;
 
 export function createHub(THREE, C) {
@@ -36,7 +36,7 @@ export function createHub(THREE, C) {
   // talk-to spots that are not people: the contract board and the big rank sign
   const PROPS = [
     { id: "board", name: "GUILD BOARD", role: "CONTRACTS", dx: 0.0, dz: -2.7, quests: true, lines: ["Guild contracts pay extra ◆ shards. The top ones pay a BOSS POWER. Finish one, then come back here to claim it."] },
-    { id: "ranks", name: "SEASON 1", role: "RANKS", dx: -4.0, dz: -3.9, ranks: true, lines: ["The big sign shows the Season 1 top 5. Scores are saved on this device. Live SOL prizes are OFF until launch."] },
+    { id: "ranks", name: "SEASON 1", role: "RANKS", dx: -4.0, dz: -3.9, ranks: true, lines: ["The big sign is LIVE: the shared Season 1 top 5, same for every player. Link Phantom here (free, no transaction) to rank.", "Rounds last 3 days. The top 5 split the Sandbox SOL pot 40 / 25 / 15 / 12 / 8 every round. Free to play, no purchase needed."] },
   ];
   const CAST = [
     { id: "nia", name: "NIA", role: "GUILD SHOP", dx: 3.6, dz: -1.9, yaw: Math.PI, skin: 0xffe0c4, cloth: 0xff4fd8, glow: 0x28dcff, hat: "visor", shop: true,
@@ -118,7 +118,7 @@ export function createHub(THREE, C) {
   function drawRanks(d) { const k = JSON.stringify(d || {}); if (k === lbKey && lbTex) return; lbKey = k; const rows = (d && d.rows) || [];
     const t = canvasTex(1024, 640, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#1a0c38"); gr.addColorStop(1, "#08061a"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
       g.strokeStyle = "#ffd24a"; g.lineWidth = 12; g.strokeRect(8, 8, w - 16, h - 16); g.strokeStyle = "#28dcff"; g.lineWidth = 4; g.strokeRect(26, 26, w - 52, h - 52);
-      g.textAlign = "center"; g.font = "900 70px Orbitron,Verdana,sans-serif"; g.shadowColor = "#ffd24a"; g.shadowBlur = 26; g.fillStyle = "#ffe27a"; g.fillText("🏆 SEASON 1", w / 2, 104); g.shadowBlur = 0;
+      g.textAlign = "center"; g.font = (d && d.live ? "900 60px" : "900 70px") + " Orbitron,Verdana,sans-serif"; g.shadowColor = "#ffd24a"; g.shadowBlur = 26; g.fillStyle = "#ffe27a"; g.fillText(d && d.live ? "🏆 SEASON 1 · LIVE" : "🏆 SEASON 1", w / 2, 104); g.shadowBlur = 0;
       g.font = "700 22px Verdana,sans-serif"; g.fillStyle = "#9df7ff"; g.fillText("Bosses · shards earned · legendary wins", w / 2, 140);
       const medal = ["#ffd24a", "#d8e0ff", "#ff9a4a", "#b8a0ff", "#b8a0ff"];
       for (let i = 0; i < 5; i++) { const r = rows[i], y = 205 + i * 66; g.fillStyle = i % 2 ? "rgba(255,255,255,.05)" : "rgba(40,220,255,.08)"; g.fillRect(60, y - 44, w - 120, 58);
@@ -127,7 +127,7 @@ export function createHub(THREE, C) {
         g.font = "900 36px Verdana,sans-serif"; g.fillStyle = r ? "#ffffff" : "rgba(255,255,255,.3)"; g.fillText(r ? String(r.name).slice(0, 16) : "— open spot —", 200, y);
         g.textAlign = "right"; g.fillStyle = r ? "#14f195" : "rgba(255,255,255,.3)"; g.fillText(r ? Number(r.score).toLocaleString("en-US") : "", w - 90, y); }
       g.textAlign = "center"; g.font = "700 22px Verdana,sans-serif"; g.fillStyle = "#ffb0c0"; g.fillText(d && d.you ? d.you : "Play to get on the board", w / 2, 560);
-      g.fillStyle = "#cfd8ff"; g.font = "700 19px Verdana,sans-serif"; g.fillText("Live SOL prizes: OFF until launch · scores saved on this device", w / 2, 598); });
+      g.fillStyle = "#cfd8ff"; g.font = "700 19px Verdana,sans-serif"; g.fillStyle = d && d.live ? "#14f195" : "#cfd8ff"; g.fillText((d && d.foot) || "Connecting to the LIVE board…", w / 2, 598); });
     if (lbMesh) { if (lbMesh.material.map) lbMesh.material.map.dispose(); lbMesh.material.map = t; lbMesh.material.needsUpdate = true; } lbTex = t; }
   function rankSign(x, z, yaw) { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = yaw; const metal = toon(0x2a2840, 0x140818, .25);
     for (const s of [-1, 1]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(.12, .16, 4.4, 8), metal); post.position.set(s * 2.4, 2.2, -.05); g.add(post);

@@ -1,20 +1,21 @@
 // $BOSS Sandbox: third-person (default) / first-person build & explore (Phase 1, single-player beta).
 // Original content: neon tiles, Rug-Buster drill, SOL shard veins (in-game items, no cash value), FUD wolves.
 // Season board is local. Prize SOL is a display stub and is never sent. ◆ shards have no cash value.
-import * as THREE from "./three.module.min.js?v=0.9.7";
-import { createCharKit } from "./chars3d.js?v=0.9.7";
-import { createGems } from "./gems.js?v=0.9.7";
-import { createTerrain } from "./terrain.js?v=0.9.7";
-import { createBosses } from "./bosses.js?v=0.9.7";
-import { createLair } from "./lair.js?v=0.9.7";
-import { createWolves } from "./wolves.js?v=0.9.7";
-import { createAnimals } from "./animals.js?v=0.9.7";
-import { createCombat, POWERS, WEAPONS, GUNS, GUN_ORDER } from "./combat.js?v=0.9.7";
-import { createRifts, RIFT_CFG, tierOdds } from "./rifts.js?v=0.9.7";
-import { createBoard } from "./leaderboard.js?v=0.9.7";
-import { BURN, burnConfigured, burnLive, burnReady, burnFor, connectWallet, burnPrice, wallet } from "./burnshop.js?v=0.9.7";
-import { createHub, SAFE_R } from "./hub.js?v=0.9.7";
-import { STARTER, SKIN_NFT, claimHolderSkins, skinHeld, heldSkins, rememberHeld } from "./skins.js?v=0.9.7";
+import * as THREE from "./three.module.min.js?v=0.9.8";
+import { createCharKit } from "./chars3d.js?v=0.9.8";
+import { createGems } from "./gems.js?v=0.9.8";
+import { createTerrain } from "./terrain.js?v=0.9.8";
+import { createBosses } from "./bosses.js?v=0.9.8";
+import { createLair } from "./lair.js?v=0.9.8";
+import { createWolves } from "./wolves.js?v=0.9.8";
+import { createAnimals } from "./animals.js?v=0.9.8";
+import { createCombat, POWERS, WEAPONS, GUNS, GUN_ORDER } from "./combat.js?v=0.9.8";
+import { createRifts, RIFT_CFG, tierOdds } from "./rifts.js?v=0.9.8";
+import { createBoard } from "./leaderboard.js?v=0.9.8";
+import { createLive } from "./live.js?v=0.9.8";
+import { BURN, burnConfigured, burnLive, burnReady, burnFor, connectWallet, burnPrice, wallet } from "./burnshop.js?v=0.9.8";
+import { createHub, SAFE_R } from "./hub.js?v=0.9.8";
+import { STARTER, SKIN_NFT, claimHolderSkins, skinHeld, heldSkins, rememberHeld } from "./skins.js?v=0.9.8";
 
 const Q = new URLSearchParams(location.search);
 const $ = id => document.getElementById(id);
@@ -24,7 +25,7 @@ if (IS_TOUCH) document.body.classList.add("touch");
 const IS_PHONE = IS_TOUCH && Math.min(screen.width || 9999, screen.height || 9999) <= 540 && !Q.has("tablet");
 if (IS_PHONE) document.body.classList.add("phone");
 
-import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools, caches, trees, lair } from "./world.js?v=0.9.7";
+import { SX, SY, SZ, CS, NCX, NCZ, B, PALETTE, world, idx, inB, get, rng, generate as genWorld, biomeName, pools, caches, trees, lair } from "./world.js?v=0.9.8";
 const SAVE_KEY = "boss_sandbox_v2", OLD_KEY = "boss_sandbox_v1", WORLD_V = 3;   // v0.9: WORLD_V 3 = bigger natural world (older saves keep progress, get the new map)
 const DAY_LEN = 480;                               // seconds per full day/night cycle
 let seed = 1337, edits = {}, shards = 0, plaza = { x: 40, y: 20, z: 40 };
@@ -979,6 +980,13 @@ function updMP(dt) { if (!mp.on) return; mp.sendT -= dt;
 // ---------------- progression: drill tiers, upgrades, stats ----------------
 const SPEED = [0, 1, 1.6, 2.4, 3.5], REACH = [0, 5, 6, 7, 8], DMG = [0, 9, 15, 24, 38], LASER = [0, 0x14f195, 0x28dcff, 0xffd24a, 0xff4fd8];
 const LB = createBoard();
+// v0.9.8 LIVE shared Season board: every boss win / ◆ earned is also queued for the $BOSS score server (scored server-side, one board for everyone).
+let liveHinted = false;
+const LIVE = createLive({ onUpdate: () => { try { HUB.refresh(); } catch (e) {} if (lbOpen) try { renderBoard(); } catch (e) {} },
+  onReject: r => { const k = r.find(x => /kill/i.test(x.why || "") || /Fudder/.test(x.why || "")); if (k) pop("Live board: " + k.why, "#ffb0c0"); } });
+{ const _k = LB.kill, _e = LB.earn;
+  LB.kill = (kind, tier, leg) => { LIVE.kill(kind, tier, leg); if (!liveHinted && LIVE.on && !LIVE.signed()) { liveHinted = true; setTimeout(() => pop("🏆 Link Phantom at the Season board to rank LIVE", "#ffd24a"), 1800); } return _k(kind, tier, leg); };
+  LB.earn = n => { LIVE.earn(n); return _e(n); }; }
 const upg = { drill: 1, boots: 0, shield: 0, hp: 0, rod: 1, pets: {}, pet: "", blast: 1, powers: {}, power: "", guns: { blaster: 1 }, gun: "blaster", potions: 0, armor: 0 };
 const stats = { mined: 0, veins: 0, placed: 0, prisms: 0, golds: 0, cores: 0, fud: 0, kills: 0, combos: 0, dj: 0, lair: 0, k_fudder: 0 };
 const maxHp = () => 10 + upg.hp * 4;
@@ -1839,7 +1847,14 @@ function renderGuild() { const el = $("guildL"); if (!el) return; const L = guil
 let guildOpen = false;
 function openGuild() { guildOpen = true; uiModal = true; input.mine = false; input.f = input.s = 0; renderGuild(); $("guild").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
 function closeGuild() { guildOpen = false; uiModal = false; $("guild").classList.remove("show"); }
-function signRanks() { const rows = LB.ranked(), you = LB.me(), rank = LB.youRank(rows); return { rows: rows.slice(0, 5).map(r => ({ name: r.name, score: r.score, you: r.id === you.id })), you: "YOU · " + you.name + " · " + you.score + (rank ? " · #" + rank : "") }; }
+function signRanks() { const L = LIVE.state();
+  if (L.on && L.ok) { const w = L.wallet, y = L.you;
+    return { live: true, rows: L.rows.slice(0, 5).map(r => ({ name: r.name, score: r.score, you: !!w && r.wallet === w })),
+      you: L.signed ? "YOU · " + L.name + " · " + (y ? y.score : 0) + (y && y.rank ? " · #" + y.rank : "") + (L.pending ? " · syncing" : "") : "Link Phantom at this board to rank LIVE · free, no transaction",
+      foot: "🟢 LIVE · " + LIVE.roundText() + " · top 5 win SOL every 3 days", players: L.players }; }
+  const rows = LB.ranked(), you = LB.me(), rank = LB.youRank(rows);
+  return { live: false, rows: rows.slice(0, 5).map(r => ({ name: r.name, score: r.score, you: r.id === you.id })), you: "YOU · " + you.name + " · " + you.score + (rank ? " · #" + rank : ""),
+    foot: L.on ? "Connecting to the LIVE board… showing this device for now" : "Live board offline · scores saved on this device" }; }
 // ---------------- boot ----------------
 const saved = load();
 let riftReload = null; try { if (Q.has("reset")) localStorage.removeItem(RIFT_KEY); riftReload = JSON.parse(localStorage.getItem(RIFT_KEY) || "null"); } catch (e) {}
@@ -1864,14 +1879,27 @@ $("load").remove();
 setInterval(save, 5000);
 requestAnimationFrame(frame);
 
-function renderBoard() { const el = $("lb"); if (!el) return; LB.refresh(); const rows = LB.ranked(), you = LB.me(), rank = LB.youRank(rows), plan = LB.plan(rows), w = LB.wallet();
+function renderBoard() { const el = $("lb"); if (!el) return; LB.refresh(); const L = LIVE.state();
   $("lbFormula").textContent = LB.FORMULA_TEXT; $("lbPrize").textContent = LB.PRIZE_TEXT;
+  if (L.on && L.ok) { const rows = L.rows, y = L.you, plan = L.prize || { legs: [], below_minimum: true, pot_sol: 0 };
+    $("lbH").textContent = "🏆 SEASON 1 · 🟢 LIVE";
+    $("lbYou").textContent = L.signed ? "You · " + L.name + " · score " + (y ? y.score : 0) + (y && y.rank ? " · rank " + y.rank : "") + " · bosses " + (y ? y.bosses : 0) + " · ◆ earned " + (y ? y.shards : 0) + " · legendary wins " + (y ? y.legs : 0) + (L.pending ? " · " + L.pending + " to sync" : " · synced")
+      : "Link Phantom to rank on the LIVE board (one free signed message, no transaction). Wins you play now still count if you link within 6 hours." + (L.pending ? " · " + L.pending + " waiting" : "");
+    const inp = $("lbName"); inp.value = L.signed ? L.name : (LB.dump().name || ""); inp.disabled = true; $("lbPhantom").textContent = L.signed ? "✓ LIVE · LINKED" : "LINK PHANTOM · GO LIVE";
+    const tb = $("lbRows"); tb.innerHTML = ""; rows.forEach((e, i) => { const leg = plan.legs[i]; const est = !leg ? "" : (plan.below_minimum || !leg.filled ? leg.pct + "%" : leg.pct + "% · " + leg.sol.toFixed(3) + " SOL");
+      const tr = document.createElement("tr"); if (L.wallet && e.wallet === L.wallet) tr.className = "you"; tr.innerHTML = `<td>${e.rank}</td><td>${e.name}</td><td>${e.score}</td><td>${e.bosses | 0}</td><td>${e.shards | 0}</td><td>${e.legs | 0}</td><td>${i < 5 ? est : ""}</td>`; tb.appendChild(tr); });
+    if (!rows.length) tb.innerHTML = '<tr><td colspan="7">No live scores yet this round. Win a boss fight to take #1.</td></tr>';
+    $("lbRank").textContent = LIVE.roundText() + " · " + (L.players | 0) + " ranked" + (L.rejected.length ? " · last rejected: " + L.rejected[0].why : "");
+    $("lbPot").textContent = "Sandbox pot " + (+plan.pot_sol || 0).toFixed(3) + " SOL (10% of creator fees received) · top 5 split 40/25/15/12/8 every 3 days · paid by the $BOSS team, never by this game.";
+    $("lbReset").hidden = true; return; }
+  const rows = LB.ranked(), you = LB.me(), rank = LB.youRank(rows), plan = LB.plan(rows), w = LB.wallet();
+  $("lbH").textContent = "🏆 SEASON 1" + (L.on ? " · connecting…" : "");
   $("lbYou").textContent = "You · " + you.name + " · score " + you.score + (rank ? " · rank " + rank : "") + " · bosses " + (you.bosses | 0) + " · ◆ earned " + (you.shards | 0) + " · legendary wins " + (you.legs | 0);
-  const inp = $("lbName"); inp.value = w ? you.name : (LB.dump().name || ""); inp.disabled = !!w; $("lbPhantom").textContent = w ? "PHANTOM LINKED" : "USE PHANTOM";
+  const inp = $("lbName"); inp.disabled = !!w; inp.value = w ? you.name : (LB.dump().name || ""); $("lbPhantom").textContent = L.on ? (L.signed ? "✓ LIVE · LINKED" : "LINK PHANTOM · GO LIVE") : (w ? "PHANTOM LINKED" : "USE PHANTOM");
   const tb = $("lbRows"); tb.innerHTML = ""; rows.slice(0, 20).forEach((e, i) => { const leg = plan.legs[i]; const est = !leg ? "" : (plan.belowMinimum || !leg.filled ? leg.pct + "% · rolls over" : leg.pct + "% · " + leg.sol.toFixed(3) + " SOL");
     const tr = document.createElement("tr"); if (e.id === you.id) tr.className = "you"; tr.innerHTML = `<td>${i + 1}</td><td>${e.name}</td><td>${e.score}</td><td>${e.bosses | 0}</td><td>${e.shards | 0}</td><td>${e.legs | 0}</td><td>${i < 5 ? est : ""}</td>`; tb.appendChild(tr); });
   if (!rows.length) tb.innerHTML = '<tr><td colspan="7">No scores yet this season.</td></tr>';
-  $("lbRank").textContent = rank ? "Your rank " + rank + " of " + rows.length : "";
+  $("lbRank").textContent = (L.on ? "Live board unreachable right now (" + (L.err || "connecting") + "). This device's scores are shown; your wins are queued and sync when it's back. " : "") + (rank ? "Your rank " + rank + " of " + rows.length : "");
   $("lbPot").textContent = "Pot " + plan.potSol.toFixed(3) + " SOL · " + (plan.belowMinimum ? "under 0.05, so it would roll over" : "top 5 would split this") + " · nothing is sent from this game.";
   $("lbReset").hidden = !LB.resetAllowed(); }
 function openBoard() { if (riftAsk) return; lbOpen = true; input.mine = false; input.f = input.s = 0; renderBoard(); $("lb").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
@@ -1888,7 +1916,8 @@ $("guildL").addEventListener("click", e => { const b = e.target.closest("button[
 $("lbOpen").addEventListener("click", () => openBoard());
 $("lbClose").addEventListener("click", () => closeBoard());
 $("lbName").addEventListener("change", e => { LB.setName(e.target.value); renderBoard(); });
-$("lbPhantom").addEventListener("click", async () => { try { const a = await connectWallet(); LB.noteWallet(a); renderBoard(); pop("Board key is your wallet · nothing was spent", "#9df7ff"); } catch (err) { pop(err.message || "Phantom isn't available. Type a name instead.", "#cfd8ff"); } });
+$("lbPhantom").addEventListener("click", async () => { try { if (LIVE.on) { pop("Approve the free sign-in in Phantom (no transaction)", "#9df7ff"); const a = await LIVE.signIn(); LB.noteWallet(a); renderBoard(); pop("🟢 LIVE · your wins now rank on the shared board", "#14f195"); return; }
+  const a = await connectWallet(); LB.noteWallet(a); renderBoard(); pop("Board key is your wallet · nothing was spent", "#9df7ff"); } catch (err) { pop(err.message || "Phantom isn't available. Type a name instead.", "#cfd8ff"); } });
 $("lbReset").addEventListener("click", () => { if (!LB.resetAllowed()) return; if (!confirm("Reset Season 1 scores saved on this device?")) return; LB.resetSeason(); renderBoard(); });
 $("gunL").addEventListener("click", e => { const b = e.target.closest("button[data-gun]"); if (b && !b.disabled) { ownGun(b.dataset.gun) ? equipGun(b.dataset.gun) : buyGun(b.dataset.gun); renderGuns(); return; } if (e.target.closest("button[data-drink]")) { drinkPotion(); return; } if (e.target.closest("button[data-tease]")) { pop("Sealed. Not for sale here.", "#cfd8ff"); return; } const br = e.target.closest("button[data-burn]"); if (br) tryBurn(br.dataset.burn); });
 window.addEventListener("keydown", e => { if (lbOpen && e.code === "Escape" && document.activeElement !== $("lbName")) closeBoard(); });
@@ -1913,6 +1942,7 @@ Object.assign(window.__SB, {
   fireOnce: () => { CB.fire(); }, punchOnce: () => CB.punch(),
   powers: () => ({ owned: Object.keys(upg.powers || {}), eq: upg.power, blast: upg.blast | 0 }), givePower: id => { upg.powers = upg.powers || {}; upg.powers[id] = 1; upg.power = id; updWpnHud(); }, usePower, powerCard: () => $("powCard").classList.contains("show"),
   setShards: n => { shards = n; updShards(); }, setBlast: n => { upg.blast = n; updWpnHud(); },
+  live: () => LIVE.state(), liveSign: () => LIVE.signIn(), liveFlush: () => LIVE.flush(), livePoll: () => LIVE.poll(), signRanks: () => signRanks(),
   lb: () => ({ you: LB.me(), rank: LB.youRank(), rows: LB.ranked().slice(0, 20), plan: LB.plan(), formula: LB.FORMULA_TEXT, prize: LB.PRIZE_TEXT }),
   lbKill: (kind, tier, leg) => LB.kill(kind, tier, !!leg), lbEarn: n => LB.earn(n), lbSetName: n => LB.setName(n), lbWallet: a => LB.noteWallet(a), lbSeed: (n, s) => LB.seed(n, s), lbReset: () => LB.resetSeason(), lbSetPot: n => LB.setPot(n),
   openBoard, closeBoard, boardOpen: () => lbOpen, renderBoard, inHub: () => inHub(), safeR: () => SAFE_R, hub: () => HUB.info(), hubTalk: id => HUB.talk(id), hubNext: () => HUB.next(), hubClose: () => HUB.close(), skins: () => ({ starter: STARTER, id: charId, held: heldSkins(), nft: SKIN_NFT, free: skinFree(charId) }), claimSkins: () => claimNftSkins(), rememberHeld, buySupply, drinkPotion, supplies: () => ({ potions: upg.potions | 0, armor: upg.armor | 0 }),

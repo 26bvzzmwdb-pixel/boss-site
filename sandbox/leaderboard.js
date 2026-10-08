@@ -1,5 +1,5 @@
 // $BOSS Sandbox Season 1 board. One score from bosses, shards earned, and legendary rift wins.
-// Saved on this device only. Multiplayer / hosting stays off. This file never sends SOL.
+// v0.9.8: this device keeps a local copy; the LIVE shared board (live.js + the $BOSS score server) is what ranks. This file never sends SOL.
 // Prize figures are a display stub Noah can fund later from creator fees (separate from the runner board).
 // v0.9.7 anti-farm: Legendary/Epic weigh heavily, Common is nearly worthless, and every repeat kill of the SAME boss pays less.
 
@@ -32,7 +32,7 @@ export const PRIZE = {
 
 export const FORMULA_TEXT = "SCORE = boss points + floor(◆ earned this season ÷ 50). Boss points per kill: Common 5 · Rare 60 · Epic 600 · Legendary 2,000 (+500 for a legendary rift win). Farming the same boss pays less every time: each repeat is worth 70% of the last, down to 5%. Lab bosses count as Common. The Troglodyte Fudder can only be beaten once and counts as Legendary. ◆ SOL shards are in-game items with no cash value. Dying in a rift wipes what you are carrying, not the shards you already earned this season.";
 
-export const PRIZE_TEXT = "Prize SOL, if a round is paid out, comes only from creator fees: 10% of fees received go to this Sandbox pot (the runner board's pot is separate, at 20%). Top 5 share that pot 40% / 25% / 15% / 12% / 8%. Under 0.05 SOL, nothing is paid and the pot rolls over. Unfilled places roll over too. This game does not send SOL. The pot is not funded yet.";
+export const PRIZE_TEXT = "LIVE: one shared board for every player, in 3-day rounds (scores reset each round). Free to play, no purchase needed. Prize SOL comes only from creator fees: 10% of fees received go to this Sandbox pot (the runner board's pot is separate, at 20%). Every round the top 5 share that pot 40% / 25% / 15% / 12% / 8%, paid by the $BOSS team. Under 0.05 SOL, nothing is paid and the pot rolls over. Unfilled places roll over too. The game itself never sends SOL.";
 
 const KEY = "boss_sb_board_s1";
 
