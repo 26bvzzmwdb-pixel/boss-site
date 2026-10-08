@@ -1115,7 +1115,7 @@ const CB = createCombat(THREE, { scene, camera, P, IS_TOUCH, toon: BX.toon, add:
   move: (dx, dz) => { moveAxis(0, dx); moveAxis(2, dz); }, bossCenter: () => { const M = BX.make(boss.kind); return M.ground ? M.center : 0; }, bossR: () => BX.make(boss.kind).hitR });
 const tierI = t => RIFT_CFG.tiers.indexOf(t);
 function riftSpot(x, z) { const X = Math.floor(x), Z = Math.floor(z); if (X < 6 || Z < 6 || X >= SX - 6 || Z >= SZ - 6) return null; if (inPool(x, z) || pools.some(q => ((x - q.x) / (q.rx + 3)) ** 2 + ((z - q.z) / (q.rz + 3)) ** 2 < 1)) return null;
-  if (lair && Math.hypot(x - lair.x, z - lair.z) < (lair.r || 8) + 8) return null; if (Math.hypot(x - plaza.x, z - plaza.z) < 6) return null;
+  if (lair && Math.hypot(x - lair.x, z - lair.z) < (lair.r || 8) + 8) return null; if (Math.hypot(x - plaza.x, z - plaza.z) < 6) return null; if (trees.some(t => !t.dead && Math.hypot(t.x + .5 - x, t.z + .5 - z) < 3.4)) return null;
   const t = topH[X + Z * SX]; if (t < 1 || t > SY - 6 || !get(X, t, Z)) return null; for (let k = 1; k <= 4; k++) if (get(X, t + k, Z)) return null;
   for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (Math.abs(topH[X + dx + (Z + dz) * SX] - t) > 1) return null; return [X + .5, t + 1, Z + .5]; }
 const RF = createRifts(THREE, { scene, P, IS_TOUCH, SX, SZ, toon: BX.toon, grad: BX.grad, force: Q.get("rift"), spot: riftSpot, onOpen: riftOpened, onTouch: askRift,
