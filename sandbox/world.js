@@ -58,7 +58,7 @@ export const MOON = { x: 112, z: 74, r: 16 };
 function biomeAt(x, z, sd) { if (Math.hypot(x - MOON.x, z - MOON.z) < MOON.r + (fbm(x / 6, z / 6, sd + 77) - .5) * 5) return 4; if (fbm(x / 40, z / 40, sd + 1213) < .35 && Math.hypot(x - SX / 2, z - SZ / 2) > 40) return 5; const a = fbm(x / 56, z / 56, sd + 501), b = fbm(x / 46, z / 46, sd + 733);
   if (a > .58) return 3; if (a > .44 && a < .57 && fbm(x / 36, z / 36, sd + 911) > .62) return 4; if (a < .43) return b > .5 ? 2 : 1; return b > .64 ? 2 : b < .36 ? 1 : 0; }
 const biome = new Uint8Array(SX * SZ);
-export const pools = [], caches = [], trees = [], lair = {};   // lair is carved in step 6
+export const pools = [], caches = [], trees = [], lair = {};
 export function generate(sd) {
   world.fill(0);
   const R = rng(sd), H = new Int16Array(SX * SZ);
@@ -129,6 +129,30 @@ export function generate(sd) {
     for (let k = 0; k < L; k++) { if (inB(x, y, z) && world[idx(x, y, z)] === 2) world[idx(x, y, z)] = id; const d = Math.floor(R() * 6); if (d === 0) x++; else if (d === 1) x--; else if (d === 2) z++; else if (d === 3) z--; else if (d === 4) y++; else y--; }
   } };
   vein(8, 520, 2, 26, 5, 10); vein(18, 120, 3, 15, 3, 6); vein(9, 165, 2, 11, 3, 6); vein(10, 66, 1, 6, 2, 3);
+  // v0.9: THE TROGLODYTE FUDDER'S LAIR: a deep domed cave reached by a long sloping tunnel. Lit by crystal clusters in the walls.
+  { const RL = rng(sd ^ 0x1a1b), FY = 5, LR = 11; let best = null;
+    for (let i = 0; i < 48; i++) { const an = RL() * 6.283, d = 44 + RL() * 14, x = Math.round(cx + Math.cos(an) * d), z = Math.round(cz + Math.sin(an) * d); if (x < LR + 3 || z < LR + 3 || x > SX - LR - 4 || z > SZ - LR - 4) continue;
+      let mn = 99; for (let dz = -LR - 1; dz <= LR + 1; dz++) for (let dx = -LR - 1; dx <= LR + 1; dx++) if (dx * dx + dz * dz <= (LR + 1) ** 2) mn = Math.min(mn, H[x + dx + (z + dz) * SX]);
+      if (pools.some(q => Math.hypot(q.x - x, q.z - z) < LR + 8)) continue; const ea = Math.atan2(cz - z, cx - x), ex = Math.round(x + Math.cos(ea) * 31), ez = Math.round(z + Math.sin(ea) * 31);
+      if (pools.some(q => Math.hypot(q.x - ex, q.z - ez) < 8)) continue; const sc = mn - (biome[x + z * SX] === 4 ? 4 : 0); if (!best || sc > best.sc) best = { x, z, sc, ea, ex, ez }; if (mn >= FY + 13) break; }
+    const { x: lx, z: lz, ea, ex, ez } = best; let fy = FY; const roof = Math.min(...[0, 1, 2, 3, 4, 5, 6, 7].map(k => H[Math.round(lx + Math.cos(k * .785) * 8) + Math.round(lz + Math.sin(k * .785) * 8) * SX])); while (fy > 2 && fy + 11 > roof) fy--;
+    const carve = (X, Y, Z) => { if (X > 0 && Z > 0 && X < SX - 1 && Z < SZ - 1 && Y > 0 && Y < SY) world[idx(X, Y, Z)] = 0; };
+    for (let dz = -LR - 1; dz <= LR + 1; dz++) for (let dx = -LR - 1; dx <= LR + 1; dx++) { const r = Math.hypot(dx, dz); if (r > LR + .5) continue; const top = fy + Math.round(1 + 8 * Math.sqrt(Math.max(0, 1 - (r / (LR + .5)) ** 2)));
+      world[idx(lx + dx, fy, lz + dz)] = 2; for (let y = fy + 1; y <= top; y++) carve(lx + dx, y, lz + dz); }
+    // tunnel: from the cave mouth down to the chamber wall, ~0.55 tiles drop per tile so it is an easy walk both ways
+    let sy = SY - 2; while (sy > 1 && !world[idx(ex, sy - 1, ez)]) sy--; const tx = lx + Math.cos(ea) * (LR - 1), tz = lz + Math.sin(ea) * (LR - 1), L = Math.hypot(ex - tx, ez - tz), drop = sy - (fy + 1);
+    const steps = Math.ceil(L * 3); for (let i = 0; i <= steps; i++) { const t = i / steps, px = ex + (tx - ex) * t + Math.sin(t * 6) * 2.2 * Math.sin(t * Math.PI), pz = ez + (tz - ez) * t + Math.cos(t * 5) * 1.6 * Math.sin(t * Math.PI), py = sy - drop * t;
+      for (let dy = 0; dy <= 3; dy++) for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) { if (dx * dx + dz * dz + (dy - 1.2) ** 2 * .9 > 5.2) continue; carve(Math.round(px + dx), Math.round(py) + dy, Math.round(pz + dz)); } }
+    // glowing crystal clusters in the walls and ceiling + a few gold/prism veins as loot
+    for (let i = 0; i < 70; i++) { const a2 = RL() * 6.283, el = RL() * 1.2, r = LR + .6, X = Math.round(lx + Math.cos(a2) * r * Math.cos(el)), Z = Math.round(lz + Math.sin(a2) * r * Math.cos(el)), Y = Math.round(fy + 1 + 7.6 * Math.sin(el));
+      if (world[idx(X, Y, Z)] === 2) world[idx(X, Y, Z)] = i % 7 === 0 ? 18 : i % 9 === 0 ? 9 : 25; }
+    for (let i = 0; i < 26; i++) { const t = RL(), px = Math.round(ex + (tx - ex) * t), pz = Math.round(ez + (tz - ez) * t), py = Math.round(sy - drop * t) + 1;
+      for (const [dx, dz] of [[3, 0], [-3, 0], [0, 3], [0, -3]]) if (world[idx(px + dx, py, pz + dz)] === 2) { world[idx(px + dx, py, pz + dz)] = 25; break; } }
+    for (let dz = -LR - 8; dz <= LR + 8; dz++) for (let dx = -LR - 8; dx <= LR + 8; dx++) { const X = lx + dx, Z = lz + dz; if (X < 0 || Z < 0 || X >= SX || Z >= SZ) continue; let y = SY - 1; while (y > 0 && !world[idx(X, y, Z)]) y--; H[X + Z * SX] = Math.min(H[X + Z * SX], y); }
+    { let X = ex, Z = ez; let y = SY - 1; while (y > 0 && !world[idx(X, y, Z)]) y--; }
+    for (let i = 0; i <= 40; i++) { const t = i / 40; const X = Math.round(ex + (tx - ex) * t), Z = Math.round(ez + (tz - ez) * t); let y = SY - 1; while (y > 0 && !world[idx(X, y, Z)]) y--; H[X + Z * SX] = y; }
+    Object.assign(lair, { x: lx + .5, z: lz + .5, floorY: fy + 1, r: LR, ent: [ex + .5, sy, ez + .5], ea, throne: [lx + .5 - Math.cos(ea) * (LR - 3.2), lz + .5 - Math.sin(ea) * (LR - 3.2)] }); }
+  const nearLair = (x, z) => { if (Math.hypot(x - lair.x, z - lair.z) < lair.r + 4) return true; const [ax, , az] = lair.ent, bx = lair.x + Math.cos(lair.ea) * (lair.r - 1), bz = lair.z + Math.sin(lair.ea) * (lair.r - 1), vx = bx - ax, vz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz))); return Math.hypot(x - ax - vx * t, z - az - vz * t) < 6; };
   // surface shard outcrops near spawn
   for (let i = 0; i < 18; i++) { const a = R() * 6.28, d = 9 + R() * 18, x = Math.round(cx + Math.cos(a) * d), z = Math.round(cz + Math.sin(a) * d); if (!inB(x, 1, z)) continue; const h = H[x + z * SX]; if (!world[idx(x, h, z)]) continue; world[idx(x, h, z)] = 8; if (R() < .5) world[idx(x, h + 1, z)] = 8; }
   // biome features
@@ -136,7 +160,7 @@ export function generate(sd) {
   trees.length = 0; const R4 = rng(sd ^ 0x7ee5), TREE_P = [.05, .025, .2, .06, 0, 0];
   for (let i = 0; i < 2600; i++) { const x = 3 + Math.floor(R4() * (SX - 6)), z = 3 + Math.floor(R4() * (SZ - 6)); if (!far(x, z, 12)) continue;
     let h = SY - 2; while (h > 1 && !world[idx(x, h, z)]) h--; const bm = biome[x + z * SX], roll = R4(); if (world[idx(x, h, z)] !== BIOME_TOP[bm] || world[idx(x, h + 1, z)]) continue;
-    if (roll < TREE_P[bm] && !nearPool(x, z, 2.5) && !trees.some(t => Math.abs(t.x - x) + Math.abs(t.z - z) < 5)) { const th = (bm === 1 ? 4 : 3) + Math.floor(R4() * 3); if (h + th + 4 >= SY) continue; let clear = true; for (let y = h + 1; y <= h + th + 2; y++) if (world[idx(x, y, z)]) clear = false; if (!clear) continue;
+    if (roll < TREE_P[bm] && !nearPool(x, z, 2.5) && !nearLair(x, z) && !trees.some(t => Math.abs(t.x - x) + Math.abs(t.z - z) < 5)) { const th = (bm === 1 ? 4 : 3) + Math.floor(R4() * 3); if (h + th + 4 >= SY) continue; let clear = true; for (let y = h + 1; y <= h + th + 2; y++) if (world[idx(x, y, z)]) clear = false; if (!clear) continue;
       for (let y = h + 1; y <= h + th; y++) world[idx(x, y, z)] = 27; trees.push({ x, z, y: h, h: th, kind: bm, seed: 1 + Math.floor(R4() * 2e9) }); continue; }
     const r2 = R4();
     if (bm === 1 && r2 < .03) { const t = R4() < .55 ? 4 : 5, L = 2 + Math.floor(R4() * 6); for (let y = h + 1; y <= Math.min(SY - 2, h + L); y++) world[idx(x, y, z)] = t; }

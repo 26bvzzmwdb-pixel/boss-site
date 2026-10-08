@@ -6,6 +6,7 @@ import { createCharKit } from "./chars3d.js";
 import { createGems } from "./gems.js";
 import { createTerrain } from "./terrain.js";
 import { createBosses } from "./bosses.js";
+import { createLair } from "./lair.js";
 
 const Q = new URLSearchParams(location.search);
 const $ = id => document.getElementById(id);
@@ -29,7 +30,7 @@ function setBlock(x, y, z, id, fromNet) {
 // ---------------- save / load ----------------
 let saveT = 0;
 function scheduleSave() { saveT = 1.0; }
-function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, wv: WORLD_V, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qv: 2, qBase, hp: P.hp, daily, intro: introDone, dex: fish.dex, ach, bc, char: charId, view, tp: 1, set: { snd: sndOn, mus: musOn, slow: lookSlow, look: lookMul } })); } catch (e) {} }
+function save() { if (mp.on) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, wv: WORLD_V, seed, edits, shards, sel, p: [P.x, P.y, P.z, P.yaw, P.pitch], tod, upg, stats, Qi, qv: 3, qBase, hp: P.hp, daily, intro: introDone, dex: fish.dex, ach, bc, char: charId, view, tp: 1, set: { snd: sndOn, mus: musOn, slow: lookSlow, look: lookMul } })); } catch (e) {} }
 function load() { if (Q.has("reset")) try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) {}
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); if (s && s.v === 2) return s;
     const o = JSON.parse(localStorage.getItem(OLD_KEY) || "null"); if (o && o.v === 1) return { migr: true, shards: o.shards | 0 }; } catch (e) {} return null; }
@@ -931,6 +932,8 @@ const QUESTS = [
   { t: "Mine a SOL Core vein", h: "Rarest. Down near the Genesis floor", k: "cores", n: 1, r: 15 },
   { t: "Bust THE RUG PULLER", h: "Summon it from the ⚡ LAB, blast its eye", k: "kills", n: 1, r: 40 },
   { t: "Build the BOSS DRILL", h: "The final ⚡ LAB upgrade", k: "drill", n: 4, r: 25, abs: 1 },
+  { t: "Find the Fudder's lair", h: "Follow the ▲ scanner to the cave mouth, then go deep down the tunnel", k: "lair", n: 1, r: 10 },
+  { t: "Silence THE TROGLODYTE FUDDER", h: "In its lair: dodge the rings, hit the snack bag", k: "k_fudder", n: 1, r: 60 },
 ];
 let Qi = 0, qBase = {}, qT = 0;
 function qDef(i) { if (i < QUESTS.length) return QUESTS[i]; const j = i - QUESTS.length, lv = 1 + Math.floor(j / 4);
@@ -1014,7 +1017,7 @@ function bossEnd(won, silent) { BX.end(won, silent); }
 let LZ = null, lairCd = 0, lairMsg = 0, lairArmed = true;
 function lairArena() { const dx = lair.x - lair.throne[0], dz = lair.z - lair.throne[1], d = Math.hypot(dx, dz) || 1; return { x: lair.x, z: lair.z, r: lair.r, floorY: lair.floorY, throne: [lair.throne[0] + dx / d * 1.6, lair.throne[1] + dz / d * 1.6] }; }
 function lairTick(dt, time) { if (!lair.ent) return; if (!LZ) LZ = createLair(THREE, { scene, L: lair, toon: BX.toon, add: BX.add, glow: BX.glow, IS_TOUCH });
-  const d = Math.hypot(P.x - lair.x, P.z - lair.z), inside = d < lair.r - .5 && P.y < lair.floorY + 6; LZ.tick(time, d < 70); lairCd -= dt; lairMsg -= dt; if (d > lair.r + 8 || P.y > lair.floorY + 9) lairArmed = true;
+  const d = Math.hypot(P.x - lair.x, P.z - lair.z), inside = d < lair.r - .5 && P.y < lair.floorY + 6; LZ.tick(time, d < lair.r + 22); lairCd -= dt; lairMsg -= dt; if (d > lair.r + 8 || P.y > lair.floorY + 9) lairArmed = true;
   if (inside && !stats.lair) { stats.lair = 1; banner("THE FUDDER'S LAIR", "Something is typing very loudly…"); save(); }
   if (inside && !boss.on && lairCd <= 0 && lairArmed && !mp.on) { if (upg.drill < 2) { if (lairMsg <= 0) { lairMsg = 8; pop("TOO DANGEROUS · COME BACK WITH DRILL MK II", "#ffb040"); } return; }
     const A = lairArena(); lairCd = 4; lairArmed = false; summonBoss("fudder", { arena: A, at: [A.throne[0], lair.floorY, A.throne[1]] }); } }
@@ -1391,7 +1394,7 @@ function updMotes(dt, time, night) { const a = moteGeo.attributes.position.array
 const ACH = [
   ["vein", "💎", "FIRST SHARD", "Mine a SOL vein", () => stats.veins >= 1], ["miner", "⛏", "TILE MUNCHER", "Mine 250 tiles", () => stats.mined >= 250],
   ["build", "🏗", "ARCHITECT", "Build 50 pieces", () => stats.placed >= 50], ["rug", "🧹", "RUG BUSTER", "Bust THE RUG PULLER", () => (stats.k_rug | 0) >= 1 || stats.kills >= 1],
-  ["king", "👑", "KING DETHRONED", "Beat THE FUD KING", () => (stats.k_king | 0) >= 1], ["whale", "🐋", "WHALE BEACHED", "Beat THE DUMP WHALE", () => (stats.k_whale | 0) >= 1],
+  ["king", "👑", "KING DETHRONED", "Beat THE FUD KING", () => (stats.k_king | 0) >= 1], ["whale", "🐋", "WHALE BEACHED", "Beat THE DUMP WHALE", () => (stats.k_whale | 0) >= 1], ["fudder", "🧀", "FUDDER SILENCED", "Silence THE TROGLODYTE FUDDER in its lair", () => (stats.k_fudder | 0) >= 1],
   ["fish", "🎣", "HOOKED", "Catch a fish", () => (stats.fish | 0) >= 1], ["fish10", "🐟", "NEON ANGLER", "Catch 10 fish", () => (stats.fish | 0) >= 10],
   ["dex", "📘", "FISHDEX FIVE", "Catch 5 kinds of fish", () => Object.keys(fish.dex).length >= 5], ["dia", "💠", "DIAMOND SPOTTER", "Zap a Diamond Hands", () => (stats.diamond | 0) >= 1],
   ["meteor", "☄", "STARGAZER", "See a meteor land", () => (stats.meteors | 0) >= 1], ["cache", "🗝", "TREASURE HUNTER", "Find a secret cache", () => cachesFound() >= 1],
@@ -1480,7 +1483,7 @@ const saved = load();
 let migrated = false;
 let newWorld = false; if (saved && !saved.migr && (saved.wv | 0) !== WORLD_V) { newWorld = true; saved.edits = {}; saved.p = null; }
 if (saved && !saved.migr) { seed = saved.seed; edits = saved.edits || {}; shards = saved.shards | 0; sel = saved.sel | 0; tod = saved.tod ?? tod;
-  if (saved.upg) Object.assign(upg, saved.upg); if (saved.stats) Object.assign(stats, saved.stats); Qi = saved.Qi | 0; if (!saved.qv && Qi >= 7) Qi++;  qBase = saved.qBase || {}; P.hp = saved.hp || maxHp();
+  if (saved.upg) Object.assign(upg, saved.upg); if (saved.stats) Object.assign(stats, saved.stats); Qi = saved.Qi | 0; if (!saved.qv && Qi >= 7) Qi++; if ((saved.qv | 0) < 3 && Qi >= 12) { Qi = 12; saved.qBase = {}; } qBase = saved.qBase || {}; P.hp = saved.hp || maxHp();
   view = saved.tp ? (saved.view ?? 1) : 1; if (saved.set) { sndOn = saved.set.snd !== false; musOn = saved.set.mus !== false; lookSlow = !!saved.set.slow; lookMul = saved.set.look || 1; } if (saved.daily) Object.assign(daily, saved.daily); if (saved.bc) Object.assign(bc, saved.bc); if (saved.dex) fish.dex = saved.dex; if (saved.ach) ach = saved.ach; if (saved.char) charId = saved.char; introDone = saved.intro !== false; if (introDone) met.t = 150 + Math.random() * 120; }
 else { seed = parseInt(Q.get("seed")) || 1337; if (saved && saved.migr) { shards = saved.shards; migrated = true; } qStart(); }
 generate(seed); applyEdits(); for (const t of trees) if (get(t.x, t.y + 1, t.z) !== 27 || !get(t.x, t.y, t.z)) { t.dead = true; for (let y = t.y + 1; y <= t.y + t.h; y++) if (get(t.x, y, t.z) === 27) world[idx(t.x, y, t.z)] = 0; } const tris = buildAll(); visY = P.y;
