@@ -107,7 +107,7 @@ body.touch #target{font-size:9px;top:calc(50% + 22px)}
 #biome{left:50%;top:62%;transform:translateX(-50%);font-size:11px;letter-spacing:4px;color:#cfefff;text-shadow:0 0 10px var(--cyan);opacity:0}#biome.show{animation:bio 3s ease-out forwards}@keyframes bio{0%{opacity:0}15%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
 #shards.bump .n{animation:cb .2s ease-out}
 #lab{position:fixed;inset:0;z-index:15;display:none;align-items:center;justify-content:center;background:rgba(5,6,15,.72);padding:12px;touch-action:auto}#lab.show{display:flex}
-#lab .card{position:relative;z-index:1;max-width:440px;padding:14px;max-height:94vh;overflow:auto;touch-action:pan-y}#lab h3{margin:0 0 2px;letter-spacing:3px;color:var(--gold)}#lab .sub{font-size:10px;opacity:.75;margin-bottom:8px}
+#lab .card{position:relative;z-index:1;max-width:440px;padding:14px;max-height:94vh;overflow:hidden;display:flex;flex-direction:column;touch-action:pan-y}#labScroll{overflow:auto;min-height:0;flex:1;touch-action:pan-y}#lab h3{margin:0 0 2px;letter-spacing:3px;color:var(--gold)}#lab .sub{font-size:10px;opacity:.75;margin-bottom:8px}
 .upg{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 9px;margin:5px 0;font-size:9.5px}
 .upg b{display:block;font-size:11.5px;color:#fff;margin-bottom:2px}.upg span{opacity:.75}.upg button{flex:0 0 auto;min-width:74px;padding:9px 8px;border-radius:9px;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#aaa;font:900 11px Orbitron,sans-serif;touch-action:manipulation}
 .upg.ok{border-color:rgba(20,241,149,.6)}.upg.ok button{border-color:var(--teal);color:#fff;background:rgba(20,241,149,.2)}.upg.own{opacity:.55}.upg.own button{color:var(--teal)}.upg.lock{opacity:.45}.upg.lock button{font-size:8px}
@@ -178,7 +178,7 @@ body.photo #photoBar{display:block;touch-action:manipulation;position:fixed;z-in
 .ctl{display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left;font-size:10.5px;margin:10px 0;opacity:.9}
 .ctl div{background:rgba(255,255,255,.04);border-radius:8px;padding:6px 8px}
 .ctl b{color:var(--cyan)}
-.btn{display:inline-block;margin:6px 4px;padding:12px 22px;border-radius:12px;border:2px solid var(--cyan);background:linear-gradient(180deg,rgba(40,220,255,.25),rgba(40,220,255,.05));color:#fff;font:900 14px Orbitron,sans-serif;letter-spacing:2px;cursor:pointer;text-decoration:none;touch-action:manipulation}
+.btn[hidden]{display:none !important}.btn{display:inline-block;margin:6px 4px;padding:12px 22px;border-radius:12px;border:2px solid var(--cyan);background:linear-gradient(180deg,rgba(40,220,255,.25),rgba(40,220,255,.05));color:#fff;font:900 14px Orbitron,sans-serif;letter-spacing:2px;cursor:pointer;text-decoration:none;touch-action:manipulation}
 .btn.sm{padding:8px 12px;font-size:10px;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.05)}
 .btn.pk{border-color:var(--pink)}
 .nv2{font-size:10px;color:#cfc2ff;margin-top:10px;opacity:.85}
@@ -315,7 +315,7 @@ body.inmenu #bWpn,body.inmenu #bPow,body.photo #bWpn,body.photo #bPow,body.photo
 .gun button{flex:0 0 auto;padding:8px 8px;border-radius:10px;border:2px solid #14f195;background:rgba(20,241,149,.14);color:#fff;font:900 10px Orbitron,sans-serif;touch-action:manipulation}
 .gun button.burn{border-color:#ffd24a;background:rgba(255,210,74,.1);color:#ffe9a8}
 .gun button:disabled{opacity:.55}
-#lbOpen{position:sticky;top:0;z-index:2;width:100%;margin:8px 0 4px;background:rgba(18,14,40,.92)}
+#lbOpen{position:relative;z-index:2;width:100%;margin:8px 0 0;flex:none;background:rgba(18,14,40,.92)}
 #lb{position:fixed;inset:0;z-index:16;display:none;align-items:center;justify-content:center;background:rgba(5,6,15,.78);padding:10px;touch-action:auto}
 #lb.show{display:flex}
 #lb .card{max-width:min(760px,96vw);width:100%;max-height:94vh;overflow:auto;text-align:left;padding:14px 14px 12px}
@@ -386,8 +386,8 @@ body.inmenu #hubTalk,body.photo #hubTalk,body.cine #hubTalk{display:none!importa
 <div id="flash"></div>
 <div id="lab"><div class="card"><h3>⚡ BOSS LAB</h3><div class="sub">Spend <b style="color:#c69bff">◆ <span id="labShards">0</span> SOL shards</b> on upgrades. In-game items only · no cash value.</div>
 <button id="lbOpen" class="btn sm" type="button">🏆 SEASON 1 BOARD</button>
-<div id="gunL"></div>
-<div id="labList"></div><div id="dailyL" class="dl"></div><div id="buildL" class="dl bl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="powL"></div><div id="petL"></div><div id="achL"></div><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div>
+<div id="labScroll"><div id="gunL"></div>
+<div id="labList"></div><div id="dailyL" class="dl"></div><div id="buildL" class="dl bl"></div><button id="summonBtn" type="button">SUMMON THE RUG PULLER</button><button id="summonBtn2" class="k" type="button">SUMMON THE FUD KING</button><button id="summonBtn3" type="button">SUMMON THE DUMP WHALE</button><div id="powL"></div><div id="petL"></div><div id="achL"></div><div id="labStats"></div><button class="btn sm" id="labClose" type="button">CLOSE</button></div></div></div>
 <div class="hud" id="badge"><b>$BOSS SANDBOX</b> <span class="bt">BETA</span><br><span>third-person · practice only</span></div>
 <div class="hud" id="clock">--</div>
 <div class="hud" id="shards"><div class="n" id="shardN">0</div><div class="l">◆ SOL SHARDS</div><div class="nv">in-game items · no cash value</div></div>

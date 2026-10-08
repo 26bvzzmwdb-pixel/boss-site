@@ -1008,7 +1008,7 @@ function buyUpg(id) { const u = UPG.find(q => q.id === id); if (!u || u.have() |
 function renderPets() { const el = $("petL"); if (!el) return; el.innerHTML = `<b>🐾 COMPANIONS</b>` + PETS.map(([id, nm, d, c]) => { const own = upg.pets && upg.pets[id], on = upg.pet === id;
   return `<div class="pet"><img src="${petTex[id].image.toDataURL()}" alt=""><div><b>${nm}</b><small>${d}</small></div><button type="button" data-pet="${id}" class="${on ? "on" : ""}">${on ? "WITH YOU" : own ? "BRING" : "◆" + c}</button></div>`; }).join(""); }
 function openLab() { labOpen = true; input.mine = false; input.f = input.s = 0; renderLab(); renderGuns(); renderPets(); $("lab").classList.add("show"); if (document.pointerLockElement) document.exitPointerLock(); }
-function closeLab(quiet) { if (!labOpen) return; labOpen = false; $("lab").classList.remove("show"); if (!quiet && !IS_TOUCH && running && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
+function closeLab(quiet) { if (!labOpen) return; labOpen = false; $("lab").classList.remove("show"); if (!quiet && !IS_TOUCH && !window.__SB_TEST && running && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
 $("labList").addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if (b) buyUpg(b.dataset.id); });
 $("powL").addEventListener("click", e => { const b = e.target.closest("button[data-pow]"); if (b && upg.powers && upg.powers[b.dataset.pow]) { upg.power = b.dataset.pow; updWpnHud(); renderLab(); save(); sfx.equip(); } });
 $("labClose").addEventListener("click", () => closeLab());
